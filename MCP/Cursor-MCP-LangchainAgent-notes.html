@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 1 — Agents, Tools, and what MCP is for</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6; --paper-2: #ede5d6; --ink: #1f1a14; --ink-soft: #4a4239; --ink-mute: #8b7d65;
+  --terracotta: #b8472e; --terracotta-light: #d96d4a; --teal: #2a5d62; --teal-light: #5ba0a8;
+  --ochre: #c89b3c; --line: #d4c9b5; --highlight: #f8e6cf; --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--paper); background-image: radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px), radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px), radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px); background-size: 100px 100px, 100px 100px, 100px 100px; color: var(--ink); font-family: 'Spectral', 'Iowan Old Style', Georgia, serif; font-size: 18px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc { padding: 80px 24px 40px 40px; position: sticky; top: 0; height: 100vh; overflow-y: auto; border-right: 1px solid var(--line); background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%); }
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 22px; color: var(--ink); margin-bottom: 28px; line-height: 1.15; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 12px; font-family: 'Spectral', serif; font-size: 13px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 60px; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(40px, 6vw, 70px); line-height: 0.98; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 620px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 600px; flex-wrap: wrap; }
+.where { background: rgba(42, 93, 98, 0.06); border-left: 4px solid var(--teal); padding: 20px 26px; margin: 0 0 56px; font-size: 16px; color: var(--ink-soft); }
+.where-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--teal); font-weight: 700; margin-bottom: 8px; }
+.where p { margin-bottom: 10px; }
+.where p:last-child { margin-bottom: 0; }
+.where strong { color: var(--ink); }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 36px 0 36px 30px; border-left: 4px solid var(--terracotta); margin: 30px 0 72px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -28px; font-size: 92px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 88px; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.05; margin-bottom: 24px; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 14px 0 22px 32px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter ul li, .chapter ol li { margin-bottom: 8px; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; border-radius: 3px; }
+pre code { background: transparent; border: none; color: inherit; padding: 0; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 15px; }
+table th, table td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+table th { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--terracotta); font-weight: 700; text-transform: uppercase; border-bottom: 2px solid var(--ink); }
+table tbody tr:hover { background: rgba(248, 230, 207, 0.25); }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15px; color: var(--ink); line-height: 1.6; }
+.correction strong { color: var(--terracotta); }
+.correction p { color: var(--ink); font-size: 15px; margin-bottom: 10px; line-height: 1.6; }
+.correction p:last-child { margin-bottom: 0; }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 28px; margin: 32px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--ochre); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 16px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 20px 24px; margin: 26px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+figure.diagram { margin: 32px 0; padding: 0; }
+figure.diagram svg { width: 100%; height: auto; display: block; background: var(--paper); border: 1px solid var(--line); }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); margin-top: 10px; line-height: 1.55; }
+figure.infographic { margin: 40px -40px 40px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg { width: 100%; height: auto; display: block; }
+figure.infographic figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); padding: 16px 32px; background: var(--paper-2); border-top: 1px solid var(--line); }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+.glossary { margin-top: 72px; padding-top: 44px; border-top: 2px solid var(--ink); }
+.glossary h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 32px; margin-bottom: 24px; }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 16px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 90px; padding-top: 30px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 40px; }
+  .thesis { font-size: 22px; padding-left: 20px; }
+  .chapter h2 { font-size: 30px; }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="toc-label">MCP · LECTURE 01</div>
+    <div class="toc-title">Agents, Tools, and what MCP is for</div>
+    <ol>
+      <li><a href="#s1">What is an agent</a></li>
+      <li><a href="#s2">LangChain @tool</a></li>
+      <li><a href="#s3">Why naive tool lists fail</a></li>
+      <li><a href="#s4">What MCP actually is</a></li>
+      <li><a href="#svg">Visual summary</a></li>
+      <li><a href="#s5">Cursor + MCP demo</a></li>
+      <li><a href="#s6">The catalogue</a></li>
+      <li><a href="#s7">Why this is the moment</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+      <li><a href="#next">For Lecture 2</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">65.9 MIN<br>2 SPEAKERS<br>2026-05-20</div>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">MCP · LECTURE 01 · STUDY NOTES</div>
+      <h1>Agents, tools, and <span class="accent">what MCP is for.</span></h1>
+      <p class="hero-sub">From <code>@tool</code> decorators to a Cursor wired up with 30 MCP servers — the consumer side of MCP.</p>
+      <div class="hero-meta">
+        <span>AGENT = LLM + TOOLS + MEMORY + PLANNING</span>
+        <span>MCP = USB-C OF LLM TOOLS</span>
+      </div>
+    </header>
+
+    <div class="where">
+      <div class="where-label">WHERE WE ARE</div>
+      <p>Prior sessions covered LangChain at a high level — prompts, chains, the basic LLM-as-function pattern. Today we add the missing pieces that turn an LLM into an <strong>agent</strong>: tools (the LLM can act on the world, not just generate text) and the management layer (MCP) that makes the tool catalogue scalable. Tomorrow's lecture flips this: instead of <em>consuming</em> third-party MCP servers, we'll write our own.</p>
+      <p>By the end of this session you'll know what an agent is, how to wire LangChain's <code>@tool</code> decorator to your own Python functions, why the LangChain-tools-in-a-list approach falls apart at scale, what MCP is and isn't, and what a Cursor configured with 30 MCP servers can actually do.</p>
+    </div>
+
+    <div class="thesis">
+      An agent is an LLM that can <em>act on the world.</em> LangChain's <code>@tool</code> decorator turns any Python function into something the model can call. That's fine for 5 tools, hopeless at 500. <em>MCP is the USB-C of LLM tools</em> — a standard wire format that lets any agent client plug into any tool server.
+    </div>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">§ 01 — DEFINITION</div>
+      <h2>What is an agent, precisely?</h2>
+
+      <p>The lecturer's working definition:</p>
+      <p><strong>Agent = LLM + tools + memory + planning</strong></p>
+
+      <p>That matches the canonical Lilian Weng diagram from the 2023 OpenAI blog post <em>"LLM Powered Autonomous Agents"</em> — the picture you'll see on every agentic-AI slide deck for the next decade. Four boxes around a central LLM brain:</p>
+
+      <table>
+        <thead><tr><th>Component</th><th>What it is</th><th>Without it</th></tr></thead>
+        <tbody>
+          <tr><td><strong>LLM</strong></td><td>The language model itself — Claude, GPT-4, Llama</td><td>No reasoning capacity</td></tr>
+          <tr><td><strong>Tools</strong></td><td>Functions the LLM can call to <em>act</em> on the world</td><td>LLM can only generate text — no acting</td></tr>
+          <tr><td><strong>Memory</strong></td><td>Persistent state across turns (short-term, long-term, episodic, procedural)</td><td>Every interaction starts cold</td></tr>
+          <tr><td><strong>Planning</strong></td><td>Multi-step reasoning, self-reflection, breakdown into sub-tasks</td><td>LLM does one shot only</td></tr>
+        </tbody>
+      </table>
+
+      <p>The act-not-just-talk distinction matters. A pure LLM can write you an email, draft a calendar invite, summarise a meeting — but it can't <strong>send the email</strong>, <strong>add the event to your calendar</strong>, <strong>upload the summary to Notion</strong>. Tools are what bridge that gap. Once an LLM has tools, it has hands. And once it has memory + planning on top, it has continuity.</p>
+
+      <div class="callout">
+        <div class="callout-label">SKILLS / HOOKS / SUBAGENTS</div>
+        <p>The lecturer mentions these as the <em>planning</em> layer in modern agent frameworks (Claude Code's skills, Cursor's hooks). They are not yet standardised across vendors. Skills are typically markdown files that describe procedures; hooks are event-driven triggers; subagents are spawned helpers. Treat these as evolving names for "the agent's instructions and orchestration."</p>
+      </div>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA/SPRING BRIDGE</div>
+        <p><strong>An agent ≈ a Spring Boot app with autowired dependencies.</strong> The LLM is the core service; tools are the autowired beans (each one a function exposed for runtime invocation); memory is a persistent <code>@Repository</code>; planning is the orchestration class. None of them is novel architecturally — the novelty is that the <em>caller</em> is a probabilistic text generator rather than a deterministic program.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">§ 02 — @TOOL</div>
+      <h2>LangChain's <code>@tool</code> decorator</h2>
+
+      <p>Any Python function becomes a tool by adding the <code>@tool</code> decorator from <code>langchain_core.tools</code>.</p>
+
+<pre><code>from langchain_core.tools import tool
+
+@tool
+def multiply(a: float, b: float) -> float:
+    """Multiply two numbers together.
+
+    Args:
+        a: First number.
+        b: Second number.
+
+    Returns:
+        The product a * b.
+    """
+    return a * b
+
+
+@tool
+def word_count(text: str) -> int:
+    """Count the number of words in the given text."""
+    return len(text.split())</code></pre>
+
+      <p>Two things to internalise:</p>
+      <ol>
+        <li><strong>The docstring is the description the LLM reads.</strong> The model decides which tool to call by reading docstrings. If your docstring is missing or vague, the LLM has no way to pick the right tool. Treat docstrings as user-facing API documentation, not optional annotation.</li>
+        <li><strong>Type hints matter.</strong> They become the JSON schema the LLM uses to know what arguments to pass.</li>
+      </ol>
+
+      <p>The lecturer's slogan, paraphrased: <em>"If you joined my team today and I gave you 10 functions with no docstrings, could you pick the right one for the task? No. The LLM is exactly the same."</em></p>
+
+      <h3>Wrapping a third-party API as a tool</h3>
+
+<pre><code>import os
+from tavily import TavilyClient
+from langchain_core.tools import tool
+
+tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+
+@tool
+def web_search(query: str) -> str:
+    """Search the web for recent facts or news using the Tavily Search API.
+
+    Returns: a string containing the top results with URLs and descriptions.
+    """
+    result = tavily.search(query=query, max_results=3, include_answer=True)
+    return str(result)</code></pre>
+
+      <div class="correction">
+        <strong>Correction — it's Tavily, not "Travely."</strong>
+        <p>The transcript says "Travely Search" throughout. The product is <strong>Tavily</strong> (tavily.com), an LLM-focused search API. Free tier: 1,000 credits/month. The transcript error is an AssemblyAI hearing mistake.</p>
+      </div>
+
+      <h3>Building the agent</h3>
+
+<pre><code>from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+tools = [multiply, word_count, web_search]
+llm = ChatOpenAI(model="gpt-4o-mini")
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant. Use the tools provided when relevant."),
+    ("placeholder", "{chat_history}"),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}"),
+])
+
+agent = create_tool_calling_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+result = executor.invoke({"input": "What is 12 times 11?"})</code></pre>
+
+      <p>The model — given the user message, the tool list, and the docstrings — decides on its own that "multiply" is the right tool to call. <strong>No instruction "use the multiply tool" needed.</strong> That auto-discovery is the magic, and it depends entirely on docstrings being accurate.</p>
+
+      <div class="correction">
+        <strong>Correction — when adding tools to the list, reference them, don't call them.</strong>
+        <p>The lecturer's live demo errored with <code>tool object is not callable</code>. The fix: <code>tools = [multiply, word_count, build_tavily_tool]</code> — not <code>tools = [multiply, word_count, build_tavily_tool()]</code>. Decorated functions go in the list as references, not invocations. Common beginner gotcha.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">§ 03 — SCALE PROBLEMS</div>
+      <h2>Why naive tool lists fall apart at scale</h2>
+
+      <p>The lecturer's industry example: her production system has <strong>~3,000 tools</strong> (each SQL function that detects a specific kind of fraud or abuse is one tool). What goes wrong when you stuff 3,000 <code>@tool</code>-decorated functions into one agent's <code>tools=[...]</code> list?</p>
+
+      <h3>Problem 1 — Context rot</h3>
+      <p>Every tool's docstring is sent to the LLM as part of every prompt, so the model can decide which tool to call. With 3,000 tools at ~200 tokens of docstring each, that's <strong>600,000 tokens</strong> — well over any model's context window. The model's "effective context" gets eaten by tool descriptions before the user even sends a message.</p>
+
+      <p><strong>Context rot</strong> is the broader pathology: even when content fits in the context window, models pay less attention to information that's buried under unrelated tokens. Performance degrades long before the window fills up — Anthropic and others have measured this in needle-in-a-haystack benchmarks (Liu et al. 2023, <em>Lost in the Middle</em>).</p>
+
+      <h3>Problem 2 — Tool ambiguity</h3>
+      <p>Many tools in a large catalogue have <em>similar</em> descriptions. The lecturer's example: "paid amount per provider" and "paid amount per member" share 90% of their description text. The LLM picks the wrong one; you get a number that looks plausible but answers the wrong question. This is <strong>hallucination at the tool-selection level</strong>, not the text-generation level.</p>
+
+      <h3>Problem 3 — Tool duplication across projects</h3>
+      <p>Same tools — search, GitHub, Slack, Gmail, Postgres — get re-implemented by every team. In a 10,000-engineer org, the search tool might exist in 50 different codebases. Each version slightly different, none of them maintained in sync, all of them somebody's job to update when the API changes.</p>
+
+      <h3>The fix: a protocol, not a library</h3>
+      <p>What if tools lived <strong>outside the agent code</strong>, in dedicated processes (servers) that any agent (client) could connect to? That gives you:</p>
+      <ul>
+        <li><strong>One canonical implementation per tool</strong> (one GitHub server, used by everyone).</li>
+        <li><strong>Servers grouped by domain</strong> (admin tools, devops tools, search tools, scraper tools — one server each).</li>
+        <li><strong>Smaller per-conversation context</strong> (the client only loads the servers relevant to the current task).</li>
+        <li><strong>Standardised wire format</strong> (any client can talk to any server, without per-pair integration code).</li>
+      </ul>
+      <p>That's MCP.</p>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">§ 04 — DEFINITION</div>
+      <h2>What MCP actually is</h2>
+
+      <p><strong>MCP (Model Context Protocol)</strong> is a JSON-RPC 2.0 protocol for exposing tools, resources, and prompts to LLM applications. Released by <strong>Anthropic on November 25, 2024</strong>. Adopted by <strong>OpenAI</strong> in March 2025 and <strong>Google DeepMind</strong> in April 2025 — making it the de facto industry standard.</p>
+
+      <p>What MCP is <strong>not</strong>:</p>
+      <ul>
+        <li>Not an LLM. Not a tool itself. Not a framework.</li>
+        <li>Not an "intelligence boost" — it doesn't make models smarter.</li>
+      </ul>
+
+      <p>What MCP <strong>is</strong>:</p>
+      <ul>
+        <li>A standardised <strong>wire format</strong> for the conversation between an LLM application and a tool provider.</li>
+        <li>Three named primitives: <strong>tools, resources, prompts</strong>.</li>
+        <li>Two <strong>transports</strong>: <strong>stdio</strong> (local, server runs as a subprocess) and <strong>streamable HTTP</strong> (remote).</li>
+      </ul>
+
+      <div class="correction">
+        <strong>Correction — MCP runs at the application layer, not the TCP layer.</strong>
+        <p>The lecturer said MCP is "a TCP layer protocol." Strictly, MCP is application-layer (layer 7 in the OSI model). It uses JSON-RPC 2.0 framed over either stdio pipes or HTTP — both of which sit above TCP. The distinction matters when you're debugging: if MCP isn't working, the TCP layer is almost never the problem; it's almost always the JSON-RPC framing or the tool/resource definition.</p>
+      </div>
+
+      <h3>The architecture: host, client, server</h3>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 880 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MCP architecture diagram showing a host containing multiple clients, each connected via JSON-RPC to a separate MCP server.">
+          <defs>
+            <marker id="mcpArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/>
+            </marker>
+          </defs>
+          <g font-family="JetBrains Mono, monospace">
+            <rect x="40" y="30" width="800" height="140" fill="#ede5d6" stroke="#1f1a14" stroke-width="2"/>
+            <text x="60" y="56" fill="#b8472e" font-size="11" font-weight="700" letter-spacing="2">HOST</text>
+            <text x="60" y="76" fill="#4a4239" font-size="13" font-style="italic">Cursor · Claude Desktop · VS Code · your own app</text>
+
+            <rect x="80"  y="100" width="200" height="50" fill="#2a5d62"/>
+            <text x="180" y="118" fill="#f5efe6" font-size="10" font-weight="700" text-anchor="middle">CLIENT #1</text>
+            <text x="180" y="138" fill="#f5efe6" font-size="11" text-anchor="middle" font-family="Fraunces, serif" font-style="italic">GitHub adapter</text>
+
+            <rect x="340" y="100" width="200" height="50" fill="#5ba0a8"/>
+            <text x="440" y="118" fill="#1f1a14" font-size="10" font-weight="700" text-anchor="middle">CLIENT #2</text>
+            <text x="440" y="138" fill="#1f1a14" font-size="11" text-anchor="middle" font-family="Fraunces, serif" font-style="italic">Tavily adapter</text>
+
+            <rect x="600" y="100" width="200" height="50" fill="#c89b3c"/>
+            <text x="700" y="118" fill="#1f1a14" font-size="10" font-weight="700" text-anchor="middle">CLIENT #3</text>
+            <text x="700" y="138" fill="#1f1a14" font-size="11" text-anchor="middle" font-family="Fraunces, serif" font-style="italic">Postgres adapter</text>
+
+            <line x1="180" y1="150" x2="180" y2="240" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#mcpArrow)"/>
+            <line x1="440" y1="150" x2="440" y2="240" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#mcpArrow)"/>
+            <line x1="700" y1="150" x2="700" y2="240" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#mcpArrow)"/>
+
+            <text x="290" y="190" fill="#b8472e" font-size="10" font-style="italic">JSON-RPC 2.0 (stdio or HTTP)</text>
+
+            <rect x="80"  y="250" width="200" height="90" fill="#f8e6cf" stroke="#b8472e"/>
+            <text x="180" y="275" fill="#b8472e" font-size="10" font-weight="700" text-anchor="middle">GITHUB MCP SERVER</text>
+            <text x="180" y="295" fill="#1f1a14" font-size="11" text-anchor="middle">22 tools</text>
+            <text x="180" y="312" fill="#8b7d65" font-size="10" text-anchor="middle">push · PR · issues · branches</text>
+            <text x="180" y="328" fill="#8b7d65" font-size="10" text-anchor="middle">create_repo · search_code · ...</text>
+
+            <rect x="340" y="250" width="200" height="90" fill="#f8e6cf" stroke="#b8472e"/>
+            <text x="440" y="275" fill="#b8472e" font-size="10" font-weight="700" text-anchor="middle">TAVILY MCP SERVER</text>
+            <text x="440" y="295" fill="#1f1a14" font-size="11" text-anchor="middle">5 tools</text>
+            <text x="440" y="312" fill="#8b7d65" font-size="10" text-anchor="middle">search · extract · crawl · map</text>
+
+            <rect x="600" y="250" width="200" height="90" fill="#f8e6cf" stroke="#b8472e"/>
+            <text x="700" y="275" fill="#b8472e" font-size="10" font-weight="700" text-anchor="middle">YOUR CUSTOM SERVER</text>
+            <text x="700" y="295" fill="#1f1a14" font-size="11" text-anchor="middle">N tools</text>
+            <text x="700" y="312" fill="#8b7d65" font-size="10" text-anchor="middle">domain-specific functions</text>
+            <text x="700" y="328" fill="#8b7d65" font-size="10" text-anchor="middle">(see Lecture 2)</text>
+          </g>
+        </svg>
+        <figcaption>Cursor is the host. Inside it are multiple clients, one per configured server. Each client speaks JSON-RPC to its server.</figcaption>
+      </figure>
+
+      <ul>
+        <li><strong>Host</strong> — the user-facing application. One per session. Cursor, Claude Desktop, your custom IDE.</li>
+        <li><strong>Client</strong> — a component <strong>inside the host</strong> that maintains a 1:1 connection to one server. A host with 30 configured MCP servers has 30 clients inside it.</li>
+        <li><strong>Server</strong> — a process that exposes tools/resources/prompts.</li>
+      </ul>
+
+      <div class="correction">
+        <strong>Correction — Cursor is the host, not the client.</strong>
+        <p>The transcript sometimes says "Cursor is a client." More precisely: Cursor is the <strong>host</strong>; inside Cursor live multiple <strong>clients</strong>, one per configured server. This matters because the host owns the LLM call, the user interface, and the session — it's the application; the clients are its connector subsystems.</p>
+      </div>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA/SPRING BRIDGE</div>
+        <p><strong>MCP host ≈ a Spring Boot app with multiple <code>RestTemplate</code> beans.</strong> One application, many adapters underneath, each pointing at a different upstream service. Cursor is the Spring Boot app; each MCP client is a <code>RestTemplate</code> configured for a specific server.</p>
+      </div>
+
+      <h3>The three primitives</h3>
+
+      <p>MCP exposes three kinds of capabilities. They look similar in code but have different control semantics.</p>
+
+      <table>
+        <thead><tr><th>Primitive</th><th>Controlled by</th><th>Example</th><th>Cursor surface</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Tool</strong></td><td><strong>Model</strong> — the LLM decides when to call</td><td><code>search_web(query)</code></td><td>Invoked silently mid-conversation</td></tr>
+          <tr><td><strong>Resource</strong></td><td><strong>Application</strong> — the host attaches it to context</td><td><code>resource://docs/architecture.md</code></td><td>User selects via @-mention or auto-attach</td></tr>
+          <tr><td><strong>Prompt</strong></td><td><strong>User</strong> — the user picks it explicitly</td><td><code>/explain-topic</code></td><td>Slash commands</td></tr>
+        </tbody>
+      </table>
+
+      <div class="correction">
+        <strong>Correction — "tools are auto-discoverable, resources are not" is the right shape but the wrong vocabulary.</strong>
+        <p>All three primitives are listed via <code>list_tools()</code> / <code>list_resources()</code> / <code>list_prompts()</code>. The real distinction is <strong>who decides to call them</strong>: tools are model-controlled (LLM picks based on conversation), resources are app-controlled (host attaches based on UI), prompts are user-controlled (slash commands).</p>
+      </div>
+
+      <div class="correction">
+        <strong>Correction — resources and prompts aren't "outdated" or "replaced by MLflow."</strong>
+        <p>The lecturer prefers tools-only. They're not deprecated — Cursor uses prompts for slash commands; Claude Desktop uses resources for @-mention attachments. Skipping resources and prompts is a stylistic choice, not industry consensus.</p>
+      </div>
+    </section>
+
+    <figure class="infographic" id="svg">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-labelledby="igMCP1Title">
+        <title id="igMCP1Title">MCP Lecture 1 — Agents, Tools, and what MCP is for</title>
+        <defs>
+          <style>
+            .display { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; }
+            .display-r { font-family: 'Fraunces', serif; font-weight: 700; }
+            .body { font-family: 'Spectral', serif; }
+            .mono { font-family: 'JetBrains Mono', monospace; }
+          </style>
+          <marker id="igArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/>
+          </marker>
+        </defs>
+        <rect width="1200" height="1500" fill="#f5efe6"/>
+
+        <text x="60" y="80" class="mono" fill="#b8472e" font-size="13" letter-spacing="6" font-weight="700">MCP · LECTURE 01 · VISUAL SUMMARY</text>
+        <text x="60" y="160" class="display" fill="#1f1a14" font-size="58">Agents, tools, and</text>
+        <text x="60" y="218" class="display" fill="#b8472e" font-size="58">what MCP is for.</text>
+        <line x1="60" y1="252" x2="1140" y2="252" stroke="#1f1a14" stroke-width="2"/>
+        <text x="60" y="285" class="body" fill="#4a4239" font-size="18" font-style="italic">USB-C for LLM tools — one protocol, any host, any server.</text>
+
+        <text x="60" y="340" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§01 · WHAT MAKES AN AGENT</text>
+        <g transform="translate(60, 360)">
+          <circle cx="540" cy="100" r="80" fill="#b8472e"/>
+          <text x="540" y="95" class="display-r" fill="#f5efe6" font-size="22" text-anchor="middle">LLM</text>
+          <text x="540" y="120" class="mono" fill="#f5efe6" font-size="10" text-anchor="middle">the brain</text>
+
+          <rect x="100" y="40" width="200" height="60" fill="#c89b3c"/>
+          <text x="200" y="62" class="mono" fill="#1f1a14" font-size="11" font-weight="700" text-anchor="middle">TOOLS</text>
+          <text x="200" y="80" class="body" fill="#1f1a14" font-size="12" font-style="italic" text-anchor="middle">act on the world</text>
+
+          <rect x="780" y="40" width="200" height="60" fill="#2a5d62"/>
+          <text x="880" y="62" class="mono" fill="#f5efe6" font-size="11" font-weight="700" text-anchor="middle">MEMORY</text>
+          <text x="880" y="80" class="body" fill="#f5efe6" font-size="12" font-style="italic" text-anchor="middle">persistent state</text>
+
+          <rect x="100" y="140" width="200" height="60" fill="#5ba0a8"/>
+          <text x="200" y="162" class="mono" fill="#1f1a14" font-size="11" font-weight="700" text-anchor="middle">PLANNING</text>
+          <text x="200" y="180" class="body" fill="#1f1a14" font-size="12" font-style="italic" text-anchor="middle">multi-step reasoning</text>
+
+          <rect x="780" y="140" width="200" height="60" fill="#6db33f"/>
+          <text x="880" y="162" class="mono" fill="#1f1a14" font-size="11" font-weight="700" text-anchor="middle">PROMPT / PERSONA</text>
+          <text x="880" y="180" class="body" fill="#1f1a14" font-size="12" font-style="italic" text-anchor="middle">role + instructions</text>
+
+          <line x1="300" y1="70"  x2="460" y2="100" stroke="#1f1a14" stroke-width="1"/>
+          <line x1="780" y1="70"  x2="620" y2="100" stroke="#1f1a14" stroke-width="1"/>
+          <line x1="300" y1="170" x2="460" y2="110" stroke="#1f1a14" stroke-width="1"/>
+          <line x1="780" y1="170" x2="620" y2="110" stroke="#1f1a14" stroke-width="1"/>
+        </g>
+
+        <text x="60" y="640" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§03-04 · WHY MCP — TOOL CHAOS VS ORGANISED CATALOGUE</text>
+
+        <g transform="translate(60, 660)">
+          <rect x="0" y="0" width="540" height="240" fill="#f8e6cf" stroke="#b8472e" stroke-dasharray="4 3"/>
+          <text x="20" y="30" class="mono" fill="#b8472e" font-size="12" font-weight="700">BEFORE MCP — 3,000 TOOLS IN A LIST</text>
+          <text x="20" y="60" class="body" fill="#1f1a14" font-size="14" font-style="italic">tools=[multiply, word_count, search,</text>
+          <text x="20" y="78" class="body" fill="#1f1a14" font-size="14" font-style="italic">       send_email, query_db, push_git, …]</text>
+          <text x="20" y="120" class="mono" fill="#b8472e" font-size="10" font-weight="700">CONTEXT ROT</text>
+          <text x="20" y="138" class="mono" fill="#1f1a14" font-size="11">600,000 tokens of docstrings before</text>
+          <text x="20" y="154" class="mono" fill="#1f1a14" font-size="11">the user even types a message</text>
+          <text x="20" y="180" class="mono" fill="#b8472e" font-size="10" font-weight="700">TOOL AMBIGUITY</text>
+          <text x="20" y="198" class="mono" fill="#1f1a14" font-size="11">similar descriptions → wrong tool picked</text>
+          <text x="20" y="220" class="mono" fill="#b8472e" font-size="10" font-weight="700">DUPLICATION</text>
+          <text x="20" y="237" class="mono" fill="#1f1a14" font-size="11">50 teams re-implement search_web()</text>
+
+          <rect x="560" y="0" width="540" height="240" fill="#ede5d6" stroke="#2a5d62"/>
+          <text x="580" y="30" class="mono" fill="#2a5d62" font-size="12" font-weight="700">AFTER MCP — TOOLS IN SERVERS</text>
+          <text x="580" y="60" class="body" fill="#1f1a14" font-size="14" font-style="italic">Cursor loads only what this task needs:</text>
+          <rect x="580" y="80" width="160" height="32" fill="#2a5d62"/>
+          <text x="660" y="100" class="mono" fill="#f5efe6" font-size="11" font-weight="700" text-anchor="middle">GitHub MCP</text>
+          <rect x="750" y="80" width="160" height="32" fill="#5ba0a8"/>
+          <text x="830" y="100" class="mono" fill="#1f1a14" font-size="11" font-weight="700" text-anchor="middle">Tavily MCP</text>
+          <rect x="920" y="80" width="160" height="32" fill="#c89b3c"/>
+          <text x="1000" y="100" class="mono" fill="#1f1a14" font-size="11" font-weight="700" text-anchor="middle">your MCP</text>
+
+          <text x="580" y="140" class="mono" fill="#2a5d62" font-size="10" font-weight="700">SCOPED CONTEXT</text>
+          <text x="580" y="158" class="mono" fill="#1f1a14" font-size="11">only the relevant servers' tools loaded</text>
+          <text x="580" y="180" class="mono" fill="#2a5d62" font-size="10" font-weight="700">ONE CANONICAL IMPL.</text>
+          <text x="580" y="198" class="mono" fill="#1f1a14" font-size="11">one GitHub server, used by everyone</text>
+          <text x="580" y="220" class="mono" fill="#2a5d62" font-size="10" font-weight="700">STANDARD WIRE</text>
+          <text x="580" y="237" class="mono" fill="#1f1a14" font-size="11">JSON-RPC over stdio or HTTP</text>
+        </g>
+
+        <text x="60" y="960" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§04 · THREE PRIMITIVES — WHO INITIATES THE CALL</text>
+
+        <g transform="translate(60, 980)">
+          <rect x="0" y="0" width="350" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+          <rect x="0" y="0" width="350" height="40" fill="#b8472e"/>
+          <text x="175" y="26" class="mono" fill="#f5efe6" font-size="12" font-weight="700" text-anchor="middle">TOOL</text>
+          <text x="175" y="68" class="display-r" fill="#1f1a14" font-size="20" text-anchor="middle">Model-controlled</text>
+          <text x="175" y="98" class="body" fill="#4a4239" font-size="13" font-style="italic" text-anchor="middle">LLM picks during reasoning</text>
+          <text x="175" y="132" class="mono" fill="#1f1a14" font-size="11" text-anchor="middle">@mcp.tool</text>
+          <text x="175" y="170" class="mono" fill="#8b7d65" font-size="10" text-anchor="middle">search_web(query)</text>
+          <text x="175" y="186" class="mono" fill="#8b7d65" font-size="10" text-anchor="middle">create_issue(title, body)</text>
+          <text x="175" y="202" class="mono" fill="#8b7d65" font-size="10" text-anchor="middle">run_sql(query)</text>
+
+          <rect x="370" y="0" width="350" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+          <rect x="370" y="0" width="350" height="40" fill="#2a5d62"/>
+          <text x="545" y="26" class="mono" fill="#f5efe6" font-size="12" font-weight="700" text-anchor="middle">RESOURCE</text>
+          <text x="545" y="68" class="display-r" fill="#1f1a14" font-size="20" text-anchor="middle">App-controlled</text>
+          <text x="545" y="98" class="body" fill="#4a4239" font-size="13" font-style="italic" text-anchor="middle">Host attaches to context</text>
+          <text x="545" y="132" class="mono" fill="#1f1a14" font-size="11" text-anchor="middle">@mcp.resource("uri")</text>
+          <text x="545" y="170" class="mono" fill="#8b7d65" font-size="10" text-anchor="middle">resource://docs/arch.md</text>
+          <text x="545" y="186" class="mono" fill="#8b7d65" font-size="10" text-anchor="middle">file attachments</text>
+          <text x="545" y="202" class="mono" fill="#8b7d65" font-size="10" text-anchor="middle">config snapshots</text>
+
+          <rect x="740" y="0" width="350" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+          <rect x="740" y="0" width="350" height="40" fill="#c89b3c"/>
+          <text x="915" y="26" class="mono" fill="#1f1a14" font-size="12" font-weight="700" text-anchor="middle">PROMPT</text>
+          <text x="915" y="68" class="display-r" fill="#1f1a14" font-size="20" text-anchor="middle">User-controlled</text>
+          <text x="915" y="98" class="body" fill="#4a4239" font-size="13" font-style="italic" text-anchor="middle">User picks via slash command</text>
+          <text x="915" y="132" class="mono" fill="#1f1a14" font-size="11" text-anchor="middle">@mcp.prompt</text>
+          <text x="915" y="170" class="mono" fill="#8b7d65" font-size="10" text-anchor="middle">/explain-topic</text>
+          <text x="915" y="186" class="mono" fill="#8b7d65" font-size="10" text-anchor="middle">/summarise-meeting</text>
+          <text x="915" y="202" class="mono" fill="#8b7d65" font-size="10" text-anchor="middle">/refactor-this</text>
+        </g>
+
+        <g transform="translate(60, 1240)">
+          <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">FIVE CORRECTIONS YOU SHOULD CARRY</text>
+          <rect x="0" y="14" width="1080" height="190" fill="#f8e6cf" stroke="#b8472e" stroke-dasharray="4 3"/>
+          <g transform="translate(20, 38)">
+            <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" font-weight="700">1.</text>
+            <text x="22" y="0" class="mono" fill="#1f1a14" font-size="12">MCP is application-layer (L7), not TCP-layer. JSON-RPC over stdio or streamable HTTP.</text>
+            <text x="0" y="28" class="mono" fill="#b8472e" font-size="11" font-weight="700">2.</text>
+            <text x="22" y="28" class="mono" fill="#1f1a14" font-size="12">Cursor is the HOST. Inside it are multiple CLIENTS (one per server). Don't conflate.</text>
+            <text x="0" y="56" class="mono" fill="#b8472e" font-size="11" font-weight="700">3.</text>
+            <text x="22" y="56" class="mono" fill="#1f1a14" font-size="12">Three primitives: model-controlled (tool) / app-controlled (resource) / user-controlled (prompt). All discoverable.</text>
+            <text x="0" y="84" class="mono" fill="#b8472e" font-size="11" font-weight="700">4.</text>
+            <text x="22" y="84" class="mono" fill="#1f1a14" font-size="12">Anthropic released MCP Nov 2024. OpenAI + Google adopted in 2025. It's the standard now.</text>
+            <text x="0" y="112" class="mono" fill="#b8472e" font-size="11" font-weight="700">5.</text>
+            <text x="22" y="112" class="mono" fill="#1f1a14" font-size="12">It's "Tavily" (tavily.com), not "Travely" (AssemblyAI transcription error).</text>
+            <text x="0" y="148" class="mono" fill="#8b7d65" font-size="10" font-style="italic">+ Resources and prompts are NOT deprecated — Cursor and Claude Desktop use both heavily.</text>
+          </g>
+        </g>
+
+        <text x="60" y="1480" class="mono" fill="#8b7d65" font-size="10" letter-spacing="2">MCP · LECTURE 01 · 2026-05-20</text>
+        <text x="1140" y="1480" class="mono" fill="#8b7d65" font-size="10" letter-spacing="2" text-anchor="end">NEXT → LECTURE 02: BUILD YOUR OWN SERVER</text>
+      </svg>
+      <figcaption>The agent recipe, the tool-chaos-vs-MCP comparison, the three primitives, and the corrections — on one page.</figcaption>
+    </figure>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">§ 05 — DEMO</div>
+      <h2>Using third-party MCP servers in Cursor</h2>
+
+      <p>In Cursor (Settings → MCP), you add a server by pasting its config JSON. Once added, Cursor spawns a client for it; tools become available throughout the IDE. The lecturer's setup has roughly 30 servers configured — a sample of what's possible:</p>
+
+      <table>
+        <thead><tr><th>MCP Server</th><th>What it does</th><th>Tools</th></tr></thead>
+        <tbody>
+          <tr><td><strong>GitHub</strong></td><td>Push, PR, issues, branches, search code</td><td>22</td></tr>
+          <tr><td><strong>Tavily</strong></td><td>Web search, page extract, crawl</td><td>5</td></tr>
+          <tr><td><strong>Firecrawl</strong></td><td>Web scraping at scale</td><td>~6</td></tr>
+          <tr><td><strong>Playwright/Puppeteer</strong></td><td>Browser automation</td><td>~10</td></tr>
+          <tr><td><strong>Notion</strong></td><td>Read/write Notion pages, blocks</td><td>many</td></tr>
+          <tr><td><strong>HuggingFace</strong></td><td>Model and dataset search</td><td>several</td></tr>
+          <tr><td><strong>Figma + 21st.dev Magic</strong></td><td>"Paste a Figma screenshot, get React components"</td><td>~5</td></tr>
+          <tr><td><strong>Twilio</strong></td><td>WhatsApp messages, SMS</td><td>a handful</td></tr>
+          <tr><td><strong>Postgres / BigQuery / many DBs</strong></td><td>SQL execution + schema introspection</td><td>~10 each</td></tr>
+        </tbody>
+      </table>
+
+      <p>That last column is the point. <strong>Cursor with MCP isn't a code editor any more — it's an agent that can act across your entire toolchain.</strong></p>
+
+      <h3>The flow in slow motion</h3>
+      <p>When you type a request into Cursor with MCP servers configured:</p>
+      <ol>
+        <li><strong>You type</strong> "Use search to find me LangChain's tool documentation."</li>
+        <li><strong>Cursor (host) sends</strong> the request + its full list of tools (across all servers) to the LLM.</li>
+        <li><strong>LLM picks a tool</strong> — <code>tavily_search</code> — and decides what arguments to pass.</li>
+        <li><strong>Cursor's client for Tavily sends</strong> a JSON-RPC <code>tools/call</code> to the Tavily server.</li>
+        <li><strong>Tavily server runs</strong> the actual <code>tavily.search(...)</code> API call against Tavily's backend.</li>
+        <li><strong>Result comes back</strong> as JSON to the client, into Cursor, into the LLM's context.</li>
+        <li><strong>LLM reads the result</strong> and either calls another tool or writes its final answer.</li>
+      </ol>
+
+      <p>The model gets <em>autonomous loop control</em> — it can call as many tools as it needs, in any order, before settling on a final response. That loop is what makes the agent feel agentic.</p>
+
+      <div class="correction">
+        <strong>Security caveat — not every MCP server is safe.</strong>
+        <p>The lecturer's enterprise (a healthcare org) blocks almost all third-party MCP except GitHub. <strong>You should trust an MCP server roughly as much as you'd trust giving someone a shell on your laptop.</strong> Vetted servers from major vendors (GitHub, Anthropic, Cloudflare) are typically safe; randomly forked GitHub repos are not.</p>
+      </div>
+
+      <div class="correction">
+        <strong>Correction — "LiteLLM is compromised, do not use" oversimplifies.</strong>
+        <p>LiteLLM has had <strong>CVEs around its proxy server</strong> when the proxy is exposed to untrusted users. The LiteLLM <strong>SDK</strong> (used in-process by trusted code) is widely deployed in production. Read the CVE list, update to the patched version, and don't expose the proxy to untrusted users.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">§ 06 — CATALOGUE</div>
+      <h2>The catalogue: where to find MCP servers</h2>
+
+      <p>By May 2026, the MCP ecosystem has several thousand servers. Browsing options:</p>
+      <ul>
+        <li><strong>modelcontextprotocol.io/servers</strong> — Anthropic's official catalogue.</li>
+        <li><strong>GitHub modelcontextprotocol org</strong> — the source-of-truth repos.</li>
+        <li><strong>mcp.composio.dev / mcp.so / smithery.ai</strong> — third-party indexes.</li>
+        <li><strong>Awesome MCP Servers</strong> — the standard "awesome list" for the ecosystem.</li>
+      </ul>
+
+      <p>Categories you'll encounter:</p>
+      <ul>
+        <li><strong>Version control</strong>: GitHub, GitLab, Bitbucket</li>
+        <li><strong>Databases</strong>: Postgres, MySQL, MongoDB, BigQuery, Snowflake, Databricks, Neo4j, Qdrant, Pinecone</li>
+        <li><strong>Search</strong>: Brave, Tavily, Exa, Perplexity, Kagi</li>
+        <li><strong>Productivity</strong>: Notion, Linear, Jira, Slack, Discord, Gmail</li>
+        <li><strong>Browsers</strong>: Playwright, Puppeteer, Stagehand</li>
+        <li><strong>File systems / cloud storage</strong>: Google Drive, Dropbox, S3, local FS</li>
+        <li><strong>Specialty</strong>: Figma, Stripe, Twilio, Spotify, etc.</li>
+      </ul>
+
+      <p>If a product has an MCP server, <strong>the product is now agent-accessible</strong>. That's the single most important shift since the Transformer paper: every existing piece of software is becoming addressable by LLMs without per-product integration code.</p>
+    </section>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">§ 07 — IMPLICATIONS</div>
+      <h2>Why this is the moment</h2>
+
+      <p>The lecturer's macro point, paraphrased: <em>what you do manually with a browser and a terminal — read docs, search, query a database, push code, file a ticket, fill a form — an LLM with MCP can now do, autonomously, with a single natural-language request</em>.</p>
+
+      <p>The skills that make a developer most leveraged in 2026:</p>
+      <ol>
+        <li><strong>Knowing what tools exist</strong> — being able to compose 5-10 MCP servers to solve a real problem</li>
+        <li><strong>Writing your own MCP servers</strong> for your domain (covered in Lecture 2)</li>
+        <li><strong>Designing the orchestration layer</strong> — when one agent isn't enough and you need a graph of cooperating agents (LangGraph, covered next)</li>
+      </ol>
+    </section>
+
+    <section class="glossary" id="glossary">
+      <h2>Glossary</h2>
+      <dl>
+        <dt>Agent</dt><dd>An LLM with access to tools, memory, and (optionally) planning. Distinguished from a pure LLM by its ability to <em>act</em> on the world.</dd>
+        <dt><code>@tool</code> decorator (LangChain)</dt><dd>Marks a Python function as available to an LLM agent. The function's docstring becomes the LLM-visible description.</dd>
+        <dt>Context rot</dt><dd>Degradation of model attention and accuracy as context fills with mostly-irrelevant content.</dd>
+        <dt>Cursor</dt><dd>An AI-first code editor (cursor.com). Built-in MCP host since 2025.</dd>
+        <dt>Host (MCP host)</dt><dd>The user-facing application. Owns the LLM calls and the UI.</dd>
+        <dt>JSON-RPC 2.0</dt><dd>The wire format MCP uses. Application-layer (layer 7) protocol, transport-agnostic.</dd>
+        <dt>MCP (Model Context Protocol)</dt><dd>Anthropic's protocol for connecting LLM applications to tool providers. Released November 2024.</dd>
+        <dt>MCP Client</dt><dd>A component inside a host that maintains one connection to one server.</dd>
+        <dt>MCP Server</dt><dd>A process that exposes tools, resources, and prompts via the MCP protocol.</dd>
+        <dt>Prompt (MCP primitive)</dt><dd>A reusable templated instruction the user invokes. User-controlled.</dd>
+        <dt>Resource (MCP primitive)</dt><dd>Read-only content (files, configs, documents). Application-controlled.</dd>
+        <dt>stdio transport</dt><dd>One of MCP's two transports. Server spawned as a subprocess; communication via stdin/stdout pipes.</dd>
+        <dt>Streamable HTTP transport</dt><dd>MCP's networked transport (replaced the older HTTP+SSE in the 2025-03-26 spec).</dd>
+        <dt>Tavily</dt><dd>A search API designed for LLM agents (tavily.com). Free tier of 1,000 credits/month.</dd>
+        <dt>Tool (MCP primitive)</dt><dd>A callable function the LLM can invoke. Model-controlled.</dd>
+      </dl>
+    </section>
+
+    <section class="chapter" id="next">
+      <div class="chapter-marker">§ NEXT — LECTURE 02</div>
+      <h2>For Lecture 2</h2>
+      <p>Tomorrow we flip the perspective: instead of <em>using</em> third-party MCP servers, we'll <em>write</em> our own. The Python file <code>simple_server.py</code> in this folder is the canonical example.</p>
+      <p>Topics:</p>
+      <ul>
+        <li>Installing <strong>FastMCP</strong> — the high-level Python framework for MCP servers</li>
+        <li>Declaring tools, resources, prompts with <code>@mcp.tool</code> / <code>@mcp.resource</code> / <code>@mcp.prompt</code></li>
+        <li>Running the server in stdio mode vs HTTP mode</li>
+        <li>Writing a Python <strong>client</strong> with FastMCP's <code>Client</code> class</li>
+        <li>When to write your own server vs use a third-party one</li>
+      </ul>
+    </section>
+
+    <footer>
+      <span>MCP · LECTURE 01 · 65.9 MIN · 2026-05-20</span>
+      <span>STUDY NOTES · SASMITA COURSE</span>
+    </footer>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 19 — LangGraph, Part 1: State, Nodes, Edges</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px; line-height: 1.7; -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 64px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(48px, 7vw, 84px); line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 640px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 520px; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 32px 0 32px 32px; border-left: 4px solid var(--terracotta); margin: 40px 0 60px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -30px; font-size: 100px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 88px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.05; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 12px 0 22px 22px; color: var(--ink-soft); }
+.chapter li { margin-bottom: 8px; line-height: 1.65; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { font-family: 'JetBrains Mono', monospace; font-size: 13px; background: var(--ink); color: #e5dcc8; padding: 22px 26px; border-radius: 3px; overflow-x: auto; margin: 22px 0; line-height: 1.6; }
+pre code { background: transparent; border: none; padding: 0; color: inherit; font-size: inherit; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 15px; }
+table th, table td { border-bottom: 1px solid var(--line); padding: 10px 14px; text-align: left; vertical-align: top; }
+table th { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); font-weight: 700; border-bottom: 2px solid var(--ink); }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 28px; margin: 28px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 16px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 20px 24px; margin: 24px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+.bridge.warn { background: rgba(184, 71, 46, 0.05); border-left-color: var(--terracotta); border-color: rgba(184, 71, 46, 0.3); }
+.bridge.warn .bridge-label { color: var(--terracotta); }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 16px 22px; margin: 22px 0; font-size: 15px; color: var(--ink); }
+.correction strong { color: var(--terracotta); }
+figure.diagram { margin: 32px 0; padding: 8px; background: rgba(251, 247, 239, 0.6); border: 1px solid var(--line); }
+figure.diagram svg { width: 100%; height: auto; display: block; }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); letter-spacing: 1px; padding: 8px 12px 4px; text-align: center; }
+figure.infographic { margin: 40px -40px 40px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg, figure.infographic img { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+.glossary { margin-top: 80px; padding-top: 40px; border-top: 2px solid var(--ink); }
+.glossary h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 32px; margin-bottom: 20px; }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 16px; }
+.glossary dd { font-size: 15px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 80px; padding-top: 32px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 44px; }
+  .thesis { font-size: 20px; padding-left: 20px; }
+  .chapter h2 { font-size: 28px; }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 19</div>
+    <div class="toc-title">LangGraph &mdash;<br>Part 1: Primitives</div>
+    <ol>
+      <li><a href="#s1">What LangGraph is</a></li>
+      <li><a href="#s2">The four primitives</a></li>
+      <li><a href="#infographic">Visual reference</a></li>
+      <li><a href="#s3">Linear graph (Example A)</a></li>
+      <li><a href="#s4">Router (Example B)</a></li>
+      <li><a href="#s5">The four-step rhythm</a></li>
+      <li><a href="#s6">ReAct loop (Example C)</a></li>
+      <li><a href="#s7">Router vs ReAct</a></li>
+      <li><a href="#s8">Forward references</a></li>
+      <li><a href="#s9">Recap</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      72.6 MIN<br>
+      3 SPEAKERS<br>
+      2026-05-19
+      <div class="rev-badge">REV v1</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 19 &middot; STUDY NOTES &middot; LANGGRAPH PART 1</div>
+      <h1>State, nodes,<span class="accent">and edges.</span></h1>
+      <p class="hero-sub">Move from one LangChain agent to many that collaborate. Four primitives, three patterns, one rhythm.</p>
+      <div class="hero-meta">
+        <span>LANGGRAPH PART 1</span>
+        <span>STATE &middot; NODE &middot; EDGE &middot; CONDITIONAL EDGE</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      Four primitives. One contract: <em>nodes take state in, return a partial update out</em>. The same four primitives compose into a linear graph, a router, and a ReAct loop &mdash; nothing else needed.
+    </div>
+
+    <div class="correction">
+      <strong>Where we are.</strong> Session 18 introduced what an agent is and showed how LangChain wires a single LLM to a tool via <code>bind_tools</code>. That gives you <em>one</em> agent. Session 19 starts the LangGraph week. LangGraph is the orchestration layer above LangChain: when you have five, ten, or fifty agents that need to talk to each other, share intermediate results, and route work conditionally, you draw the system as a graph and let LangGraph run it. Today is the first class &mdash; pure mechanics. Next class extends to a customer-service router, then reflection, then human-in-the-loop, then a coding-assistant end-to-end build.
+    </div>
+
+    <figure class="infographic" id="infographic">
+      <img src="Session19-LangGraph-StateGraph-infographic.svg" alt="Session 19 infographic &mdash; four primitives, three patterns, the build-add-compile-invoke rhythm.">
+    </figure>
+
+    <!-- ============ §01 ============ -->
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">&sect; 01 &mdash; WHAT IT IS</div>
+      <h2>LangChain builds one agent. LangGraph orchestrates many.</h2>
+
+      <p>LangChain and LangGraph are <strong>separate Python packages</strong>. They sit at different levels:</p>
+
+      <table>
+        <thead><tr><th></th><th>LangChain</th><th>LangGraph</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Job</strong></td><td>Build a single agent: bind an LLM to a prompt, a memory, and a tool list.</td><td>Orchestrate <strong>multiple</strong> agents (or nodes) &mdash; decide who runs when, what they share, when to loop, when to stop.</td></tr>
+          <tr><td><strong>Mental model</strong></td><td>One callable: <code>agent.invoke(question)</code>.</td><td>A graph: nodes do work, edges decide what runs next.</td></tr>
+          <tr><td><strong>You reach for it when</strong></td><td>You need a chatbot, a single tool-using assistant, a RAG chain.</td><td>You need branching, parallel work, multi-step plans, human approval steps, or several specialised agents collaborating.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>Think of LangChain as a single Spring <code>@Service</code> bean &mdash; one class doing one well-scoped job. LangGraph is the <strong>service layer + dispatcher</strong> above it: a graph of service calls where the next call depends on the previous result. If LangChain is the bean, LangGraph is the workflow engine &mdash; Spring Cloud Data Flow or a Camel route, with explicit nodes and edges.</p>
+      </div>
+
+      <p>LangGraph's graph is a <strong>directed graph that may cycle</strong>. Cycles matter: a ReAct agent loops &ldquo;LLM &rarr; tool &rarr; LLM &rarr; tool &rarr; &hellip; &rarr; end&rdquo; until the LLM stops asking for tools. Linear DAG engines can't express that loop.</p>
+    </section>
+
+    <!-- ============ §02 ============ -->
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">&sect; 02 &mdash; THE PRIMITIVES</div>
+      <h2>Four primitives. That's it.</h2>
+
+      <p>Everything in LangGraph is one of these four things:</p>
+
+      <table>
+        <thead><tr><th></th><th>What it is</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><strong>State</strong></td><td>A typed shared object &mdash; a <code>TypedDict</code> or a Pydantic model.</td><td>Holds the data every node reads from and writes to. The only memory the graph has between nodes.</td></tr>
+          <tr><td><strong>Node</strong></td><td>A Python function (or callable).</td><td>Receives the current state, does some work (call an LLM, call a tool, run a function), and returns a <strong>partial update</strong> to state.</td></tr>
+          <tr><td><strong>Edge</strong></td><td>A fixed wire between two nodes.</td><td>&ldquo;After node A finishes, always run node B.&rdquo;</td></tr>
+          <tr><td><strong>Conditional Edge</strong></td><td>A wire plus a small <strong>routing function</strong>.</td><td>&ldquo;After node A finishes, look at state, pick one of these named downstream nodes.&rdquo; The only way to branch.</td></tr>
+        </tbody>
+      </table>
+
+      <p>Two reserved markers <code>START</code> and <code>END</code> mark where execution enters and exits the graph. They're not nodes &mdash; you don't add them with <code>add_node</code>, only with <code>add_edge</code>.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>State is a request-scoped DTO that every handler in the chain can read and mutate. Nodes are the handlers. Plain edges are like a hard-wired <code>next()</code> call; conditional edges are a <code>switch</code> whose case keys are the names of the next handlers.</p>
+      </div>
+
+      <h3>The node contract</h3>
+      <p>This is the rule that makes everything else work. Memorise it:</p>
+
+      <div class="callout">
+        <div class="callout-label">REMEMBER THIS</div>
+        <p>A node takes the current state as input and returns a <strong>dict of fields to merge into state</strong>.</p>
+        <p>It does not return the whole state, and it does not mutate state in place. It returns just the keys it wants to update. LangGraph merges those keys into the running state before the next node runs.</p>
+      </div>
+
+      <div class="correction">
+        <strong>Lecturer correction &mdash; &ldquo;return is state&rdquo;.</strong>  In the transcript: <em>&ldquo;Input is state, return is state.&rdquo;</em>  More precisely: input is state, return is a <strong>partial update</strong> (a dict) that LangGraph <strong>merges into</strong> state. The distinction matters because (a) the function signature returns <code>dict</code>, not the state class, and (b) for fields with a <strong>reducer</strong> (we'll see this with <code>MessagesState</code>), the merge isn't overwrite &mdash; it's a list-append.
+      </div>
+    </section>
+
+    <!-- ============ §03 ============ -->
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">&sect; 03 &mdash; EXAMPLE A</div>
+      <h2>Linear graph &mdash; one node, fixed path</h2>
+
+      <p>The simplest possible graph. State has two fields. One node calls an LLM. <code>START &rarr; greet &rarr; END</code>. From <code>langgraph_beginner_tutorial.py</code> Example A.</p>
+
+      <pre><code>from typing import TypedDict
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
+from langgraph.graph import START, END, StateGraph
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
+
+class GreetState(TypedDict):
+    topic: str
+    reply: str
+
+def greet_node(state: GreetState) -&gt; dict:
+    msg = llm.invoke([
+        SystemMessage(content="You are a friendly tutor. Reply in 2 short sentences."),
+        HumanMessage(content=f"Explain briefly: {state['topic']}"),
+    ])
+    return {"reply": msg.content}
+
+builder = StateGraph(GreetState)
+builder.add_node("greet", greet_node)
+builder.add_edge(START, "greet")
+builder.add_edge("greet", END)
+
+linear_app = builder.compile()
+out = linear_app.invoke({"topic": "what is a LangGraph node", "reply": ""})
+print(out["reply"])
+</code></pre>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="13">
+          <rect width="700" height="160" fill="#fbf7ef"/>
+          <rect x="40" y="60" width="120" height="40" fill="#1f1a14"/>
+          <text x="100" y="84" text-anchor="middle" fill="#f5efe6" font-weight="700">START</text>
+          <line x1="160" y1="80" x2="270" y2="80" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="265,75 275,80 265,85" fill="#1f1a14"/>
+          <rect x="280" y="50" width="140" height="60" fill="#ede5d6" stroke="#b8472e" stroke-width="2"/>
+          <text x="350" y="78" text-anchor="middle" font-family="'Fraunces', serif" font-style="italic" font-weight="700" font-size="18" fill="#1f1a14">greet</text>
+          <text x="350" y="98" text-anchor="middle" font-size="11" fill="#8b7d65">LLM call</text>
+          <line x1="420" y1="80" x2="540" y2="80" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="535,75 545,80 535,85" fill="#1f1a14"/>
+          <rect x="540" y="60" width="120" height="40" fill="#1f1a14"/>
+          <text x="600" y="84" text-anchor="middle" fill="#f5efe6" font-weight="700">END</text>
+        </svg>
+        <figcaption>The linear graph &mdash; one LLM call, no branching.</figcaption>
+      </figure>
+
+      <p>Read it in four beats:</p>
+      <ol>
+        <li><strong>Define the state schema.</strong> <code>GreetState</code> is a <code>TypedDict</code> with two string fields. This is the contract: every node knows it can read <code>state['topic']</code> and write <code>state['reply']</code>.</li>
+        <li><strong>Define the node.</strong> <code>greet_node</code> reads <code>state['topic']</code>, calls the LLM with a 2-sentence system prompt, returns <code>{"reply": msg.content}</code>. Note the return type is <code>dict</code>, not <code>GreetState</code> &mdash; partial update, not full state.</li>
+        <li><strong>Build the graph.</strong> <code>StateGraph(GreetState)</code> creates the builder; <code>add_node</code> registers the function under the name <code>"greet"</code>; two <code>add_edge</code> calls wire <code>START &rarr; "greet" &rarr; END</code>.</li>
+        <li><strong>Compile and invoke.</strong> <code>builder.compile()</code> returns the runnable graph. <code>invoke(...)</code> takes the initial state and returns the final state.</li>
+      </ol>
+
+      <div class="correction">
+        <strong>Lecturer correction &mdash; <code>state.topic</code> vs <code>state["topic"]</code>.</strong>  In the transcript: <em>&ldquo;<code>state.topic</code> also will work, or <code>state of topic</code>.&rdquo;</em>  With a <code>TypedDict</code> (what this example uses), only the subscript form <code>state["topic"]</code> works &mdash; <code>TypedDict</code> instances are plain dicts at runtime, with no attribute access. Dot access works only when state is a Pydantic <code>BaseModel</code> or a <code>@dataclass</code>. The tutorial code uses <code>TypedDict</code> throughout, so <code>state["topic"]</code> is the right form.
+      </div>
+
+      <h3>What happens at <code>invoke</code></h3>
+      <p>You pass an initial dict. The keys you fill in <em>are</em> the initial state; any key you leave unset (e.g. <code>reply: ""</code>) is what the graph will fill in. <code>invoke</code> runs the graph and returns the final merged state:</p>
+      <pre><code>{"topic": "what is a LangGraph node",
+ "reply": "&lt;the LLM's 2-sentence answer&gt;"}
+</code></pre>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>The build-then-compile-then-invoke rhythm is the same shape as a Spring <code>ApplicationContext</code>: you describe beans during configuration, <code>refresh()</code> finalises the context, and from then on you call into the context. <code>compile()</code> is <code>refresh()</code>; <code>invoke()</code> is calling the entry point.</p>
+      </div>
+    </section>
+
+    <!-- ============ §04 ============ -->
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">&sect; 04 &mdash; EXAMPLE B</div>
+      <h2>Router pattern &mdash; conditional edges</h2>
+
+      <p>Now we add branching. The graph classifies the user's question as either <strong>math</strong> or <strong>chit-chat</strong>, then dispatches to a different node for each. From <code>langgraph_beginner_tutorial.py</code> Example B.</p>
+
+      <h3>State has three fields</h3>
+      <pre><code>class RouterState(TypedDict):
+    question: str   # the user's input
+    route: str      # filled in by the classifier &mdash; "math" or "chitchat"
+    answer: str     # filled in by whichever expert ran
+</code></pre>
+
+      <p><code>question</code> is what the user supplies. <code>route</code> is intermediate scratch &mdash; the classifier writes it, the routing function reads it. <code>answer</code> is the final output.</p>
+
+      <h3>Three working nodes plus one routing function</h3>
+      <pre><code>def classify(state: RouterState) -&gt; dict:
+    text = state["question"].lower()
+    if any(w in text for w in ("+", "plus", "times", "multiply", "what is", "calculate")):
+        return {"route": "math"}
+    return {"route": "chitchat"}
+
+def math_bot(state: RouterState) -&gt; dict:
+    r = llm.invoke([HumanMessage(
+        content=f"Solve or explain briefly (show reasoning): {state['question']}")])
+    return {"answer": r.content}
+
+def chitchat_bot(state: RouterState) -&gt; dict:
+    r = llm.invoke([HumanMessage(
+        content=f"Reply helpfully and briefly: {state['question']}")])
+    return {"answer": r.content}
+
+def pick_route(state: RouterState) -&gt; Literal["math", "chitchat"]:
+    return state["route"]
+</code></pre>
+
+      <p><code>classify</code> is a <strong>regular node</strong> &mdash; it does work and updates state. <code>pick_route</code> is <strong>not a node</strong> &mdash; it's the small routing function that a conditional edge consults. Conceptually:</p>
+      <ul>
+        <li><code>classify</code> decides <em>what</em> the next step should be and records the decision in state.</li>
+        <li><code>pick_route</code> reads the decision and returns the <strong>name</strong> of the next node to run.</li>
+      </ul>
+
+      <h3>Wiring it up</h3>
+      <pre><code>rb = StateGraph(RouterState)
+rb.add_node("classify", classify)
+rb.add_node("math", math_bot)
+rb.add_node("chitchat", chitchat_bot)
+
+rb.add_edge(START, "classify")
+rb.add_conditional_edges(
+    "classify",
+    pick_route,
+    {"math": "math", "chitchat": "chitchat"},
+)
+rb.add_edge("math", END)
+rb.add_edge("chitchat", END)
+
+router_app = rb.compile()
+print(router_app.invoke({"question": "What is 12 * 7?",
+                         "route": "", "answer": ""}))
+print(router_app.invoke({"question": "Say hi in one sentence",
+                         "route": "", "answer": ""}))
+</code></pre>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="13">
+          <rect width="700" height="360" fill="#fbf7ef"/>
+          <rect x="290" y="20" width="120" height="36" fill="#1f1a14"/>
+          <text x="350" y="43" text-anchor="middle" fill="#f5efe6" font-weight="700">START</text>
+          <line x1="350" y1="56" x2="350" y2="84" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="345,82 355,82 350,90" fill="#1f1a14"/>
+          <rect x="270" y="90" width="160" height="56" fill="#ede5d6" stroke="#b8472e" stroke-width="2"/>
+          <text x="350" y="118" text-anchor="middle" font-family="'Fraunces', serif" font-style="italic" font-weight="700" font-size="18" fill="#1f1a14">classify</text>
+          <text x="350" y="135" text-anchor="middle" font-size="10" fill="#8b7d65">rule on state.question</text>
+          <text x="350" y="170" text-anchor="middle" font-size="11" fill="#c89b3c" letter-spacing="2">pick_route(state)</text>
+          <line x1="330" y1="146" x2="200" y2="200" stroke="#c89b3c" stroke-width="2" stroke-dasharray="4 3"/>
+          <line x1="370" y1="146" x2="500" y2="200" stroke="#c89b3c" stroke-width="2" stroke-dasharray="4 3"/>
+          <text x="240" y="180" font-size="10" fill="#c89b3c">"math"</text>
+          <text x="430" y="180" font-size="10" fill="#c89b3c">"chitchat"</text>
+          <rect x="120" y="206" width="160" height="50" fill="#ede5d6" stroke="#b8472e" stroke-width="2"/>
+          <text x="200" y="234" text-anchor="middle" font-family="'Fraunces', serif" font-style="italic" font-weight="700" font-size="16" fill="#1f1a14">math</text>
+          <text x="200" y="248" text-anchor="middle" font-size="10" fill="#8b7d65">LLM (reasoning)</text>
+          <rect x="420" y="206" width="160" height="50" fill="#ede5d6" stroke="#b8472e" stroke-width="2"/>
+          <text x="500" y="234" text-anchor="middle" font-family="'Fraunces', serif" font-style="italic" font-weight="700" font-size="16" fill="#1f1a14">chitchat</text>
+          <text x="500" y="248" text-anchor="middle" font-size="10" fill="#8b7d65">LLM (helpful reply)</text>
+          <line x1="200" y1="256" x2="335" y2="298" stroke="#1f1a14" stroke-width="2"/>
+          <line x1="500" y1="256" x2="365" y2="298" stroke="#1f1a14" stroke-width="2"/>
+          <rect x="290" y="300" width="120" height="36" fill="#1f1a14"/>
+          <text x="350" y="323" text-anchor="middle" fill="#f5efe6" font-weight="700">END</text>
+        </svg>
+        <figcaption>The router &mdash; one conditional edge fans out to one of two specialists.</figcaption>
+      </figure>
+
+      <h3>Reading <code>add_conditional_edges</code></h3>
+      <p>This call is doing three things:</p>
+      <ol>
+        <li><strong>Source:</strong> <code>"classify"</code> &mdash; after this node finishes, the conditional edge fires.</li>
+        <li><strong>Routing function:</strong> <code>pick_route</code> &mdash; called with current state, returns a string key.</li>
+        <li><strong>Mapping:</strong> <code>{"math": "math", "chitchat": "chitchat"}</code> &mdash; maps the returned key to the actual downstream node name.</li>
+      </ol>
+
+      <p>The mapping looks redundant when the key and node name are the same string. They don't have to be. You could have <code>pick_route</code> return <code>"easy"</code> / <code>"hard"</code> and map them to <code>"math"</code> / <code>"reasoning_model"</code> &mdash; the mapping is the indirection layer.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>This is exactly Spring's <code>@Qualifier</code> indirection. The routing function returns a logical name; the mapping resolves the logical name to a concrete bean. You can change which bean handles &ldquo;math&rdquo; without touching <code>pick_route</code>.</p>
+      </div>
+
+      <h3>A common student question &mdash; answered</h3>
+      <p>One student asked: <em>&ldquo;If <code>classify</code> already returns <code>'math'</code> or <code>'chitchat'</code>, why do we still need a conditional edge? Can't classify just route directly?&rdquo;</em></p>
+
+      <p>The answer: a node updates <strong>state</strong>; it does not direct <strong>execution</strong>. Updating <code>state["route"]</code> to <code>"math"</code> is just writing a string into a field. Something still has to read that string and decide where the runtime goes next. That &ldquo;something&rdquo; is the conditional edge plus its routing function. The graph engine deliberately keeps these two concerns separate &mdash; node = data transformation, edge = control flow &mdash; because it lets you reason about each independently.</p>
+
+      <div class="correction">
+        Newer LangGraph versions add a <code>Command(...)</code> return value that lets a node both update state and direct routing in one go. The lecturer mentioned this but recommended sticking with <code>add_conditional_edges</code> because the separation is clearer to read. Both forms are correct.
+      </div>
+
+      <h3>What &ldquo;router&rdquo; means as a pattern</h3>
+      <p>This is the <strong>router pattern</strong> (sometimes &ldquo;supervisor pattern&rdquo;): one classifier at the top picks one of <em>N</em> specialists below, then the specialist answers and the graph ends. The classifier doesn't have to be a hand-written rule like <code>classify</code> above &mdash; it's commonly an LLM with a prompt like &ldquo;categorise this question as math, code, weather, or chitchat.&rdquo; The mechanics are identical.</p>
+    </section>
+
+    <!-- ============ §05 ============ -->
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">&sect; 05 &mdash; THE RHYTHM</div>
+      <h2>Every program. Same four beats.</h2>
+
+      <p>Every LangGraph program follows the same four-step rhythm:</p>
+
+      <table>
+        <thead><tr><th>Step</th><th>Code</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Build</strong></td><td><code>b = StateGraph(MyState)</code></td><td>Create a builder with a state schema.</td></tr>
+          <tr><td><strong>Add</strong></td><td><code>b.add_node(...)</code>, <code>b.add_edge(...)</code>, <code>b.add_conditional_edges(...)</code></td><td>Register nodes and wire them up.</td></tr>
+          <tr><td><strong>Compile</strong></td><td><code>app = b.compile()</code></td><td>Freeze the topology, validate it, return a runnable.</td></tr>
+          <tr><td><strong>Invoke</strong></td><td><code>app.invoke(initial_state)</code></td><td>Run the graph with an initial state; get the final state back.</td></tr>
+        </tbody>
+      </table>
+
+      <p>Once compiled, an app is reusable and <strong>stateless</strong> &mdash; every <code>invoke</code> starts from the initial state you pass in. Persistence between invocations needs a <code>checkpointer</code> (a later session).</p>
+
+      <div class="bridge warn">
+        <div class="bridge-label">WHERE THE ANALOGY BREAKS</div>
+        <p>A Spring bean is usually long-lived: instantiated at startup, kept around. A compiled LangGraph app is also long-lived, but each <code>invoke</code> is <strong>stateless</strong> by default &mdash; there's no &ldquo;session&rdquo; inside the graph unless you explicitly add a <code>checkpointer</code>. Don't carry over the assumption that the app remembers anything across calls.</p>
+      </div>
+    </section>
+
+    <!-- ============ §06 ============ -->
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">&sect; 06 &mdash; EXAMPLE C</div>
+      <h2>ReAct loop &mdash; LLM + tools, manually wired</h2>
+
+      <p>The third pattern is <strong>ReAct</strong> &mdash; <em>Reasoning + Acting</em> &mdash; from Yao et al., &ldquo;ReAct: Synergizing Reasoning and Acting in Language Models&rdquo; (ICLR 2023; arXiv:2210.03629). The shape: an LLM that may call a tool, observe the tool's result, reason again, possibly call another tool, and so on until it produces a final answer without a tool call.</p>
+
+      <p>LangGraph ships a one-line helper for this &mdash; <code>create_react_agent</code> &mdash; that we'll cover next class. <strong>This section deliberately builds it from primitives</strong> so you can see what <code>create_react_agent</code> packages up. From <code>langgraph_beginner_tutorial.py</code> Example C.</p>
+
+      <h3>Two tools</h3>
+      <pre><code>from langchain_core.tools import tool
+
+@tool
+def fake_weather(city: str) -&gt; str:
+    """Get pretend weather for a city (demo only)."""
+    return f"Weather in {city}: 22&deg;C, partly cloudy (demo data)."
+
+@tool
+def add_numbers(a: int, b: int) -&gt; int:
+    """Add two integers."""
+    return a + b
+</code></pre>
+
+      <p>The <code>@tool</code> decorator turns a Python function into a LangChain <code>Tool</code>: it wraps the function's name, docstring, and type-annotated arguments into the JSON-schema the LLM needs to know what's callable. <strong>The docstring matters</strong> &mdash; it's what the LLM reads to decide <em>when</em> to call this tool.</p>
+
+      <h3>Bind the tools to the LLM</h3>
+      <pre><code>tools = [fake_weather, add_numbers]
+llm_tools = llm.bind_tools(tools)
+</code></pre>
+
+      <p><code>bind_tools</code> attaches the tool schemas to every request this LLM makes. The LLM now knows that when it generates a response, it may, instead of (or in addition to) text, emit a structured <strong>tool call</strong> &mdash; <code>{"name": "fake_weather", "args": {"city": "Paris"}}</code> &mdash; which the framework will execute.</p>
+
+      <h3>State: <code>MessagesState</code></h3>
+      <p>For chat-style agents, LangGraph provides a prebuilt state class: <code>MessagesState</code>. It has one field, <code>messages: list</code>, and &mdash; crucially &mdash; a <strong>reducer</strong> attached to that field so that returning <code>{"messages": [new_msg]}</code> from a node <strong>appends</strong> to the list rather than overwriting it.</p>
+
+      <pre><code>from langgraph.graph.message import MessagesState
+</code></pre>
+
+      <div class="correction">
+        <strong>Lecturer correction &mdash; what makes <code>messages</code> special.</strong>  In the transcript: <em>&ldquo;This is basically default, uh, state.&rdquo;</em>  Worth saying out loud: <code>MessagesState</code> is <strong>not just</strong> a <code>TypedDict</code> with one field &mdash; its <code>messages</code> field has a built-in <strong>reducer</strong> (<code>add_messages</code>). When two nodes both return <code>{"messages": [...]}</code>, LangGraph appends instead of overwriting. That's why the conversation history keeps growing across LLM-and-tool turns instead of being clobbered by each node.
+      </div>
+
+      <h3>The two nodes</h3>
+      <pre><code>from langgraph.prebuilt import ToolNode
+
+def agent_node(state: MessagesState) -&gt; dict:
+    resp = llm_tools.invoke(state["messages"])
+    return {"messages": [resp]}
+
+tool_node = ToolNode(tools)
+</code></pre>
+
+      <p><code>agent_node</code> is the LLM step: read the conversation so far, call the tool-bound LLM, append the response (which may be plain text or a tool call). <code>ToolNode</code> is a prebuilt node from <code>langgraph.prebuilt</code> &mdash; give it your tool list and it knows how to take an <code>AIMessage</code> containing tool calls, execute each tool, and append a <code>ToolMessage</code> per tool call back into <code>messages</code>.</p>
+
+      <h3>The routing function</h3>
+      <pre><code>from langchain_core.messages import AIMessage
+
+def should_use_tools(state: MessagesState) -&gt; Literal["tools", "__end__"]:
+    last = state["messages"][-1]
+    if isinstance(last, AIMessage) and last.tool_calls:
+        return "tools"
+    return END
+</code></pre>
+
+      <p>Pulled apart: take the <strong>last</strong> message. If it's an <code>AIMessage</code> <strong>and</strong> it has <code>tool_calls</code>, the LLM is asking us to run a tool &mdash; route to the <code>"tools"</code> node. Otherwise the LLM is done &mdash; route to <code>END</code>.</p>
+
+      <div class="correction">
+        <strong>Lecturer correction &mdash; &ldquo;if last message is tool, go to tool.&rdquo;</strong>  More precisely: we check whether the LLM's most recent message <strong>requests</strong> a tool call (the <code>tool_calls</code> attribute is non-empty). It's not the <em>content</em> of the message that triggers tools &mdash; it's the LLM's structured signal that it wants a tool run. Sending a plain text containing the word <em>&ldquo;tool&rdquo;</em> does <strong>not</strong> route to tools; the LLM has to actually emit a <code>tool_calls</code> payload.
+      </div>
+
+      <h3>Wire it as a cycle</h3>
+      <pre><code>react_b = StateGraph(MessagesState)
+react_b.add_node("agent", agent_node)
+react_b.add_node("tools", tool_node)
+react_b.add_edge(START, "agent")
+react_b.add_conditional_edges(
+    "agent", should_use_tools, {"tools": "tools", END: END}
+)
+react_b.add_edge("tools", "agent")   # &larr; the loop
+
+react_app = react_b.compile()
+</code></pre>
+
+      <p>The crucial edge is the last one: <code>tools &rarr; agent</code>. After the tool runs, control comes <strong>back</strong> to the LLM so it can read the tool's output and decide what to do next. <strong>This is the loop.</strong> The graph runs as long as the LLM keeps emitting <code>tool_calls</code>; it terminates the moment the LLM produces a final response with no tool calls.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="13">
+          <rect width="700" height="360" fill="#fbf7ef"/>
+          <rect x="290" y="20" width="120" height="36" fill="#1f1a14"/>
+          <text x="350" y="43" text-anchor="middle" fill="#f5efe6" font-weight="700">START</text>
+          <line x1="350" y1="56" x2="350" y2="84" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="345,82 355,82 350,90" fill="#1f1a14"/>
+
+          <rect x="290" y="90" width="120" height="60" fill="#ede5d6" stroke="#2a5d62" stroke-width="2"/>
+          <text x="350" y="118" text-anchor="middle" font-family="'Fraunces', serif" font-style="italic" font-weight="700" font-size="18" fill="#1f1a14">agent</text>
+          <text x="350" y="138" text-anchor="middle" font-size="10" fill="#8b7d65">LLM with tools</text>
+
+          <text x="350" y="170" text-anchor="middle" font-size="11" fill="#c89b3c" letter-spacing="2">should_use_tools(state)</text>
+          <text x="350" y="184" text-anchor="middle" font-size="10" fill="#8b7d65">last.tool_calls?</text>
+
+          <line x1="310" y1="150" x2="180" y2="210" stroke="#c89b3c" stroke-width="2" stroke-dasharray="4 3"/>
+          <text x="200" y="190" font-size="10" fill="#c89b3c">"tools"</text>
+
+          <line x1="390" y1="150" x2="520" y2="210" stroke="#c89b3c" stroke-width="2" stroke-dasharray="4 3"/>
+          <text x="490" y="190" font-size="10" fill="#c89b3c">END</text>
+
+          <rect x="100" y="216" width="160" height="60" fill="#ede5d6" stroke="#2a5d62" stroke-width="2"/>
+          <text x="180" y="244" text-anchor="middle" font-family="'Fraunces', serif" font-style="italic" font-weight="700" font-size="16" fill="#1f1a14">tools</text>
+          <text x="180" y="262" text-anchor="middle" font-size="10" fill="#8b7d65">ToolNode(tools)</text>
+
+          <!-- loop back from tools to agent -->
+          <path d="M 180 216 C 180 170, 200 100, 290 110" stroke="#b8472e" stroke-width="2.5" fill="none"/>
+          <polygon points="286,106 296,110 288,118" fill="#b8472e"/>
+          <text x="120" y="160" font-family="'Fraunces', serif" font-style="italic" font-size="14" fill="#b8472e">loop</text>
+
+          <rect x="460" y="216" width="120" height="40" fill="#1f1a14"/>
+          <text x="520" y="240" text-anchor="middle" fill="#f5efe6" font-weight="700">END</text>
+        </svg>
+        <figcaption>The ReAct loop &mdash; the agent decides each turn whether to call a tool. The red edge is the loop back from tools to the LLM.</figcaption>
+      </figure>
+
+      <h3>A worked run</h3>
+      <pre><code>result = react_app.invoke({
+    "messages": [HumanMessage(
+        content="What is 41 + 9? Then tell me the weather in Paris (use tools).")]
+})
+for m in result["messages"]:
+    print(m.type, ":", getattr(m, "content", m))
+</code></pre>
+
+      <p>What happens, step by step:</p>
+      <ol>
+        <li><code>agent_node</code> runs. LLM sees the prompt, decides both questions need tools. It emits two tool calls: <code>add_numbers(41, 9)</code> and <code>fake_weather("Paris")</code>. Returned message has <code>tool_calls</code> populated.</li>
+        <li><code>should_use_tools</code> sees the tool calls &rarr; routes to <code>"tools"</code>.</li>
+        <li><code>ToolNode</code> runs both tools, appends two <code>ToolMessage</code>s with <code>"50"</code> and <code>"Weather in Paris: 22&deg;C, partly cloudy (demo data)."</code></li>
+        <li>Edge <code>tools &rarr; agent</code> fires. <code>agent_node</code> runs again. LLM now has the tool results in context. It produces a plain text response: <em>&ldquo;41 + 9 is 50, and the weather in Paris is currently 22&deg;C, partly cloudy (demo data).&rdquo;</em> No tool calls.</li>
+        <li><code>should_use_tools</code> sees no tool calls &rarr; routes to <code>END</code>. Graph stops.</li>
+      </ol>
+
+      <p>The student's follow-up question &mdash; <em>&ldquo;do I have to say 'use tools' in the prompt?&rdquo;</em> &mdash; was answered by removing those two words and asking <em>&ldquo;what's the weather in Paris?&rdquo;</em>: the LLM still called the weather tool, because it knew it had no way to answer otherwise. The &ldquo;use tools&rdquo; phrase isn't a magic incantation; the LLM decides per turn whether tool use is needed.</p>
+
+      <div class="callout">
+        <div class="callout-label">REMEMBER THIS</div>
+        <p>The ReAct loop terminates not by counting turns, but by the LLM <strong>choosing not to call a tool</strong>. If the LLM keeps asking for tools, the loop keeps spinning. Production ReAct agents add an explicit max-iterations guard for this reason.</p>
+      </div>
+    </section>
+
+    <!-- ============ §07 ============ -->
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">&sect; 07 &mdash; COMPARISON</div>
+      <h2>Router vs ReAct, side by side</h2>
+
+      <table>
+        <thead><tr><th></th><th>Router (Example B)</th><th>ReAct (Example C)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Branching point</strong></td><td>Once &mdash; the classifier picks one specialist.</td><td>Repeatedly &mdash; every LLM turn re-decides tool-or-end.</td></tr>
+          <tr><td><strong>Routing function inspects</strong></td><td>A field the previous node wrote (<code>state["route"]</code>).</td><td>The structure of the last LLM message (<code>last.tool_calls</code>).</td></tr>
+          <tr><td><strong># of LLM calls</strong></td><td>Usually one specialist call.</td><td>One per &ldquo;reason&rdquo; step &mdash; can be many.</td></tr>
+          <tr><td><strong>Cycles?</strong></td><td>None. Always exits in one hop.</td><td>Yes &mdash; <code>tools &rarr; agent</code> is the load-bearing edge.</td></tr>
+          <tr><td><strong>State shape</strong></td><td>Custom <code>TypedDict</code> with named fields per intent.</td><td><code>MessagesState</code> &mdash; a growing list of chat messages.</td></tr>
+          <tr><td><strong>When to reach for it</strong></td><td>You have a fixed set of specialised paths and want to pick one.</td><td>You have a set of tools and you want the LLM to decide if and when to use them, iteratively.</td></tr>
+        </tbody>
+      </table>
+
+      <p>The lecturer's instinct that &ldquo;router has ReAct in it&rdquo; isn't quite right. They share the <em>primitive</em> (conditional edge), but the shapes differ: router fans out <strong>once</strong>, ReAct <strong>loops</strong>. The student who asked this in class was right to push on the distinction.</p>
+    </section>
+
+    <!-- ============ §08 ============ -->
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">&sect; 08 &mdash; FORWARD REFERENCES</div>
+      <h2>What's coming next (not in today's class)</h2>
+
+      <p>The transcript names several things the lecturer plans to cover later. Listing them here as a roadmap, not material for today:</p>
+
+      <ul>
+        <li><strong>Reflection pattern</strong> (draft &rarr; critique &rarr; revise loop). Example D in <code>langgraph_beginner_tutorial.py</code>. Mentioned as <em>&ldquo;we will discuss tomorrow.&rdquo;</em> Not walked through in this class.</li>
+        <li><strong><code>create_react_agent</code></strong> (the prebuilt helper that wraps Example C in one call). Example E in the tutorial. Mentioned as <em>&ldquo;next class I will update the code&hellip; much easier.&rdquo;</em></li>
+        <li><strong>Conditional-edge deep dive &mdash; customer-service router.</strong> The file <code>Langgraph/customer_service_ConditionalEdgenotebook (1).py</code> exists in the folder. Lecturer: <em>&ldquo;we have a separate notebook also, detail. I will show you one more example where customer care support team will decide which ticket, where to route.&rdquo;</em> Deferred to next class.</li>
+        <li><strong>Coding-assistant agent with human-in-the-loop and persistent memory.</strong> Files <code>Langgraph/coding_assistant_HumanIntheLoop_PersistentMemorypnotebook.py</code> and the larger notebook. Lecturer: <em>&ldquo;we will build a coding agent which will automatically write code, take your feedback, rewrite the code based on your feedback until you approve&hellip; maybe Monday or Tuesday.&rdquo;</em> End-to-end project for a later session.</li>
+        <li><strong>Subgraphs</strong> for larger systems. Mentioned in the tutorial's recap, not in class.</li>
+      </ul>
+
+      <p>Per the user's instruction &mdash; <em>include only content discussed in the session from the Langgraph folder</em> &mdash; none of the above appears in the body of these notes. The forward-reference list is here so the reader knows where the lecturer is heading.</p>
+    </section>
+
+    <!-- ============ §09 ============ -->
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">&sect; 09 &mdash; RECAP</div>
+      <h2>Four primitives. Three patterns. One rhythm.</h2>
+
+      <p>LangGraph is an <strong>orchestrator</strong>: it runs a graph whose nodes do work and whose edges decide what runs next. The four primitives &mdash; <strong>State</strong> (shared typed data), <strong>Node</strong> (a function that returns a partial update), <strong>Edge</strong> (fixed wire), <strong>Conditional Edge</strong> (wire + routing function) &mdash; compose into every pattern you'll see.</p>
+
+      <p>Three patterns from one set of primitives:</p>
+      <ul>
+        <li><strong>Linear</strong> (<code>START &rarr; node &rarr; END</code>) &mdash; no branching, just demonstrates the rhythm.</li>
+        <li><strong>Router</strong> &mdash; classify, then <code>add_conditional_edges</code> fans out once to a chosen specialist.</li>
+        <li><strong>ReAct</strong> &mdash; LLM + <code>ToolNode</code> + a conditional edge after the LLM that loops back through tools until the LLM stops asking for them.</li>
+      </ul>
+
+      <p>The rhythm of every program: <strong>build &rarr; add &rarr; compile &rarr; invoke</strong>.</p>
+
+      <p>Next class continues with the conditional-edge customer-service example, the reflection pattern, and the <code>create_react_agent</code> shortcut.</p>
+    </section>
+
+    <!-- ============ GLOSSARY ============ -->
+    <section class="glossary" id="glossary">
+      <h2>Glossary</h2>
+      <dl>
+        <dt>State</dt>
+        <dd>The shared typed data structure every node reads from and writes to. Defined as a <code>TypedDict</code> or Pydantic <code>BaseModel</code>. The graph has no other memory.</dd>
+        <dt>Node</dt>
+        <dd>A function <code>f(state) -&gt; dict</code> that returns a partial update to state. May call an LLM, run a tool, transform data, or anything else Python can do.</dd>
+        <dt>Edge</dt>
+        <dd>A fixed unconditional next-step wire between two nodes.</dd>
+        <dt>Conditional Edge</dt>
+        <dd>An edge with a routing function: after the source node finishes, the routing function inspects state and returns a key that names the next node. Registered with <code>add_conditional_edges(source, routing_fn, mapping)</code>.</dd>
+        <dt>Reducer</dt>
+        <dd>A merge function attached to a state field. <code>MessagesState.messages</code> has the <code>add_messages</code> reducer, which appends rather than overwrites. Custom state fields can declare reducers using <code>Annotated[list, add_messages]</code> (or similar).</dd>
+        <dt>START / END</dt>
+        <dd>Reserved markers &mdash; entry and exit of the graph. Not nodes; you don't <code>add_node</code> them.</dd>
+        <dt>StateGraph</dt>
+        <dd>The graph builder. <code>StateGraph(MyState).add_node(...).add_edge(...).compile()</code>.</dd>
+        <dt>MessagesState</dt>
+        <dd>A prebuilt state class with one reducer-equipped field <code>messages: list</code>. Use it for chat/tool-using agents.</dd>
+        <dt>ToolNode</dt>
+        <dd>A prebuilt node from <code>langgraph.prebuilt</code> that executes any tool calls in the most recent <code>AIMessage</code> and appends the resulting <code>ToolMessage</code>s to <code>messages</code>.</dd>
+        <dt>@tool</dt>
+        <dd>A LangChain decorator that turns a Python function (with type hints and a docstring) into a callable Tool the LLM can invoke.</dd>
+        <dt>bind_tools</dt>
+        <dd>LLM method that attaches a tool list (as JSON schemas) so every request includes the option of returning a structured tool call.</dd>
+        <dt>Router pattern</dt>
+        <dd>Classify the input, dispatch to one of <em>N</em> specialised nodes, end. One-shot branching.</dd>
+        <dt>ReAct pattern</dt>
+        <dd>Reason &rarr; act (tool call) &rarr; observe &rarr; reason again, until the LLM produces a final answer with no further tool call. From Yao et al. (ICLR 2023).</dd>
+        <dt>Reflection pattern</dt>
+        <dd>Draft &rarr; critique &rarr; revise loop. Forward-referenced; covered next class.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <span>SASMITACOURSE &middot; SESSION 19</span>
+      <span>2026-05-19 &middot; REV v1</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

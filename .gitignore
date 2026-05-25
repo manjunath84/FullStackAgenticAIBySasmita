@@ -1,0 +1,11 @@
+# Track only HTML files in this repo.
+# Everything else (.md, .svg, .py, .pdf, .ipynb, fonts, transcripts, build scripts)
+# stays local — the published artifact is the self-contained HTML page.
+
+# Ignore everything by default
+*
+
+# But not these:
+!*/
+!*.html
+!.gitignore

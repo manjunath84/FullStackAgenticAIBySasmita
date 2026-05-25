@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session 24 — Wiring LangGraph into Databricks (Mosaic AI) — Infographic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,700&family=Spectral:wght@300;400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:#f5efe6; --paper-2:#ede5d6; --ink:#1f1a14; --ink-soft:#4a4239;
+    --ink-mute:#8b7d65; --line:#d4c9b5; --terracotta:#b8472e; --teal:#2a5d62;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: 'Spectral', Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.viewer-top {
+    position: sticky; top: 0; z-index: 50;
+    padding: 12px 24px;
+    background: color-mix(in oklab, var(--paper) 92%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+  }
+  header.viewer-top .crumb { color: var(--ink-soft); letter-spacing: 0.5px; }
+  header.viewer-top a {
+    color: var(--terracotta); text-decoration: none;
+    padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px;
+    background: var(--paper-2);
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  header.viewer-top a:hover { background: var(--terracotta); color: var(--paper); border-color: var(--terracotta); }
+  header.viewer-top a + a { margin-left: 8px; }
+  main.viewer-main {
+    max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px;
+  }
+  h1 {
+    font-family: 'Fraunces', Georgia, serif; font-style: italic; font-weight: 500;
+    font-size: clamp(28px, 4vw, 40px); line-height: 1.1;
+    margin: 0 0 8px; color: var(--ink);
+  }
+  h1 em.accent { color: var(--terracotta); font-style: italic; }
+  .subtitle { color: var(--ink-mute); font-family: 'Fraunces', Georgia, serif; font-style: italic; margin: 0 0 24px; font-size: 18px; }
+  .infographic-wrap {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 24px; box-shadow: 0 4px 16px rgba(31,26,20,0.08);
+    overflow-x: auto;
+  }
+  .infographic-wrap object,
+  .infographic-wrap embed {
+    display: block; width: 100%; min-width: 1100px; height: auto; max-height: none;
+  }
+  footer.viewer-foot {
+    margin-top: 28px;
+    color: var(--ink-mute); font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; text-align: center; letter-spacing: 0.5px;
+  }
+  footer.viewer-foot a { color: var(--terracotta); text-decoration: none; border-bottom: 1px dotted var(--terracotta); }
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<header class="viewer-top">
+  <div class="crumb">SasmitaCourse · Session 24 · Infographic</div>
+  <div>
+    <a href="Session24-LangGraph-MosaicAI-notes.html">Deep notes →</a></div>
+</header>
+
+<main class="viewer-main">
+  <h1>Session 24 — Wiring LangGraph into Databricks ( <em class="accent">Mosaic AI</em>)</h1>
+  <p class="subtitle">One-page infographic · scroll to see full content</p>
+  <div class="infographic-wrap">
+    <object type="image/svg+xml" data="Session24-LangGraph-MosaicAI-infographic.svg" aria-label="Session 24 — Wiring LangGraph into Databricks (Mosaic AI) infographic">
+      <embed type="image/svg+xml" src="Session24-LangGraph-MosaicAI-infographic.svg" />
+    </object>
+  </div>
+  <footer class="viewer-foot">
+    <p>Source SVG: <a href="Session24-LangGraph-MosaicAI-infographic.svg">Session24-LangGraph-MosaicAI-infographic.svg</a> · open in a new tab to view at full size.</p>
+  </footer>
+</main>
+
+</body>
+</html>

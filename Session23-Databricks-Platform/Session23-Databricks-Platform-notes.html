@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 23 — Databricks for AI Engineers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+
+main { padding: 80px 80px 120px; max-width: 920px; }
+
+.hero { margin-bottom: 60px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(44px, 6vw, 76px); line-height: 0.98; letter-spacing: -0.02em; margin-bottom: 28px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 21px; font-style: italic; color: var(--ink-soft); line-height: 1.45; max-width: 640px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 28px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 520px; flex-wrap: wrap; }
+
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 32px 0 32px 32px; border-left: 4px solid var(--terracotta); margin: 40px 0 70px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -28px; font-size: 90px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+
+section.chapter { margin-bottom: 84px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.08; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 14px 0 22px 24px; color: var(--ink-soft); }
+.chapter ul li, .chapter ol li { margin-bottom: 8px; font-size: 17px; line-height: 1.65; }
+.chapter ul li b, .chapter ol li b { color: var(--ink); }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.55; overflow-x: auto; }
+pre code { background: transparent; border: none; color: var(--paper); padding: 0; }
+
+blockquote { border-left: 3px solid var(--ink-mute); padding: 6px 0 6px 22px; margin: 24px 0; color: var(--ink-soft); font-style: italic; font-family: 'Fraunces', serif; font-size: 18px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 28px 0; font-size: 15px; }
+.tbl th, .tbl td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+.tbl th { background: var(--paper-2); color: var(--ink); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+.tbl td b, .tbl td strong { color: var(--ink); font-weight: 600; }
+.tbl tr:hover { background: rgba(248, 230, 207, 0.25); }
+
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 26px 30px; margin: 32px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 17px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+.callout em { color: var(--terracotta); font-style: italic; font-weight: 600; }
+
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 20px 24px; margin: 26px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15.5px; color: var(--ink); line-height: 1.65; }
+.correction strong { color: var(--terracotta); font-weight: 700; }
+.correction p { margin-bottom: 10px; color: var(--ink-soft); }
+.correction p:last-child { margin-bottom: 0; }
+
+.failtell { background: rgba(42, 93, 98, 0.06); border-left: 4px solid var(--teal); padding: 18px 22px; margin: 24px 0; font-size: 16px; color: var(--ink); }
+.failtell-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--teal); font-weight: 700; margin-bottom: 8px; }
+.failtell p { margin: 0; color: var(--ink-soft); }
+
+.stack-table { width: 100%; border-collapse: collapse; margin: 22px 0 32px; font-size: 14.5px; }
+.stack-table th { background: var(--ink); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; padding: 12px 14px; text-align: left; }
+.stack-table td { padding: 14px; border-bottom: 1px solid var(--line); color: var(--ink-soft); vertical-align: top; }
+.stack-table td:last-child { font-family: 'JetBrains Mono', monospace; color: var(--terracotta); font-size: 13px; font-weight: 700; }
+
+.glossary { margin-top: 70px; padding-top: 44px; border-top: 2px solid var(--ink); }
+.glossary h2 { font-family: 'Fraunces', serif; font-style: italic; font-size: 34px; margin-bottom: 24px; }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 16px; }
+.glossary dd { font-size: 15.5px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+
+.selfcheck { background: var(--paper-2); border: 1px solid var(--line); padding: 28px 32px; margin: 36px 0; }
+.selfcheck-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.selfcheck ol { margin: 0 0 0 20px; }
+.selfcheck ol li { margin-bottom: 10px; color: var(--ink-soft); font-size: 16px; line-height: 1.55; }
+
+.sources { margin-top: 50px; padding-top: 28px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-mute); line-height: 1.7; }
+.sources p { color: var(--ink-mute); margin-bottom: 6px; }
+
+figure.infographic { margin: 50px -40px 50px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg { width: 100%; height: auto; display: block; }
+figure.infographic figcaption { padding: 14px 22px; background: var(--paper-2); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1.5px; color: var(--ink-mute); border-top: 1px solid var(--line); }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+
+figure.diagram { margin: 36px 0; padding: 24px; background: var(--paper-2); border: 1px solid var(--line); }
+figure.diagram svg { width: 100%; height: auto; display: block; }
+figure.diagram figcaption { padding-top: 14px; margin-top: 12px; border-top: 1px dashed var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); line-height: 1.6; }
+
+footer { margin-top: 90px; padding-top: 28px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 44px; }
+  .thesis { font-size: 20px; padding-left: 20px; }
+  .chapter h2 { font-size: 30px; }
+  .tbl, .stack-table { font-size: 13px; }
+}
+
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+  figure.infographic { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 23</div>
+    <div class="toc-title">Databricks for<br>AI Engineers</div>
+    <ol>
+      <li><a href="#where">Where we are</a></li>
+      <li><a href="#s1">30-second answer</a></li>
+      <li><a href="#s2">Parallel vs distributed</a></li>
+      <li><a href="#s3">What Databricks is</a></li>
+      <li><a href="#s4">Unity Catalog</a></li>
+      <li><a href="#s5">Medallion architecture</a></li>
+      <li><a href="#s6">Genie</a></li>
+      <li><a href="#s7">AgentBricks vs LangGraph</a></li>
+      <li><a href="#s8">The rest of the surface</a></li>
+      <li><a href="#s9">Cost &amp; access</a></li>
+      <li><a href="#svg">Visual reference</a></li>
+      <li><a href="#s10">Where we go next</a></li>
+      <li><a href="#selfcheck">Self-check</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      66.9 MIN<br>
+      2 SPEAKERS<br>
+      2026-05-20
+      <div class="rev-badge">REV v1</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 23 · STUDY NOTES · REV V1</div>
+      <h1>Databricks for<br><span class="accent">AI Engineers</span></h1>
+      <p class="hero-sub">Unity Catalog, Genie, and the part of the stack a LangGraph agent actually needs.</p>
+      <div class="hero-meta">
+        <span>66.9 MIN</span>
+        <span>2 SPEAKERS</span>
+        <span>EN_US</span>
+        <span>2026-05-20</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      Databricks turns <em>structured-data analytics</em> into a queryable conversation surface. The Java/Spring engineer who used to hand-write SQL on top of someone else's warehouse now writes a prompt against a governed catalog — and the same platform stores the data, runs the agent, serves the model, and tracks the experiment.
+    </div>
+
+    <section class="chapter" id="where">
+      <div class="chapter-marker">00 · WHERE WE ARE</div>
+      <h2>Where we are</h2>
+      <p><a href="../Session22-Subgraphs-MCP/Session22-2026-05-20.md">Session 22</a> closed LangGraph by adding <em>subgraphs</em> (treating an entire graph as a single node in a parent graph) and revisiting <em>checkpointing</em> with <code>thread_id</code>-keyed conversation state. That ended the LangGraph arc.</p>
+      <p>Three curriculum topics remain. The lecturer fixed an explicit order:</p>
+      <ol>
+        <li><b>Databricks</b> — this session and the next one.</li>
+        <li><b>LangFuse</b> — comes during the hands-on multi-agent build, because <em>"it's not a theory; in the front end we will monitor it and log it."</em> Guardrails ride inside the LangFuse module.</li>
+        <li><b>MCP</b> — last, because <em>"it is the most easiest topic."</em> The previous batch's recording has already been shared.</li>
+      </ol>
+      <p>Session 24 picks up where this one stops: load real data into Unity Catalog, create a Genie Space, and call it from a Streamlit front end over the Genie Conversation API.</p>
+    </section>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">01 · THE 30-SECOND ANSWER</div>
+      <h2>Why a warehouse vendor matters to an agent builder</h2>
+      <p>Every demo so far has been built around text, audio, or video. Real enterprises run on <b>structured data</b> — claim forms, member tables, transaction ledgers, hospital codes — and that's where the dollars live. Banking is almost entirely structured. Healthcare is half-structured (claims) and half-unstructured (notes, scans). Even the unstructured stream usually ends up extracted into a table.</p>
+      <p>A LangGraph agent that can only answer questions about PDFs is therefore a toy. A LangGraph agent that can ask <em>"what is the West-Asia sales delta from March to April 2026?"</em> against a 525-column claims table and get a correct answer is a product. The hard part is the second one — and that is the gap Databricks closes.</p>
+      <p>The pitch in one line, copied from the Databricks marketing page the lecturer pulled up:</p>
+      <blockquote>"A unified, open analytics platform for building, deploying, sharing, and maintaining enterprise-grade data analytics and AI solutions at scale."</blockquote>
+      <p>The reason an <em>agent</em> course teaches it: agents need a place to put structured data, govern it, and ask questions of it. Databricks is the dominant answer in Azure/AWS shops. (BigQuery is the GCP answer; Snowflake is the cloud-agnostic competitor.)</p>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">02 · COMPUTE MODELS</div>
+      <h2>Parallel vs distributed processing (and what Spark is for)</h2>
+      <p>The lecturer makes a sharp split before introducing Spark:</p>
+      <ul>
+        <li><b>Parallel processing.</b> One big machine with many GPU cores doing the same operation on different slices of one data structure. Training a Transformer fits here — the gradient updates touch every parameter every step, so the workload doesn't decompose cleanly across separate machines.</li>
+        <li><b>Distributed processing.</b> Many machines, each holding <em>part</em> of the data, executing <em>part</em> of the logic, with a coordinator aggregating results. This is what Spark does. SQL joins, group-bys, streaming aggregates, classical ML — these decompose cleanly, so distributing them across a cluster wins.</li>
+      </ul>
+      <p>A <b>distributed engine</b> is the software that orchestrates this — the master holds a logical plan, the workers hold data partitions, the coordinator stitches results. Spark is the canonical one.</p>
+
+      <div class="correction">
+        <p><strong>Correction (transcript §parallel-vs-distributed).</strong> The transcript says <em>"deep learning cannot be distributed"</em>. That is too strong. Distributed deep-learning training is standard practice: data parallelism (each worker holds a copy of the model and a different mini-batch), model parallelism (the model itself is split across devices), pipeline parallelism, and frameworks like PyTorch FSDP and DeepSpeed ZeRO exist specifically for this.</p>
+        <p>The narrower claim is correct: <strong>Spark's MapReduce-style execution model is the wrong fit for dense gradient-based training</strong>, so Spark MLlib stops at classical ML (logistic regression, trees, k-means, ALS). Databricks does distributed deep learning, but through different runtimes (TorchDistributor, Mosaic AI Training, Horovod), not through Spark itself.</p>
+      </div>
+
+      <div class="correction">
+        <p><strong>Correction (transcript §big-data-history).</strong> The transcript groups <em>"Hadoop and all"</em> as <em>"nothing but Spark"</em>. They are different projects. <strong>Hadoop</strong> is HDFS (a distributed filesystem) plus MapReduce (a job framework), released 2006. <strong>Spark</strong> is a separate execution engine from UC Berkeley's AMPLab (2009) that often runs <em>on top of</em> HDFS or YARN but is not Hadoop. The "Hadoop, big data" hype of 2015–16 the lecturer remembers was the moment Spark started displacing MapReduce as the engine inside Hadoop clusters.</p>
+      </div>
+
+      <div class="failtell">
+        <div class="failtell-label">FAILURE TELL</div>
+        <p>When someone says "we'll just train it on Spark," ask which runtime — TorchDistributor or MLlib. If the answer is MLlib, the model is not a neural network.</p>
+      </div>
+
+      <p>The reason this matters for the rest of the lecture: <b>Spark is Databricks' execution engine, and Databricks was founded by Spark's creators</b> (Matei Zaharia and the UC Berkeley AMPLab team, 2013). When you pay Databricks, you're paying for managed Spark plus the layers built on top — catalog, governance, dashboards, agents, model serving.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA BRIDGE · DISTRIBUTED VS PARALLEL</div>
+        <p>Distributed Spark is closer to a <code>@KafkaListener</code> consumer group on the same topic — many JVMs, each consuming a partition, results aggregated downstream — than to a single fat JVM with a <code>parallelStream()</code> running on 64 cores. Both have their place. Transformers are the fat-JVM-with-GPU story; a 171-million-row claims aggregation is the consumer-group story.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">03 · THE STACK</div>
+      <h2>What Databricks actually is</h2>
+      <p>Strip the marketing and Databricks bundles five things into one bill:</p>
+      <table class="stack-table">
+        <thead>
+          <tr><th>Layer</th><th>What you'd otherwise glue</th><th>Databricks name</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>Storage + governance</b></td><td>S3 + Glue + Lake Formation, or Postgres + manual ACLs</td><td>Unity Catalog</td></tr>
+          <tr><td><b>Distributed compute</b></td><td>Spark on EMR / Dataproc / HDInsight</td><td>Managed Spark</td></tr>
+          <tr><td><b>BI + dashboards</b></td><td>Power BI / Looker / Tableau</td><td>AI/BI Dashboards</td></tr>
+          <tr><td><b>Model serving + tracking</b></td><td>SageMaker + MLflow + Weights &amp; Biases</td><td>MLflow + Mosaic AI</td></tr>
+          <tr><td><b>Agent runtime + governance</b></td><td>LangSmith + custom infra</td><td>Agent Bricks + Apps</td></tr>
+        </tbody>
+      </table>
+      <p>The lecturer's own framing: <em>"Your headache is just keep your data. Rest on analytics is automated already."</em></p>
+      <p>The platform is <b>cloud-only</b> — you enable it from the Azure / AWS / GCP marketplace. There is no on-prem standalone Databricks. (A student asked. The answer was <em>"already it is in cloud only."</em>)</p>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">04 · UNITY CATALOG</div>
+      <h2>The 3-layer model: catalog → schema → table</h2>
+      <p>Every dataset in Databricks lives at a path with exactly three segments:</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/>
+            </marker>
+          </defs>
+          <!-- Catalog box -->
+          <rect x="20" y="100" width="180" height="80" fill="#2a5d62" stroke="#1f1a14" stroke-width="1.5"/>
+          <text x="110" y="135" text-anchor="middle" fill="#f5efe6" font-size="14" font-weight="700" letter-spacing="2">CATALOG</text>
+          <text x="110" y="160" text-anchor="middle" fill="#f5efe6" font-size="11" opacity="0.9">fraud_detection</text>
+          <text x="110" y="200" text-anchor="middle" fill="#8b7d65" font-size="10">business unit / project family</text>
+
+          <!-- Arrow 1 -->
+          <line x1="200" y1="140" x2="270" y2="140" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+          <!-- Schema box -->
+          <rect x="280" y="100" width="180" height="80" fill="#c89b3c" stroke="#1f1a14" stroke-width="1.5"/>
+          <text x="370" y="135" text-anchor="middle" fill="#1f1a14" font-size="14" font-weight="700" letter-spacing="2">SCHEMA</text>
+          <text x="370" y="160" text-anchor="middle" fill="#1f1a14" font-size="11" opacity="0.9">drg_shift</text>
+          <text x="370" y="200" text-anchor="middle" fill="#8b7d65" font-size="10">one per project</text>
+
+          <!-- Arrow 2 -->
+          <line x1="460" y1="140" x2="530" y2="140" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+          <!-- Right column: 3 stacked -->
+          <rect x="540" y="40" width="200" height="56" fill="#b8472e" stroke="#1f1a14" stroke-width="1.5"/>
+          <text x="640" y="64" text-anchor="middle" fill="#f5efe6" font-size="13" font-weight="700" letter-spacing="2">TABLE</text>
+          <text x="640" y="83" text-anchor="middle" fill="#f5efe6" font-size="10" opacity="0.9">claims · structured (rows + cols)</text>
+
+          <rect x="540" y="112" width="200" height="56" fill="#5ba0a8" stroke="#1f1a14" stroke-width="1.5"/>
+          <text x="640" y="136" text-anchor="middle" fill="#1f1a14" font-size="13" font-weight="700" letter-spacing="2">VOLUME</text>
+          <text x="640" y="155" text-anchor="middle" fill="#1f1a14" font-size="10" opacity="0.9">PDFs · unstructured files</text>
+
+          <rect x="540" y="184" width="200" height="56" fill="#d96d4a" stroke="#1f1a14" stroke-width="1.5"/>
+          <text x="640" y="208" text-anchor="middle" fill="#f5efe6" font-size="13" font-weight="700" letter-spacing="2">VIEW</text>
+          <text x="640" y="227" text-anchor="middle" fill="#f5efe6" font-size="10" opacity="0.9">subset · per-team access</text>
+
+          <!-- Arrows from schema to each -->
+          <line x1="460" y1="120" x2="540" y2="68" stroke="#1f1a14" stroke-width="1" opacity="0.5"/>
+          <line x1="460" y1="160" x2="540" y2="212" stroke="#1f1a14" stroke-width="1" opacity="0.5"/>
+
+          <!-- Path label -->
+          <text x="380" y="265" text-anchor="middle" fill="#1f1a14" font-size="12" font-weight="700">fraud_detection . drg_shift . claims</text>
+        </svg>
+        <figcaption>FIG 1 · Unity Catalog's three-part path. Access control hangs on this hierarchy: an admin grants <code>team_1</code> read on a view, <code>team_2</code> write on a table, and the same gate enforces it for SQL editor, dashboards, Genie, and LangGraph agents.</figcaption>
+      </figure>
+
+      <ul>
+        <li><b>Catalog</b> — top-level namespace, usually one per major business unit or project family (<code>fraud_detection</code>, <code>nextgen</code>). <code>System</code> is the default catalog every workspace gets.</li>
+        <li><b>Schema</b> — second-level namespace inside a catalog, usually one per project (<code>drg_shift</code>, <code>claims_q2</code>).</li>
+        <li><b>Table</b> — structured (rows and columns). Backed by Delta Lake by default.</li>
+        <li><b>Volume</b> — unstructured (PDFs, images, raw files). What you store before extracting text.</li>
+        <li><b>View</b> — saved query exposing a subset of a table; used to expose only the columns one team is allowed to see.</li>
+      </ul>
+      <p>Access control hangs on this hierarchy. The data engineer creates <code>fraud_detection.drg_shift.claims</code>; the admin grants <code>team_1</code> read on <code>member</code> view, <code>team_2</code> write on <code>hospital</code> view. <b>One place enforces it for every consumer</b> — SQL editor, dashboard, Genie, LangGraph agent, Databricks App.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA BRIDGE · CATALOG HIERARCHY</div>
+        <p>Think of catalog → schema → table as <code>com.acme.fraud → drg_shift → ClaimsTable</code>. Then layer Spring Security's <code>@PreAuthorize("hasRole('TEAM_1')")</code> per bean. Unity Catalog is <em>exactly that</em>, but enforced at the storage layer rather than in application code — so a rogue SQL query, a Power BI dashboard, or a Genie prompt all hit the same gate.</p>
+      </div>
+
+      <p><b>Why this layout is mandatory:</b> Genie, MLflow models, dashboards, and Databricks Apps all address data by its three-part name. Skip the catalog and the agent has nothing to point at.</p>
+    </section>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">05 · MEDALLION ARCHITECTURE</div>
+      <h2>Bronze, silver, gold</h2>
+      <p>Three layers, named like Olympic medals, used by the data-engineering team to stage transformations:</p>
+      <ul>
+        <li><b>Bronze</b> — raw ingest, no cleaning. The claim form as it arrived.</li>
+        <li><b>Silver</b> — cleaned and conformed. Nulls filled, types coerced, duplicate keys resolved.</li>
+        <li><b>Gold</b> — query-ready subset for one consumer. <em>"Some other team needs hospital addresses, so they create another table from the raw data, clean data, and they provide to them."</em></li>
+      </ul>
+      <p>Each team gets a gold table tailored to it, with its own access grants. An AI engineer consuming the warehouse should expect to ask for a gold layer, not the bronze dump. <em>"Data engineering will get the gold-layer data, which is clean and everything."</em></p>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">06 · GENIE</div>
+      <h2>Text-to-SQL as a tool</h2>
+      <p>This is the section the rest of the lecture builds toward. Genie is Databricks' first-party text-to-SQL agent. Its outputs: an executed SQL query, a result table, an auto-generated chart, and an explanation. Its inputs: a Genie Space (a curated bundle of tables + instructions) and a natural-language prompt.</p>
+
+      <h3>6.1 — Why text-to-SQL on enterprise tables is hard</h3>
+      <p>LangChain ships a <code>SQLDatabaseChain</code> that can do toy text-to-SQL. It falls apart on real enterprise schemas, and the reason is mundane:</p>
+      <blockquote>"In my organization, the claim form has 525 columns. Every column is important. The agent will be confused when your user is asking. It will write the SQL code, but it will take the wrong columns."</blockquote>
+      <p>The model can't fit a 525-column schema in its context window with enough description to disambiguate <code>member_id_v2</code> from <code>subscriber_id_legacy</code>. When two columns sound similar, it picks the wrong one and silently returns the wrong answer. <em>Silent</em>-wrong is the worst failure mode for analytics.</p>
+
+      <h3>6.2 — The fix: a curated Genie Space</h3>
+      <p>A <b>Genie Space</b> is the unit of configuration. It holds:</p>
+      <table class="tbl">
+        <thead>
+          <tr><th>Slot</th><th>What it does</th><th>Why it matters</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>Selected tables</b></td><td>Which catalog.schema.table entries are in scope</td><td>Limits the column count the model has to reason over</td></tr>
+          <tr><td><b>Display name + description per column</b></td><td>Human-friendly rename + one-line meaning</td><td>Disambiguates similar columns; <b>mandatory</b> for accuracy</td></tr>
+          <tr><td><b>Hidden columns</b></td><td>Columns Genie is told never to see</td><td>Cuts noise on 400-column tables where 10 are actually queried</td></tr>
+          <tr><td><b>General instructions</b></td><td>System-prompt-style business rules (<code>patient_key = first + last + member_id</code>)</td><td>Encodes domain logic the SQL can't infer from column names</td></tr>
+          <tr><td><b>Joins</b></td><td>Pre-declared join conditions between tables</td><td>Genie reuses the correct ON clause every time, never guesses</td></tr>
+          <tr><td><b>SQL expressions / saved queries</b></td><td>Frequently-asked questions with hand-written SQL</td><td>Genie calls these as tools instead of re-planning</td></tr>
+        </tbody>
+      </table>
+      <p>The Genie Space carries an <b>ID</b>. That ID is the integration point — from a Streamlit app, LangGraph node, Slack bot, or <code>curl</code> call you hit:</p>
+      <pre><code>POST /api/2.0/genie/spaces/{space_id}/start-conversation</code></pre>
+      <p>and poll the response endpoints until the message status concludes (the docs recommend 5–10 second polling, 10-minute max, exponential backoff after 2 minutes of no response).</p>
+      <p>This is what Session 24 will wire up.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA BRIDGE · GENIE SPACE</div>
+        <p>Think of a Genie Space as a <code>@RestController</code> with an OpenAPI spec — but the OpenAPI spec is the column descriptions, the system prompt is the general instructions, and the pre-baked SQL queries are like <code>@Cacheable</code> request handlers for the questions you already know users will ask. The Space ID is the URL prefix.</p>
+      </div>
+
+      <h3>6.3 — How Genie behaves at runtime</h3>
+      <p>When you ask Genie <em>"what is the distribution of trip distance — min, max, average, median?"</em> the UI shows a two-row plan:</p>
+      <ol>
+        <li><b>Planner agent</b> — decomposes the question into subtasks.</li>
+        <li><b>SQL generator</b> — writes <code>SELECT MIN(trip_distance), MAX(trip_distance), AVG(trip_distance), PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY trip_distance) FROM trips;</code> or equivalent, runs it, renders a chart.</li>
+      </ol>
+      <p>You can download the result, download the SQL, share to a teammate, click <em>"not useful — poor visualization"</em> and re-ask. The whole panel is exposable via the Conversation API — what you see in the UI is what an external app gets back.</p>
+
+      <h3>6.4 — Failure tells</h3>
+      <ul>
+        <li><b>Wrong column picked, silently</b> — the column description is missing or two columns have near-identical names. Fix: write the description; if you have authority, hide the duplicate.</li>
+        <li><b>Wrong join</b> — Genie inferred a join that doesn't match your domain (e.g., joining <code>claims.member_id</code> to <code>provider.member_id</code> when those are different namespaces). Fix: declare the join explicitly in the Genie Space.</li>
+        <li><b>Hallucinated metric</b> — Genie invented a column. Fix: this only happens when descriptions are absent. The lecturer is firm: <em>"this is mandatory before even you start coding."</em></li>
+        <li><b>Genie refuses or stalls on a complex chart-comprehension question</b> — the lecturer's own test (asking Genie to interpret a correlation already drawn on a dashboard) failed. Genie is strong on text-to-SQL, weaker on chart-introspection. Use it for what it's good at.</li>
+      </ul>
+
+      <div class="callout">
+        <div class="callout-label">THE LECTURER'S STRONG CLAIM · KEEP AS HER CLAIM</div>
+        <p><em>"99.9% accurate if you have properly loaded your data and have a data dictionary."</em></p>
+        <p>This is the lecturer's production experience, not a benchmark — treat as illustrative. The right way to phrase it in an interview: <em>"with a curated Genie Space, my team observed near-zero column-selection errors on a 525-column claims table."</em></p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">07 · AGENT BRICKS</div>
+      <h2>AgentBricks vs LangGraph</h2>
+      <p>The transcript frames AgentBricks as <em>"like LangGraph but less advanced — lot of components are missing, you can't go back to the parent from a child node like in LangGraph"</em>. This is the part of the lecture that is most off.</p>
+
+      <div class="correction">
+        <p><strong>Correction (transcript §agentbricks).</strong> Agent Bricks is not a LangGraph alternative. It is Databricks' <strong>enterprise platform layer</strong> for agents. It <strong>supports</strong> LangGraph, LangChain, LlamaIndex, and the OpenAI Agents SDK as the agent-authoring framework.</p>
+        <p>What Agent Bricks adds on top: Unity Catalog governance applied to model and tool access, the CLEARS evaluation framework (Correctness, Latency, Execution, Adherence, Relevance, Safety) tracked in MLflow, a Supervisor Agent pattern for multi-agent orchestration, and one-step serverless deployment to Databricks Apps. The lecturer's intuition — <em>"we will use LangGraph, not AgentBricks"</em> — is right for the wrong reason. You're already using both as soon as you deploy a LangGraph agent into a Databricks workspace.</p>
+      </div>
+
+      <p><b>When to reach for each:</b></p>
+      <table class="tbl">
+        <thead>
+          <tr><th>Question</th><th>Answer</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>I need conditional edges, cycles, custom state</td><td>LangGraph (the authoring layer)</td></tr>
+          <tr><td>I need to govern which user / role / app can call which model</td><td>Agent Bricks via Unity Catalog</td></tr>
+          <tr><td>I need standardized agent quality eval (CLEARS) plumbed into MLflow</td><td>Agent Bricks</td></tr>
+          <tr><td>I need to ship a multi-agent workflow into a Databricks App in one click</td><td>Agent Bricks</td></tr>
+          <tr><td>I'm prototyping in a notebook</td><td>LangGraph in the notebook, deploy later via Agent Bricks</td></tr>
+        </tbody>
+      </table>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA BRIDGE · STARTERS VS RAW SPRING</div>
+        <p>Agent Bricks is to LangGraph as Spring Boot starters are to raw Spring Framework. Starters give you opinionated wiring, sane defaults, and one-step deploy; raw Spring gives you control over every bean. You use both — starters for the deploy, raw Spring for the bits the starter doesn't cover.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">08 · THE REST</div>
+      <h2>The rest of the surface area</h2>
+      <p>The lecturer skimmed a number of features that you'll encounter without re-introduction. The minimum mental model for each:</p>
+
+      <h3>Lakebase</h3>
+      <p>Fully-managed serverless Postgres, powered by Neon, announced June 2025 Public Preview and February 2026 GA. <em>Different from</em> a Delta table: Lakebase is the OLTP store an application writes to (think: user profiles, session state, the table behind a Spring <code>JdbcTemplate</code>); a Delta table is the OLAP store you analyze. Lakebase's distinctive feature is <b>copy-on-write branching</b> — an agent can spin up a Lakebase clone, mutate it, validate the result, and merge or discard, the way <code>git branch</code> works. Useful for "agent tests a destructive query against a sandbox before running for real."</p>
+
+      <h3>AI/BI Dashboards</h3>
+      <p>Power-BI-style drag-drop dashboards with Genie embedded for ad-hoc questions on the chart. <em>"You cannot compete with Databricks. They are the pioneer."</em> The lecturer's caveat: Genie's chart-introspection (ask Genie <em>about</em> a chart already drawn) is weaker than Genie's text-to-SQL.</p>
+
+      <h3>MLflow</h3>
+      <p>Experiment tracking, model registry, model serving, and — now — the eval framework Agent Bricks plugs into for the CLEARS scores. <em>"From next batch onwards I am removing LangFuse and adding MLflow."</em> For this batch, LangFuse is still the observability layer for LangGraph agents; MLflow is what you use for traditional ML lifecycle and increasingly for agent eval.</p>
+
+      <h3>Playground</h3>
+      <p>A model-comparison UI: pick a model (Claude, Gemini, Llama, gpt-oss-120b), paste a prompt, see the output. Cheap way to choose before committing.</p>
+
+      <div class="correction">
+        <p><strong>Correction (transcript §playground).</strong> The lecturer referred to <em>"GPT-OS 120 billion"</em>. The model's actual name is <strong>gpt-oss-120b</strong>, OpenAI's open-weight model (Apache 2.0), released August 2025. It runs on a single 80 GB GPU and is hosted in Databricks' Foundation Model API across AWS, Azure, and GCP — including in the Playground.</p>
+      </div>
+
+      <h3>Databricks Apps</h3>
+      <p>A managed app-hosting product inside Databricks itself. Good for lightweight internal tools that already need Unity Catalog auth and Genie. <em>Not</em> the place to host a public-facing customer app — the lecturer's guidance: <em>"hosting, we will always go in a traditional way."</em> Azure / AWS / GCP for production traffic, Databricks Apps for internal demos and tools.</p>
+
+      <h3>The notebook coding assistant</h3>
+      <p>A built-in agent in every Databricks notebook that takes natural-language prompts (<em>"do an analysis on New York taxi data, create Plotly dashboard charts"</em>) and writes the code — SQL, Python, or PySpark, your pick. Comparable to GitHub Copilot Cloud, with the advantage that it already knows the schema of every table you can see in Unity Catalog. The lecturer's word of caution: <em>"junior engineers are the happiest ones. They just write anything that the AI is telling and then share the code. Every day, 1,000-line, 2,000-line code. Most of the time you will just spend in debugging."</em></p>
+    </section>
+
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">09 · COST &amp; ACCESS</div>
+      <h2>Cost and access</h2>
+      <ul>
+        <li><b>Free tier:</b> ~40 credits or two months on sign-up, <em>"enough to try and test everything."</em></li>
+        <li><b>Pay-as-you-go after that.</b> Storage is billed even when idle — the lecturer pays monthly for data she "forgot to delete." Rule: <b>delete or pay.</b></li>
+        <li><b>Marketplace install.</b> Enable Databricks from your Azure / AWS / GCP marketplace; the workspace lives in your cloud account.</li>
+        <li><b>Account isolation.</b> A second laptop with a different email gets a fresh free trial — useful for cohort experiments, not a long-term strategy.</li>
+      </ul>
+    </section>
+
+    <section id="svg" style="scroll-margin-top: 40px;">
+      <figure class="infographic">
+        <svg viewBox="0 0 1200 1500" xmlns="http://www.w3.org/2000/svg" font-family="'Spectral', serif">
+          <!-- Background -->
+          <rect width="1200" height="1500" fill="#f5efe6"/>
+
+          <!-- Eyebrow -->
+          <text x="60" y="70" font-family="'JetBrains Mono', monospace" font-size="14" letter-spacing="6" fill="#b8472e" font-weight="700">SESSION 23 · DATABRICKS FOR AI ENGINEERS</text>
+
+          <!-- Title -->
+          <text x="60" y="150" font-family="'Fraunces', serif" font-size="72" font-style="italic" font-weight="700" fill="#1f1a14">Databricks, in one</text>
+          <text x="60" y="225" font-family="'Fraunces', serif" font-size="72" font-style="italic" font-weight="700" fill="#b8472e">page.</text>
+
+          <!-- Subtitle -->
+          <text x="60" y="280" font-family="'Spectral', serif" font-size="22" font-style="italic" fill="#4a4239">Storage + governance + analytics + agent runtime + model serving, one bill.</text>
+
+          <!-- Divider -->
+          <line x1="60" y1="320" x2="1140" y2="320" stroke="#1f1a14" stroke-width="2"/>
+
+          <!-- Block 1: The 3-layer Unity Catalog path -->
+          <text x="60" y="380" font-family="'JetBrains Mono', monospace" font-size="13" letter-spacing="3" fill="#b8472e" font-weight="700">01 · UNITY CATALOG · 3-LAYER PATH</text>
+          <text x="60" y="425" font-family="'Fraunces', serif" font-size="32" font-style="italic" font-weight="700" fill="#1f1a14">catalog → schema → table | volume | view</text>
+
+          <rect x="60" y="460" width="240" height="90" fill="#2a5d62"/>
+          <text x="180" y="500" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="14" letter-spacing="3" fill="#f5efe6" font-weight="700">CATALOG</text>
+          <text x="180" y="525" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="#f5efe6" opacity="0.9">fraud_detection</text>
+
+          <text x="320" y="513" text-anchor="middle" font-size="28" fill="#1f1a14">→</text>
+
+          <rect x="340" y="460" width="240" height="90" fill="#c89b3c"/>
+          <text x="460" y="500" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="14" letter-spacing="3" fill="#1f1a14" font-weight="700">SCHEMA</text>
+          <text x="460" y="525" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="#1f1a14" opacity="0.9">drg_shift</text>
+
+          <text x="600" y="513" text-anchor="middle" font-size="28" fill="#1f1a14">→</text>
+
+          <rect x="620" y="460" width="170" height="90" fill="#b8472e"/>
+          <text x="705" y="500" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" letter-spacing="2" fill="#f5efe6" font-weight="700">TABLE</text>
+          <text x="705" y="525" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#f5efe6" opacity="0.9">rows + columns</text>
+
+          <rect x="800" y="460" width="170" height="90" fill="#5ba0a8"/>
+          <text x="885" y="500" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" letter-spacing="2" fill="#1f1a14" font-weight="700">VOLUME</text>
+          <text x="885" y="525" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1f1a14" opacity="0.9">PDFs / files</text>
+
+          <rect x="980" y="460" width="160" height="90" fill="#d96d4a"/>
+          <text x="1060" y="500" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" letter-spacing="2" fill="#f5efe6" font-weight="700">VIEW</text>
+          <text x="1060" y="525" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#f5efe6" opacity="0.9">scoped subset</text>
+
+          <text x="60" y="595" font-family="'Spectral', serif" font-style="italic" font-size="16" fill="#4a4239">Genie, MLflow, dashboards, Databricks Apps — all address data by the three-part name. Skip the catalog and the agent has nothing to point at.</text>
+
+          <!-- Divider -->
+          <line x1="60" y1="640" x2="1140" y2="640" stroke="#d4c9b5" stroke-width="1"/>
+
+          <!-- Block 2: The Genie pipeline -->
+          <text x="60" y="700" font-family="'JetBrains Mono', monospace" font-size="13" letter-spacing="3" fill="#b8472e" font-weight="700">02 · GENIE · TEXT-TO-SQL AS A TOOL</text>
+          <text x="60" y="745" font-family="'Fraunces', serif" font-size="32" font-style="italic" font-weight="700" fill="#1f1a14">prompt → Planner → SQL → result → chart</text>
+
+          <!-- Pipeline -->
+          <g transform="translate(60, 780)">
+            <rect x="0" y="0" width="195" height="70" fill="#1f1a14"/>
+            <text x="97" y="32" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#f5efe6" font-weight="700">PROMPT</text>
+            <text x="97" y="52" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#f5efe6" opacity="0.85">"trip distance distribution"</text>
+
+            <text x="207" y="42" font-size="20" fill="#1f1a14">→</text>
+
+            <rect x="225" y="0" width="195" height="70" fill="#2a5d62"/>
+            <text x="322" y="32" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#f5efe6" font-weight="700">PLANNER</text>
+            <text x="322" y="52" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#f5efe6" opacity="0.85">decompose subtasks</text>
+
+            <text x="432" y="42" font-size="20" fill="#1f1a14">→</text>
+
+            <rect x="450" y="0" width="195" height="70" fill="#c89b3c"/>
+            <text x="547" y="32" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#1f1a14" font-weight="700">SQL GEN</text>
+            <text x="547" y="52" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1f1a14" opacity="0.85">SELECT MIN/MAX/AVG…</text>
+
+            <text x="657" y="42" font-size="20" fill="#1f1a14">→</text>
+
+            <rect x="675" y="0" width="195" height="70" fill="#b8472e"/>
+            <text x="772" y="32" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#f5efe6" font-weight="700">EXECUTE</text>
+            <text x="772" y="52" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#f5efe6" opacity="0.85">on Spark cluster</text>
+
+            <text x="882" y="42" font-size="20" fill="#1f1a14">→</text>
+
+            <rect x="900" y="0" width="180" height="70" fill="#5ba0a8"/>
+            <text x="990" y="32" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#1f1a14" font-weight="700">RESULT + CHART</text>
+            <text x="990" y="52" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1f1a14" opacity="0.85">+ SQL + explanation</text>
+          </g>
+
+          <!-- Genie Space anatomy -->
+          <text x="60" y="900" font-family="'Fraunces', serif" font-size="22" font-style="italic" font-weight="700" fill="#1f1a14">A Genie Space holds six slots</text>
+
+          <g transform="translate(60, 920)" font-family="'JetBrains Mono', monospace">
+            <rect x="0" y="0" width="350" height="50" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="14" y="22" font-size="11" font-weight="700" fill="#b8472e">SELECTED TABLES</text>
+            <text x="14" y="40" font-size="10" fill="#4a4239">scope · which catalog.schema.tables in play</text>
+
+            <rect x="365" y="0" width="350" height="50" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="379" y="22" font-size="11" font-weight="700" fill="#b8472e">DISPLAY NAME + DESCRIPTION</text>
+            <text x="379" y="40" font-size="10" fill="#4a4239">per column · mandatory · disambiguates</text>
+
+            <rect x="730" y="0" width="350" height="50" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="744" y="22" font-size="11" font-weight="700" fill="#b8472e">HIDDEN COLUMNS</text>
+            <text x="744" y="40" font-size="10" fill="#4a4239">cut noise on 400-column tables</text>
+
+            <rect x="0" y="60" width="350" height="50" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="14" y="82" font-size="11" font-weight="700" fill="#b8472e">GENERAL INSTRUCTIONS</text>
+            <text x="14" y="100" font-size="10" fill="#4a4239">system prompt · business rules</text>
+
+            <rect x="365" y="60" width="350" height="50" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="379" y="82" font-size="11" font-weight="700" fill="#b8472e">JOINS</text>
+            <text x="379" y="100" font-size="10" fill="#4a4239">declared ON clauses · Genie reuses</text>
+
+            <rect x="730" y="60" width="350" height="50" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="744" y="82" font-size="11" font-weight="700" fill="#b8472e">SQL EXPRESSIONS</text>
+            <text x="744" y="100" font-size="10" fill="#4a4239">saved queries · called as tools</text>
+          </g>
+
+          <!-- API call -->
+          <rect x="60" y="1055" width="1080" height="80" fill="#1f1a14"/>
+          <text x="80" y="1085" font-family="'JetBrains Mono', monospace" font-size="11" letter-spacing="2" fill="#d96d4a" font-weight="700">EXTERNAL CALL · STREAMLIT / LANGGRAPH / SLACK</text>
+          <text x="80" y="1112" font-family="'JetBrains Mono', monospace" font-size="15" fill="#f5efe6">POST /api/2.0/genie/spaces/{space_id}/start-conversation</text>
+
+          <!-- Divider -->
+          <line x1="60" y1="1175" x2="1140" y2="1175" stroke="#d4c9b5" stroke-width="1"/>
+
+          <!-- Block 3: corrections strip -->
+          <text x="60" y="1220" font-family="'JetBrains Mono', monospace" font-size="13" letter-spacing="3" fill="#b8472e" font-weight="700">03 · TRANSCRIPT CORRECTIONS</text>
+
+          <g transform="translate(60, 1240)" font-family="'Spectral', serif">
+            <rect x="0" y="0" width="350" height="100" fill="rgba(184, 71, 46, 0.06)" stroke="#b8472e" stroke-dasharray="3,3"/>
+            <text x="14" y="22" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#b8472e">DL CANNOT BE DISTRIBUTED</text>
+            <text x="14" y="48" font-size="12" fill="#1f1a14">False. FSDP, ZeRO, data/model</text>
+            <text x="14" y="64" font-size="12" fill="#1f1a14">parallelism exist. True for Spark</text>
+            <text x="14" y="80" font-size="12" fill="#1f1a14">MLlib specifically — Spark's</text>
+            <text x="14" y="96" font-size="12" fill="#1f1a14">engine doesn't fit dense training.</text>
+
+            <rect x="365" y="0" width="350" height="100" fill="rgba(184, 71, 46, 0.06)" stroke="#b8472e" stroke-dasharray="3,3"/>
+            <text x="379" y="22" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#b8472e">AGENTBRICKS &lt; LANGGRAPH</text>
+            <text x="379" y="48" font-size="12" fill="#1f1a14">Misframed. Agent Bricks is the</text>
+            <text x="379" y="64" font-size="12" fill="#1f1a14">governance + deploy layer; it</text>
+            <text x="379" y="80" font-size="12" fill="#1f1a14">supports LangGraph as authoring.</text>
+            <text x="379" y="96" font-size="12" fill="#1f1a14">You use both, not "instead of".</text>
+
+            <rect x="730" y="0" width="350" height="100" fill="rgba(184, 71, 46, 0.06)" stroke="#b8472e" stroke-dasharray="3,3"/>
+            <text x="744" y="22" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#b8472e">"GPT-OS 120 BILLION"</text>
+            <text x="744" y="48" font-size="12" fill="#1f1a14">Correct name: gpt-oss-120b.</text>
+            <text x="744" y="64" font-size="12" fill="#1f1a14">OpenAI open-weight (Apache 2.0),</text>
+            <text x="744" y="80" font-size="12" fill="#1f1a14">Aug 2025. Runs on one 80 GB GPU,</text>
+            <text x="744" y="96" font-size="12" fill="#1f1a14">hosted in Foundation Model API.</text>
+          </g>
+
+          <!-- Footer -->
+          <line x1="60" y1="1400" x2="1140" y2="1400" stroke="#1f1a14" stroke-width="2"/>
+          <text x="60" y="1430" font-family="'JetBrains Mono', monospace" font-size="11" letter-spacing="2" fill="#8b7d65">SASMITA COURSE · SESSION 23 · 2026-05-20 · REV V1</text>
+          <text x="1140" y="1430" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="11" letter-spacing="2" fill="#8b7d65">NEXT · S24 STREAMLIT + GENIE</text>
+          <text x="60" y="1458" font-family="'Spectral', serif" font-style="italic" font-size="14" fill="#4a4239">Failure tell — silent wrong-column picks always trace to missing data dictionaries. Write the descriptions first; the rest is mechanical.</text>
+        </svg>
+        <figcaption>INFOGRAPHIC · ONE-PAGE SUMMARY OF SESSION 23 — UNITY CATALOG, GENIE, TRANSCRIPT CORRECTIONS</figcaption>
+      </figure>
+    </section>
+
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">10 · NEXT</div>
+      <h2>Where we go next</h2>
+      <p><b>Session 24</b> will pick up immediately:</p>
+      <ol>
+        <li>Load real data into a Unity-Catalog schema we create.</li>
+        <li>Add column descriptions and a few general instructions.</li>
+        <li>Create a Genie Space and copy its ID.</li>
+        <li>Stand up a Streamlit front end that takes a user question, calls the Genie Conversation API with the Space ID, polls until the message status concludes, and renders the SQL + result table.</li>
+      </ol>
+      <p>The wider course-completion plan: <b>MCP</b> after Databricks, then <b>LangFuse</b> during the final multi-agent build, with guardrails living inside the LangFuse module.</p>
+    </section>
+
+    <section id="selfcheck">
+      <div class="selfcheck">
+        <div class="selfcheck-label">CHECK YOURSELF · NO PEEKING</div>
+        <ol>
+          <li>Why does a course about agents teach a data warehouse?</li>
+          <li>Name the three layers of a Unity Catalog path.</li>
+          <li>What does a Genie Space contain that a raw <code>SQLDatabaseChain</code> doesn't?</li>
+          <li>Spark MLlib has logistic regression and k-means but no Transformers. Why?</li>
+          <li>AgentBricks "competes with" LangGraph — true or false, and why?</li>
+          <li>What's the integration point for calling Genie from a Streamlit app?</li>
+          <li>What's the medallion-architecture layer the AI engineer usually consumes?</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="glossary" id="glossary">
+      <h2>Glossary</h2>
+      <dl>
+        <dt>AgentBricks</dt>
+        <dd>Databricks' enterprise governance + deployment platform for agents. Supports LangGraph, LangChain, LlamaIndex, OpenAI Agents SDK as the authoring layer; adds Unity Catalog access control, MLflow CLEARS eval, Supervisor Agent orchestration, and one-step deploy to Databricks Apps.</dd>
+
+        <dt>AI/BI Dashboard</dt>
+        <dd>Databricks' Power-BI-style dashboard product with Genie embedded for ad-hoc questions.</dd>
+
+        <dt>Apache Spark</dt>
+        <dd>Distributed execution engine for large-scale data processing. Created at UC Berkeley AMPLab (2009); Databricks (founded 2013) commercializes it.</dd>
+
+        <dt>Catalog</dt>
+        <dd>Top-level Unity Catalog namespace; usually one per business unit or major project.</dd>
+
+        <dt>Databricks</dt>
+        <dd>Unified analytics platform combining managed Spark, Unity Catalog, MLflow, AI/BI Dashboards, Agent Bricks, and Lakebase. Cloud-only; available from Azure / AWS / GCP marketplaces.</dd>
+
+        <dt>Data dictionary</dt>
+        <dd>Column-by-column human-readable description of a table's schema. The single most important Genie input.</dd>
+
+        <dt>Delta Lake</dt>
+        <dd>The default table format in Databricks. Provides ACID transactions on top of cloud object storage.</dd>
+
+        <dt>Distributed processing</dt>
+        <dd>Partition the data and the logic across many machines, aggregate results. Fits SQL, streaming, classical ML; doesn't fit dense neural-network training well.</dd>
+
+        <dt>Genie</dt>
+        <dd>Databricks' first-party text-to-SQL agent. Takes a natural-language prompt + Genie Space, returns SQL + result table + chart + explanation.</dd>
+
+        <dt>Genie Conversation API</dt>
+        <dd>The REST endpoints (<code>POST /api/2.0/genie/spaces/{space_id}/start-conversation</code> and friends) that let external apps drive Genie programmatically.</dd>
+
+        <dt>Genie Space</dt>
+        <dd>The curated bundle (selected tables, column descriptions, hidden columns, general instructions, joins, saved SQL) that scopes one Genie deployment.</dd>
+
+        <dt>Hadoop</dt>
+        <dd>HDFS (distributed filesystem) + MapReduce (job framework), 2006. <em>Not</em> the same project as Spark, though they often run together.</dd>
+
+        <dt>Lakebase</dt>
+        <dd>Databricks' fully-managed serverless Postgres (powered by Neon), Public Preview June 2025, GA February 2026. The OLTP/operational store; complement to Delta tables (the OLAP/analytical store). Copy-on-write branching for agent sandboxes.</dd>
+
+        <dt>MLflow</dt>
+        <dd>Open-source experiment tracking, model registry, model serving, and evaluation framework. Maintained by Databricks; central to Agent Bricks' CLEARS scores.</dd>
+
+        <dt>Medallion architecture</dt>
+        <dd>Bronze (raw) / silver (cleaned) / gold (consumer-ready) layered transformation pipeline.</dd>
+
+        <dt>Parallel processing</dt>
+        <dd>Many cores in one machine acting on slices of one data structure. Fits dense neural-network training.</dd>
+
+        <dt>Planner agent</dt>
+        <dd>The first stage of Genie's two-step pipeline: decompose the natural-language question into ordered subtasks before generating SQL.</dd>
+
+        <dt>Schema</dt>
+        <dd>Second Unity Catalog level; usually one per project inside a catalog.</dd>
+
+        <dt>Supervisor Agent</dt>
+        <dd>Agent Bricks' orchestration pattern for routing tasks across multiple sub-agents and tools in one workflow.</dd>
+
+        <dt>Table</dt>
+        <dd>Structured data (rows + columns) in a schema. Backed by Delta Lake by default.</dd>
+
+        <dt>Unity Catalog</dt>
+        <dd>Databricks' unified governance layer over data, models, files, and tools. Enforces access control, lineage, and discovery at the storage layer.</dd>
+
+        <dt>Volume</dt>
+        <dd>Unstructured-file storage inside a schema (PDFs, images, raw text). Use Volumes for RAG document corpora.</dd>
+      </dl>
+    </section>
+
+    <div class="sources">
+      <p><b>Sources</b> · all retrieved 2026-05-20</p>
+      <p>Databricks docs — <em>Use the Genie Spaces API</em>; <em>Announcing Public Preview of AI/BI Genie Conversation APIs</em>.</p>
+      <p>Databricks blog — <em>Agent Bricks: The governed enterprise agent platform</em>; <em>Supervisor Agent Architecture: Orchestrating Enterprise AI at Scale</em>.</p>
+      <p>Databricks blog — <em>Databricks Lakebase Generally Available</em>; <em>Announcing Lakebase Public Preview</em>.</p>
+      <p>Databricks blog — <em>Introducing OpenAI's New Open Models on Databricks</em> (gpt-oss-120b).</p>
+      <p>OpenAI — <em>Introducing gpt-oss</em>, August 2025.</p>
+      <p>Apache Spark project history (UC Berkeley AMPLab); Apache Hadoop project documentation.</p>
+    </div>
+
+    <footer>
+      <div>SASMITA COURSE · SESSION 23 · 2026-05-20 · REV V1</div>
+      <div>NEXT · SESSION 24 — STREAMLIT + GENIE</div>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

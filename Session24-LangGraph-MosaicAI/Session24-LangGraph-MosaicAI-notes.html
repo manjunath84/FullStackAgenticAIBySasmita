@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 24 — Wiring LangGraph into Databricks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+
+main { padding: 80px 80px 120px; max-width: 920px; }
+
+.hero { margin-bottom: 60px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(44px, 6vw, 76px); line-height: 0.98; letter-spacing: -0.02em; margin-bottom: 28px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 21px; font-style: italic; color: var(--ink-soft); line-height: 1.45; max-width: 640px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 28px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 520px; flex-wrap: wrap; }
+
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 32px 0 32px 32px; border-left: 4px solid var(--terracotta); margin: 40px 0 70px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -28px; font-size: 90px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+
+section.chapter { margin-bottom: 84px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.08; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 14px 0 22px 24px; color: var(--ink-soft); }
+.chapter ul li, .chapter ol li { margin-bottom: 8px; font-size: 17px; line-height: 1.65; }
+.chapter ul li b, .chapter ol li b { color: var(--ink); }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.55; overflow-x: auto; }
+pre code { background: transparent; border: none; color: var(--paper); padding: 0; }
+
+blockquote { border-left: 3px solid var(--ink-mute); padding: 6px 0 6px 22px; margin: 24px 0; color: var(--ink-soft); font-style: italic; font-family: 'Fraunces', serif; font-size: 18px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 28px 0; font-size: 15px; }
+.tbl th, .tbl td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+.tbl th { background: var(--paper-2); color: var(--ink); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+.tbl td b, .tbl td strong { color: var(--ink); font-weight: 600; }
+.tbl tr:hover { background: rgba(248, 230, 207, 0.25); }
+
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 26px 30px; margin: 32px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 17px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+.callout em { color: var(--terracotta); font-style: italic; font-weight: 600; }
+
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 20px 24px; margin: 26px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15.5px; color: var(--ink); line-height: 1.65; }
+.correction strong { color: var(--terracotta); font-weight: 700; }
+.correction p { margin-bottom: 10px; color: var(--ink-soft); }
+.correction p:last-child { margin-bottom: 0; }
+
+.failtell { background: rgba(42, 93, 98, 0.06); border-left: 4px solid var(--teal); padding: 18px 22px; margin: 24px 0; font-size: 16px; color: var(--ink); }
+.failtell-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--teal); font-weight: 700; margin-bottom: 8px; }
+.failtell p { margin: 0; color: var(--ink-soft); }
+
+.glossary { margin-top: 70px; padding-top: 44px; border-top: 2px solid var(--ink); }
+.glossary h2 { font-family: 'Fraunces', serif; font-style: italic; font-size: 34px; margin-bottom: 24px; }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 16px; }
+.glossary dd { font-size: 15.5px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+
+.selfcheck { background: var(--paper-2); border: 1px solid var(--line); padding: 28px 32px; margin: 36px 0; }
+.selfcheck-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.selfcheck ol { margin: 0 0 0 20px; }
+.selfcheck ol li { margin-bottom: 10px; color: var(--ink-soft); font-size: 16px; line-height: 1.55; }
+
+.sources { margin-top: 50px; padding-top: 28px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-mute); line-height: 1.7; }
+.sources p { color: var(--ink-mute); margin-bottom: 6px; }
+
+figure.infographic { margin: 50px -40px 50px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg { width: 100%; height: auto; display: block; }
+figure.infographic figcaption { padding: 14px 22px; background: var(--paper-2); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1.5px; color: var(--ink-mute); border-top: 1px solid var(--line); }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+
+figure.diagram { margin: 36px 0; padding: 24px; background: var(--paper-2); border: 1px solid var(--line); }
+figure.diagram svg { width: 100%; height: auto; display: block; }
+figure.diagram figcaption { padding-top: 14px; margin-top: 12px; border-top: 1px dashed var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); line-height: 1.6; }
+
+footer { margin-top: 90px; padding-top: 28px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 44px; }
+  .thesis { font-size: 20px; padding-left: 20px; }
+  .chapter h2 { font-size: 30px; }
+  .tbl { font-size: 13px; }
+}
+
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+  figure.infographic { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 24</div>
+    <div class="toc-title">Wiring LangGraph<br>into Databricks</div>
+    <ol>
+      <li><a href="#where">Where we are</a></li>
+      <li><a href="#s1">Genie space, recapped</a></li>
+      <li><a href="#s2">Two packages</a></li>
+      <li><a href="#s3">UC function tools</a></li>
+      <li><a href="#s4">The two agents</a></li>
+      <li><a href="#s5">Supervisor pattern</a></li>
+      <li><a href="#s6">ChatAgent wrapper</a></li>
+      <li><a href="#s7">From outside Databricks</a></li>
+      <li><a href="#s8">Agent Bricks vs hand-coded</a></li>
+      <li><a href="#s9">Canonical assembly order</a></li>
+      <li><a href="#svg">Visual reference</a></li>
+      <li><a href="#selfcheck">Self-check</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+      <li><a href="#changelog">Changelog vs source</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      67 MIN<br>
+      1 SPEAKER<br>
+      2026-05-20
+      <div class="rev-badge">REV v1</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 24 · STUDY NOTES · REV V1</div>
+      <h1>Wiring LangGraph<br><span class="accent">into Databricks</span></h1>
+      <p class="hero-sub">Genie agents, Unity Catalog tools, and the MLflow ChatAgent wrapper that turns your LangGraph into a deployable Databricks artefact.</p>
+      <div class="hero-meta">
+        <span>67 MIN</span>
+        <span>1 SPEAKER</span>
+        <span>EN_US</span>
+        <span>2026-05-20</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      Genie and the Unity Catalog tools are <em>adapters into Databricks state</em>. The orchestration — what calls what, in what order — stays in your LangGraph. The job of this session is to learn the three lines of glue that put a <em>GenieAgent</em> and a <em>create_react_agent</em> into a graph the same way you'd put any other node.
+    </div>
+
+    <section class="chapter" id="where">
+      <div class="chapter-marker">00 · WHERE WE ARE</div>
+      <h2>Where we are</h2>
+      <p><a href="../Session23-Databricks-Platform/Session23-2026-05-20.md">Session 23</a> introduced Databricks as a <em>platform</em> — Unity Catalog (the <code>catalog.schema.table</code> hierarchy), the medallion architecture, the Genie text-to-SQL agent, MLflow, the in-notebook Playground. We saw what a Genie Space <em>is</em>, how to register a table to it, and how to ask questions in plain English.</p>
+      <p>This session goes one layer down: <b>how do you reach Genie from your own LangGraph code?</b> The lecturer walks through the official Mosaic AI Agent Framework example end-to-end — Genie agent, Unity Catalog function tools, supervisor agent, and the MLflow <code>ChatAgent</code> wrapper that adapts everything to Databricks' deployment surface. The whole point is one sentence: <em>your LangGraph flow does not have to be rewritten to run on Databricks; you wrap it.</em></p>
+      <p>The lecturer promised the full New York Taxi end-to-end build for "tomorrow" — that's Session 25, where two Genie spaces (taxi + customer-sales) will be routed by a single supervisor.</p>
+    </section>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">01 · GENIE SPACE, RECAPPED</div>
+      <h2>The Genie space, briefly recapped</h2>
+      <p>A <b>Genie space</b> is a curated bundle of one or more Unity Catalog tables, plus a description, plus a small library of (natural-language question → SQL query) example pairs, that turns into a text-to-SQL agent. You ask in English; Genie writes the SQL against the bundled tables and returns the result. It is the production-grade answer to "can we have a Text2SQL?" — which LangChain already shipped, but with a fatal weakness: <em>it has no opinion about the data dictionary</em>.</p>
+      <p>What makes Genie work where LangChain's <code>SQLDatabaseChain</code> doesn't is discipline at the catalog layer, not at the prompt layer:</p>
+      <ol>
+        <li><b>Every table and every column must have a description</b> in Unity Catalog metadata. The data engineering team should add the data dictionary at load time, not the agent author after the fact. If the descriptions are missing, you can patch them in the Genie space <em>Instructions</em> panel — but that's a workaround, not the right place.</li>
+        <li><b>Add example SQL queries</b> for the questions your users will actually ask. The lecturer's number: up to 100 example pairs are loaded into the Genie space at session start. When a user asks a question that matches one of the examples, Genie executes the bundled SQL directly, with confidence, instead of regenerating.</li>
+        <li><b>One Genie space per use case.</b> Do not pile 30 tables into one space — the agent gets confused about joins. Create separate spaces with 1–3 tables each.</li>
+      </ol>
+      <p><b>Why this matters.</b> A LangChain text-to-SQL chain prompts the LLM with the schema every call, hopes the schema you wrote is the schema that exists, and has no source of truth when the data team adds a column. Genie inherits its schema from Unity Catalog at runtime, so when the data team adds a column, <em>your code keeps working</em> without redeploy. The boundary that breaks LangChain's text-to-SQL — the data dictionary — has been moved from your prompt into the data team's job.</p>
+
+      <div class="failtell">
+        <div class="failtell-label">FAILURE TELL</div>
+        <p>When Genie returns the wrong column, look in Unity Catalog metadata first — not at the prompt. The description on the column is almost always blank or wrong.</p>
+      </div>
+
+      <h3>How to grab a Genie space ID</h3>
+      <p>Open the Genie space. Look at the URL. Copy the path segment <b>before</b> the <code>?</code> — that long alphanumeric string is your space ID. You will paste it into your code in exactly one place.</p>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">02 · TWO PACKAGES</div>
+      <h2>The two packages you actually install</h2>
+      <p>The lecturer's pip list, deduplicated:</p>
+<pre><code>pip install databricks-langchain databricks-agents mlflow langgraph databricks-sdk</code></pre>
+      <table class="tbl">
+        <thead><tr><th>Package</th><th>What it provides</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td><code>databricks-langchain</code></td><td><code>ChatDatabricks</code>, <code>UCFunctionToolkit</code>, <code>GenieAgent</code></td><td>Databricks, OSS bridge to LangChain/LangGraph</td></tr>
+          <tr><td><code>databricks-agents</code></td><td>Production agent deployment tooling</td><td>Databricks</td></tr>
+          <tr><td><code>mlflow</code></td><td><code>mlflow.pyfunc.ChatAgent</code> — the wrapper interface</td><td>LF AI Foundation; bundled into every Databricks workspace</td></tr>
+          <tr><td><code>langgraph</code></td><td><code>StateGraph</code>, <code>create_react_agent</code>, conditional edges</td><td>LangChain team</td></tr>
+          <tr><td><code>databricks-sdk</code></td><td><code>WorkspaceClient</code> — talk to a workspace from outside the notebook</td><td>Databricks</td></tr>
+        </tbody>
+      </table>
+      <p>The mental picture: <code>databricks-langchain</code> is the package that makes Databricks-native classes look and behave like LangChain primitives. Once installed, you write <code>from databricks_langchain import GenieAgent, ChatDatabricks, UCFunctionToolkit</code> and the rest of your LangGraph code looks normal.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p><code>databricks-langchain</code> is the Spring-Boot starter equivalent for Databricks-on-LangChain — it ships a small, opinionated set of beans (a chat model, a tool collection, an agent class) preconfigured to talk to the platform. You import the starter, autowire the beans, and you're done. The platform internals stay platform-internal.</p>
+      </div>
+
+      <div class="correction">
+        <strong>Transcript correction.</strong>
+        <p>The transcript reads <em>"databricks Lang 2 Chain"</em> — that's AssemblyAI mishearing. The PyPI package is <code>databricks-langchain</code>, imported as <code>databricks_langchain</code>.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">03 · UC FUNCTION TOOLS</div>
+      <h2>Unity Catalog function tools — built-in, not built-by-you</h2>
+      <p>Unity Catalog is not just a catalog of tables; it's also a catalog of <em>functions</em>. Databricks ships a large set of built-in functions under the schema <code>system.ai</code>. You don't write them; they exist on every workspace.</p>
+      <table class="tbl">
+        <thead><tr><th>Function</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>system.ai.python_exec</code></td><td>Sandbox Python execution — lets any LLM run code without you writing a Python tool.</td></tr>
+          <tr><td><code>system.ai.ai_query</code></td><td>Route a prompt to a foundation-model endpoint — Databricks' "ask any LLM" helper.</td></tr>
+          <tr><td><code>system.ai.ai_classify</code></td><td>LLM-backed classifier — label set + input → label.</td></tr>
+          <tr><td><code>system.ai.ai_extract</code></td><td>LLM-backed structured extraction (entities, fields).</td></tr>
+          <tr><td><code>system.ai.ai_summarize</code></td><td>LLM-backed summarization.</td></tr>
+          <tr><td><code>system.ai.ai_translate</code></td><td>LLM-backed translation.</td></tr>
+          <tr><td><code>system.ai.ai_gen</code></td><td>Open-ended LLM generation.</td></tr>
+          <tr><td><code>system.ai.vector_search</code></td><td>Query a Databricks Vector Search index.</td></tr>
+        </tbody>
+      </table>
+      <p>You can also register your own functions into Unity Catalog — they live alongside <code>system.ai</code> and get the same governance (access control, lineage, version tracking) as the built-ins.</p>
+      <p>To make all of these visible to an LLM agent, wrap them in a <code>UCFunctionToolkit</code>:</p>
+<pre><code>from databricks_langchain import UCFunctionToolkit
+
+uc_tool_names = ["system.ai.*"]                # everything under system.ai
+toolkit = UCFunctionToolkit(function_names=uc_tool_names)
+tools = toolkit.tools                          # list of LangChain Tool objects</code></pre>
+      <p><code>"system.ai.*"</code> is a wildcard meaning "every function in <code>system.ai</code>". You can also list specific functions: <code>["system.ai.python_exec", "main.utilities.my_function"]</code>.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p><code>UCFunctionToolkit(function_names=["system.ai.*"])</code> is <code>@ComponentScan(basePackages = "system.ai")</code>. You're not declaring which beans to use; you're declaring a package to scan, and the framework discovers everything that matches and wires it for you.</p>
+      </div>
+
+      <div class="failtell">
+        <div class="failtell-label">FAILURE TELL</div>
+        <p>When an agent says "I can do X" and then fails to call the matching tool, check that the function is actually under the wildcard you passed. <code>system.ai.*</code> does <em>not</em> include functions you wrote into <code>main.utilities.*</code>.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">04 · THE TWO AGENTS</div>
+      <h2>The two agents Databricks ships in this example</h2>
+      <p>The lecturer's example builds <b>two</b> ready-made agents from <code>databricks-langchain</code>.</p>
+
+      <h3>GenieAgent — wraps a Genie space, has no LLM</h3>
+<pre><code>from databricks_langchain.genie import GenieAgent
+
+genie_agent = GenieAgent(
+    genie_space_id="01ef...",                  # your space ID
+    genie_agent_name="Genie",                  # for tracing / observability
+    description="Answers questions about NY taxi trip data.",
+)</code></pre>
+      <p>The crucial point — and one the lecturer flagged because it confuses everyone — <b><code>GenieAgent</code> does not contain an LLM call.</b> There is no <code>model=</code> argument. It's a thin handle that points at a Genie space. The LLM that writes the SQL is <em>inside Genie</em>, on the Databricks side. You're not building an agent; you're registering a <em>reference</em> to a Databricks-side agent so LangGraph can call it like any other node.</p>
+      <p>If you look at the constructor signature, only <code>genie_space_id</code> is mandatory. The name and description exist so that when MLflow traces this run later, you can tell which Genie space was hit. Always set them — without names, a 10-agent trace looks like a wall of <code>agent_0</code>, <code>agent_1</code>, …</p>
+
+      <h3>The Code Agent — a ReAct agent over the Unity Catalog tools</h3>
+<pre><code>from databricks_langchain import ChatDatabricks
+from langgraph.prebuilt import create_react_agent
+
+llm = ChatDatabricks(endpoint="databricks-meta-llama-3-1-70b-instruct")
+
+code_agent_description = (
+    "Runs Python or SQL via the Unity Catalog system.ai tools. "
+    "Use for arithmetic, code execution, classification, summarization, "
+    "translation, extraction, generation, and vector search."
+)
+
+code_agent = create_react_agent(
+    model=llm,
+    tools=tools,                                # from UCFunctionToolkit
+    name="Coder",
+)</code></pre>
+      <p>This one <em>does</em> contain an LLM. <code>create_react_agent</code> is the LangGraph prebuilt that implements the <b>ReAct pattern</b> — a two-node loop where the LLM either answers directly or emits a tool call, the tool node executes the call, and the LLM sees the result and decides whether to call another tool or finish.</p>
+      <p><code>ChatDatabricks</code> is the LangChain-style chat-model class for any model endpoint hosted in Databricks Foundation Model APIs — open-weight models (Llama, <code>gpt-oss-120b</code>, Mistral, DBRX), proprietary models (Claude, GPT family via partner endpoints), or custom fine-tunes you deployed. Same <code>.invoke()</code> interface as <code>ChatOpenAI</code> or <code>ChatAnthropic</code>.</p>
+
+      <h3>Why the asymmetry</h3>
+      <p><code>GenieAgent</code> is a <em>destination</em>; <code>code_agent</code> is an <em>engine</em>. Genie has its own LLM and its own logic on the Databricks side — you only need to point at it. The Code agent is just an LLM + tool list assembled on your side and given a name. The fact that both end up as nodes in the same LangGraph is what makes the pattern composable.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p><code>GenieAgent</code> is a Spring <code>@Component</code> that holds an <code>ExternalServiceConfig</code> — connection string, no business logic. <code>create_react_agent</code> is a Spring <code>@Service</code> with a strategy bean injected and a <code>@PostConstruct</code> that wires the strategy to a list of helper components. Both expose the same interface, so the caller doesn't know one is hollow and the other is fat.</p>
+      </div>
+
+      <div class="correction">
+        <strong>Transcript correction.</strong>
+        <p>The transcript repeatedly says <em>"chart Databricks"</em> and <em>"chart Agent"</em> — that's AssemblyAI mishearing. The actual class names are <code>ChatDatabricks</code> and <code>ChatAgent</code> (chat, not chart). Both are real classes; treat every instance of "chart …" in the transcript as <em>chat …</em>.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">05 · SUPERVISOR PATTERN</div>
+      <h2>The supervisor pattern — routing among workers with a hard iteration cap</h2>
+      <p>So far we have three nodes the supervisor will route to: <code>Genie</code>, <code>Coder</code>, and (in the lecturer's example) a third <code>Weather</code> node that wraps a small custom function. The supervisor is itself an LLM call whose job is to pick which worker should handle the next user message.</p>
+      <p>Two things make this <em>not</em> a simple conditional edge:</p>
+      <ol>
+        <li><b>Multiple paths.</b> Previous LangGraph sessions (Sessions 21–22) showed binary conditional edges — if-this-else-that. Here we have <em>N</em> possible routes. The graph must add an edge from <code>supervisor</code> to each worker, which means a <code>for</code> loop over the worker names.</li>
+        <li><b>Loop risk.</b> A supervisor that can route back to itself can ping-pong forever. The lecturer's pattern adds an explicit iteration counter to the graph state and a hard cap (her choice: 3 iterations); past the cap, the supervisor routes to <code>FINISH</code> regardless of what the LLM picked.</li>
+      </ol>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 880 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Supervisor multi-agent topology with three workers, an iteration counter, and a final-answer node.">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f1a14"/>
+            </marker>
+            <marker id="arr-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#b8472e"/>
+            </marker>
+            <marker id="arr-l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b7d65"/>
+            </marker>
+          </defs>
+
+          <!-- START -->
+          <circle cx="80" cy="210" r="22" fill="#1f1a14"/>
+          <text x="80" y="214" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6">START</text>
+
+          <!-- Supervisor -->
+          <rect x="200" y="160" width="200" height="100" rx="6" fill="#b8472e" stroke="#b8472e"/>
+          <text x="300" y="190" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="18" font-weight="700" fill="#f5efe6">Supervisor</text>
+          <text x="300" y="212" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#f8e6cf">LLM · structured output</text>
+          <text x="300" y="230" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#f8e6cf">picks next_node ∈ workers∪{FINISH}</text>
+          <text x="300" y="247" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#f8e6cf">iteration_count++</text>
+
+          <!-- Workers -->
+          <rect x="510" y="40" width="200" height="80" rx="6" fill="#2a5d62"/>
+          <text x="610" y="68" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="17" font-weight="700" fill="#f5efe6">Genie</text>
+          <text x="610" y="90" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#f5efe6">space_id → text-to-SQL</text>
+          <text x="610" y="106" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#f5efe6">no LLM on our side</text>
+
+          <rect x="510" y="170" width="200" height="80" rx="6" fill="#2a5d62"/>
+          <text x="610" y="198" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="17" font-weight="700" fill="#f5efe6">Coder</text>
+          <text x="610" y="220" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#f5efe6">ReAct over UCFunctionToolkit</text>
+          <text x="610" y="236" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#f5efe6">system.ai.* tools</text>
+
+          <rect x="510" y="300" width="200" height="80" rx="6" fill="#2a5d62"/>
+          <text x="610" y="328" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="17" font-weight="700" fill="#f5efe6">Weather</text>
+          <text x="610" y="350" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#f5efe6">custom function</text>
+          <text x="610" y="366" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#f5efe6">your own logic</text>
+
+          <!-- Final Answer + END -->
+          <rect x="760" y="170" width="100" height="80" rx="6" fill="#c89b3c"/>
+          <text x="810" y="200" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" font-weight="700" fill="#1f1a14">Final</text>
+          <text x="810" y="218" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" font-weight="700" fill="#1f1a14">Answer</text>
+          <text x="810" y="240" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#1f1a14">aggregate · respond</text>
+
+          <!-- START → Supervisor -->
+          <line x1="102" y1="210" x2="195" y2="210" stroke="#1f1a14" stroke-width="2" marker-end="url(#arr)"/>
+
+          <!-- Supervisor → workers (conditional edges) -->
+          <path d="M 400 180 Q 460 130 510 80" fill="none" stroke="#b8472e" stroke-width="2" marker-end="url(#arr-t)"/>
+          <path d="M 400 210 L 510 210" stroke="#b8472e" stroke-width="2" marker-end="url(#arr-t)"/>
+          <path d="M 400 240 Q 460 290 510 340" fill="none" stroke="#b8472e" stroke-width="2" marker-end="url(#arr-t)"/>
+          <text x="450" y="170" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#b8472e">add_conditional_edges</text>
+
+          <!-- Workers → Supervisor (loop back) -->
+          <path d="M 510 70 Q 430 50 410 155" fill="none" stroke="#8b7d65" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arr-l)"/>
+          <path d="M 510 200 Q 470 165 405 175" fill="none" stroke="#8b7d65" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arr-l)"/>
+          <path d="M 510 340 Q 430 360 410 263" fill="none" stroke="#8b7d65" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arr-l)"/>
+          <text x="412" y="105" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#8b7d65" transform="rotate(-20 412 105)">add_edge(worker, supervisor)</text>
+
+          <!-- Supervisor → Final (FINISH) -->
+          <path d="M 400 210 Q 580 130 760 200" fill="none" stroke="#1f1a14" stroke-width="2" marker-end="url(#arr)"/>
+          <text x="600" y="155" font-family="JetBrains Mono, monospace" font-size="10" fill="#1f1a14">next_node == "FINISH" OR iter ≥ 3</text>
+
+          <!-- Iteration cap badge -->
+          <rect x="200" y="280" width="200" height="46" rx="3" fill="none" stroke="#b8472e" stroke-dasharray="4 4"/>
+          <text x="300" y="298" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#b8472e" font-weight="700">SAFETY CAP</text>
+          <text x="300" y="316" text-anchor="middle" font-family="Spectral, serif" font-style="italic" font-size="12" fill="#4a4239">if iteration_count ≥ 3 → FINISH</text>
+        </svg>
+        <figcaption>Supervisor routes among Genie / Coder / Weather workers via <code>add_conditional_edges</code>. Each worker reports back to the supervisor (dashed). An iteration counter in state forces FINISH on the third hop, preventing infinite loops.</figcaption>
+      </figure>
+
+      <h3>The state object</h3>
+<pre><code>from typing import Optional, Annotated, Sequence, TypedDict
+from langgraph.graph.message import add_messages
+from langchain_core.messages import BaseMessage
+
+class AgentState(TypedDict):
+    messages: Annotated[Sequence[BaseMessage], add_messages]
+    next_node: Optional[str]                       # who the supervisor picked
+    iteration_count: int                           # how many supervisor hops so far</code></pre>
+      <p><code>messages</code> is the running conversation, accumulated by <code>add_messages</code> (the LangGraph reducer that appends). <code>next_node</code> is the name of the worker the supervisor most recently picked. <code>iteration_count</code> is how the loop is bounded.</p>
+
+      <h3>The supervisor itself</h3>
+      <p>The supervisor node is an LLM call with a <b>structured output</b> schema constrained to the worker names plus <code>FINISH</code>. Structured output is the LangChain mechanism (<code>.with_structured_output(Schema)</code>) that forces the LLM to return a parseable object instead of free text. Without it, the supervisor returns <em>"I think we should go to the Coder agent"</em> and you have to regex-parse it.</p>
+<pre><code>from pydantic import BaseModel, Field
+from typing import Literal
+
+worker_names = ["Genie", "Coder", "Weather"]
+options = worker_names + ["FINISH"]
+
+class Route(BaseModel):
+    next_node: Literal["Genie", "Coder", "Weather", "FINISH"] = Field(
+        description="Which worker should handle the next step, or FINISH if done."
+    )
+
+SUPERVISOR_PROMPT = """You are a supervisor routing user requests to worker agents.
+Workers: {worker_descriptions}
+Pick exactly one of {options} as next_node. Choose FINISH when no further work is needed.
+"""
+
+def supervisor_node(state: AgentState) -> AgentState:
+    if state["iteration_count"] &gt;= 3:
+        return {"next_node": "FINISH", "iteration_count": state["iteration_count"]}
+    chain = preprocessor | llm.with_structured_output(Route)
+    result = chain.invoke({"messages": state["messages"]})
+    return {
+        "next_node": result.next_node,
+        "iteration_count": state["iteration_count"] + 1,
+    }</code></pre>
+
+      <h3>Wiring the edges</h3>
+<pre><code>from langgraph.graph import StateGraph, START, END
+
+workflow = StateGraph(AgentState)
+workflow.add_node("Genie",   genie_node)
+workflow.add_node("Coder",   code_node)
+workflow.add_node("Weather", weather_node)
+workflow.add_node("supervisor",   supervisor_node)
+workflow.add_node("final_answer", final_answer_node)
+
+workflow.add_edge(START, "supervisor")
+
+# every worker reports back to the supervisor
+for worker in worker_names:
+    workflow.add_edge(worker, "supervisor")
+
+# the supervisor's conditional routing
+def route_from_supervisor(state: AgentState) -&gt; str:
+    return state["next_node"]
+
+workflow.add_conditional_edges(
+    "supervisor",
+    route_from_supervisor,
+    {name: name for name in worker_names} | {"FINISH": "final_answer"},
+)
+
+workflow.add_edge("final_answer", END)
+multi_agent = workflow.compile()</code></pre>
+
+      <h3>The final-answer node</h3>
+      <p>After the supervisor routes to <code>FINISH</code>, the <code>final_answer</code> node aggregates the conversation and asks the LLM to produce the user-facing reply. It's a small chain — preprocessor (system prompt) → <code>llm</code> → return the message — that exists so the user gets one coherent answer rather than the last worker's raw output.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>The supervisor is a router <code>@Service</code> that consults a strategy enum to pick which <code>@Component</code> to delegate to. The iteration cap is the same pattern as a <code>@Retryable</code> handler — bounded retries before falling back to a graceful exit. The conditional edge is your <code>switch</code> statement; the <code>for</code> loop that adds edges is the line in <code>@PostConstruct</code> that registers every <code>@Component</code> implementing your <code>Worker</code> interface.</p>
+      </div>
+
+      <div class="failtell">
+        <div class="failtell-label">FAILURE TELL</div>
+        <p>When the agent runs forever or returns the same answer three times, look at <code>iteration_count</code>. The supervisor is being asked to re-route on a state that hasn't changed; either the worker isn't updating <code>messages</code>, or the supervisor's prompt isn't strong enough to recognize "we're done."</p>
+      </div>
+
+      <div class="correction">
+        <strong>Transcript correction.</strong>
+        <p>The transcript says "3 iterations between supervisor and worker, otherwise it falls in infinite loop" — and that the supervisor is "by Databricks". Both are slightly off. The <em>3</em> is the lecturer's chosen cap, not a Databricks-imposed limit. The supervisor <em>pattern</em> is documented in Databricks Mosaic AI docs (and in LangGraph's own multi-agent tutorial), but the code in the transcript is a LangGraph implementation of the pattern — there is no Databricks library that gives you a ready-made supervisor agent.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">06 · CHATAGENT WRAPPER</div>
+      <h2>The MLflow ChatAgent wrapper — why it exists and what it adapts</h2>
+      <p>The compiled <code>multi_agent</code> graph above is a perfectly good LangGraph runnable. You can <code>.invoke({"messages": [...]})</code> it locally and get an answer. But Databricks' agent deployment surface — Mosaic AI Agent Framework, MLflow logging, Agent Bricks evaluation — expects a specific Python interface: <b><code>mlflow.pyfunc.ChatAgent</code></b>.</p>
+      <p><code>ChatAgent</code> is an abstract class with a small contract — implement <code>predict()</code> (and optionally <code>predict_stream()</code>), and Databricks knows how to serve, log, evaluate, and govern your agent. Mosaic AI Agent Framework documentation lists it as the recommended interface for any multi-turn conversational agent built on Databricks, regardless of authoring framework (LangGraph, LangChain, LlamaIndex, OpenAI Agents SDK).</p>
+      <p>The wrapper is mechanical. You will copy-paste it almost verbatim from the Databricks tutorial:</p>
+<pre><code>from typing import Any, Generator, Optional
+from mlflow.pyfunc import ChatAgent
+from mlflow.types.agent import (
+    ChatAgentChunk, ChatAgentMessage, ChatAgentResponse, ChatContext,
+)
+
+class LangGraphChatAgent(ChatAgent):
+    def __init__(self, agent):
+        self.agent = agent                          # the compiled LangGraph
+
+    def predict(self, messages, context=None, custom_inputs=None) -&gt; ChatAgentResponse:
+        request = {"messages": self._convert(messages)}
+        result = self.agent.invoke(request)
+        final = result["messages"][-1]
+        return ChatAgentResponse(messages=[
+            ChatAgentMessage(role="assistant", content=final.content)
+        ])
+
+    def predict_stream(self, messages, context=None, custom_inputs=None) -&gt; Generator[ChatAgentChunk, None, None]:
+        request = {"messages": self._convert(messages)}
+        for chunk in self.agent.stream(request, stream_mode="messages"):
+            yield ChatAgentChunk(delta=ChatAgentMessage(role="assistant", content=chunk[0].content))
+
+    @staticmethod
+    def _convert(msgs):
+        return [{"role": m.role, "content": m.content} for m in msgs]
+
+AGENT = LangGraphChatAgent(multi_agent)</code></pre>
+      <p>After this, <code>AGENT.predict(messages=[...])</code> is the only thing Databricks calls. Your entire LangGraph multi-agent flow lives behind this one method.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>The <code>ChatAgent</code> wrapper is a <code>@RestController</code> adapter on a business <code>@Service</code>. The service does the work (your LangGraph). The controller exposes that work through the framework's expected interface (here, MLflow / Mosaic AI). Same logic, two skins. Nothing about <code>multi_agent</code> changes; you've just made it speak the platform's protocol.</p>
+      </div>
+
+      <h3>Why you can't skip it</h3>
+      <p>Without the wrapper, the LangGraph runs but Databricks-side features don't work:</p>
+      <ul>
+        <li><b>MLflow autolog</b> can't trace it correctly (no <code>ChatAgent</code> schema to attach to)</li>
+        <li><b>Agent Bricks evaluation</b> can't score it (the scorer expects <code>ChatAgentResponse</code>)</li>
+        <li><b>Mosaic AI Agent Framework deployment</b> can't serve it (the serving endpoint expects the <code>predict</code> signature)</li>
+        <li><b>Multi-turn conversation tracking</b> breaks (the platform doesn't know how to thread messages)</li>
+      </ul>
+      <p>You get all four of those by adding twenty lines of wrapper code, so there is no reason not to.</p>
+
+      <div class="failtell">
+        <div class="failtell-label">FAILURE TELL</div>
+        <p>When MLflow traces look empty or <code>mlflow.evaluate</code> errors with "no predictions logged," check that you logged the wrapped <code>AGENT</code>, not the raw <code>multi_agent</code>. The platform doesn't follow LangGraph internals; it only sees what <code>ChatAgent.predict()</code> returns.</p>
+      </div>
+
+      <div class="correction">
+        <strong>Transcript correction.</strong>
+        <p>The transcript places <code>ChatAgent</code> "by Databricks" — close enough verbally but technically wrong. <code>ChatAgent</code> lives in MLflow (<code>mlflow.pyfunc.ChatAgent</code>, with message types in <code>mlflow.types.agent</code>). Mosaic AI Agent Framework <em>recommends</em> it; Databricks did not author it. The MLflow OSS project owns the class.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">07 · FROM OUTSIDE DATABRICKS</div>
+      <h2>Connecting from outside the Databricks notebook — WorkspaceClient</h2>
+      <p>When you run this code inside a Databricks notebook, the workspace identity is implicit — no auth setup, the kernel runs as you. When you run it from your laptop (VS Code, plain Python), you need to tell the SDK who you are and where to connect.</p>
+<pre><code>from databricks.sdk import WorkspaceClient
+client = WorkspaceClient()                         # picks up env vars</code></pre>
+      <p><code>WorkspaceClient()</code> with no arguments reads from environment variables. The minimum:</p>
+<pre><code>DATABRICKS_HOST=https://&lt;workspace&gt;.cloud.databricks.com
+DATABRICKS_TOKEN=dapi...</code></pre>
+      <p>You get the token from <b>Settings → Developer → Access tokens → Generate new token</b> in your workspace. Treat it like a password — never commit it to git; load it from <code>.env</code> via <code>python-dotenv</code>, or from your platform's secret store.</p>
+      <p>For Genie specifically, two more variables are commonly used to point at the Genie REST endpoint:</p>
+<pre><code>DATABRICKS_GENIE_API_HOST=https://&lt;workspace&gt;.cloud.databricks.com
+DATABRICKS_GENIE_SPACE_ID=01ef...</code></pre>
+      <p>In a Databricks notebook you don't need any of this — the kernel has implicit auth. The lecturer's example is shown both ways: the notebook version skips the client, the VS Code version creates one. Treat the client as a <em>transport detail</em> — the agent code itself doesn't care.</p>
+    </section>
+
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">08 · AGENT BRICKS VS HAND-CODED</div>
+      <h2>Agent Bricks "Export agent" vs hand-coded LangGraph</h2>
+      <p>Inside the Databricks Playground you can build an agent visually: pick a model, pick tools (Unity Catalog functions, MCP servers, vector search, your custom functions), click <b>Get Code</b> → <b>Export agent notebook</b>, and Databricks generates a runnable notebook implementing your agent end-to-end, including evaluation and deployment.</p>
+      <p>That generated notebook is what Databricks calls <b>Agent Bricks</b> code. It's clean, opinionated, production-ready, and — the lecturer's point — <em>it does not use LangGraph</em>. Databricks' Agent Bricks generator emits its own orchestration code with MLflow <code>ChatAgent</code> at the top. It's great for a single-flow agent; it's limiting if you want LangGraph features the generator doesn't emit (subgraphs, human-in-the-loop, checkpointing, custom reducers).</p>
+
+      <table class="tbl">
+        <thead><tr><th>Use Agent Bricks "Export agent" when…</th><th>Hand-code LangGraph when…</th></tr></thead>
+        <tbody>
+          <tr><td>You want a quick scaffold to start from</td><td>You need LangGraph features (subgraphs, custom state, checkpointing, human-in-the-loop)</td></tr>
+          <tr><td>Your agent is one ReAct loop + tools</td><td>You have a real multi-agent topology with supervisor routing</td></tr>
+          <tr><td>You want maximum Databricks-native integration with zero code</td><td>You want the same code to run outside Databricks (portability)</td></tr>
+          <tr><td>You're learning the platform</td><td>You already have a LangGraph codebase and need to move it onto Databricks</td></tr>
+        </tbody>
+      </table>
+
+      <p>The bridge is the <code>ChatAgent</code> wrapper from §6. Whichever side you author on, both sides land at the same interface, and Databricks treats them identically.</p>
+    </section>
+
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">09 · CANONICAL ORDER</div>
+      <h2>Putting it all together — the canonical assembly order</h2>
+      <p>Eight steps, in the order the lecturer recommends:</p>
+      <ol>
+        <li><b>Create the Genie space</b> in the Databricks UI. Register the table, add the description, add 1–100 example (question → SQL) pairs. Copy the space ID.</li>
+        <li><b>Create the <code>GenieAgent</code></b> with that space ID. No LLM, no model — just the ID and a description.</li>
+        <li><b>Create the <code>ChatDatabricks</code> LLM endpoint</b> with the foundation model you want (<code>gpt-oss-120b</code>, Llama 3.1 70B, DBRX).</li>
+        <li><b>Build the <code>UCFunctionToolkit</code></b> with <code>["system.ai.*"]</code> or the specific functions you need. Extract <code>toolkit.tools</code>.</li>
+        <li><b>Create the Code agent</b> via <code>create_react_agent(model=llm, tools=tools)</code>. Give it a <code>name</code> and a <code>description</code>.</li>
+        <li><b>Add any custom worker</b> (e.g., a weather function) as a third agent. Wrap it in a small node function returning the state-update shape LangGraph expects.</li>
+        <li><b>Define the supervisor and the state</b>, wire the graph with <code>add_node</code> + <code>add_edge</code> + <code>add_conditional_edges</code>. Compile.</li>
+        <li><b>Wrap the compiled graph in <code>LangGraphChatAgent(ChatAgent)</code></b>. Log it with MLflow (<code>mlflow.pyfunc.log_model</code>) when you're ready to deploy.</li>
+      </ol>
+      <p>The first time you write this, steps 7 and 8 take most of the time. Every subsequent multi-agent build, steps 1–6 are the only ones that change.</p>
+    </section>
+
+    <figure class="infographic" id="svg">
+      <svg viewBox="0 0 1200 1500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Session 24 infographic: LangGraph wired into Databricks via Genie, UC tools, and MLflow ChatAgent.">
+        <rect width="1200" height="1500" fill="#f5efe6"/>
+        <text x="60" y="80" font-family="JetBrains Mono, monospace" font-size="14" letter-spacing="6" fill="#b8472e" font-weight="700">SESSION 24 · ONE-PAGE SUMMARY</text>
+        <text x="60" y="160" font-family="Fraunces, serif" font-style="italic" font-size="72" font-weight="700" fill="#1f1a14">Wiring LangGraph</text>
+        <text x="60" y="232" font-family="Fraunces, serif" font-style="italic" font-size="72" font-weight="700" fill="#b8472e">into Databricks</text>
+        <line x1="60" y1="270" x2="1140" y2="270" stroke="#1f1a14" stroke-width="2"/>
+
+        <text x="60" y="320" font-family="Spectral, serif" font-style="italic" font-size="22" fill="#4a4239">Genie + Unity Catalog tools become nodes in your LangGraph.</text>
+        <text x="60" y="350" font-family="Spectral, serif" font-style="italic" font-size="22" fill="#4a4239">A supervisor routes among them, capped at 3 hops.</text>
+        <text x="60" y="380" font-family="Spectral, serif" font-style="italic" font-size="22" fill="#4a4239">The whole graph hides behind one MLflow ChatAgent.predict().</text>
+
+        <!-- The 4-box stack: the four artefacts -->
+        <g transform="translate(60, 430)">
+          <rect width="510" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="20" y="35" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">01 · GENIE AGENT</text>
+          <text x="20" y="70" font-family="Fraunces, serif" font-style="italic" font-size="24" font-weight="700" fill="#1f1a14">Just a space ID. No LLM.</text>
+          <text x="20" y="105" font-family="Spectral, serif" font-size="15" fill="#4a4239">GenieAgent(genie_space_id="01ef…",</text>
+          <text x="20" y="125" font-family="Spectral, serif" font-size="15" fill="#4a4239">name="Genie",</text>
+          <text x="20" y="145" font-family="Spectral, serif" font-size="15" fill="#4a4239">description="Answers questions on NY taxi data")</text>
+          <text x="20" y="180" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">LLM lives inside Genie on Databricks side.</text>
+          <text x="20" y="200" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">You only hold a reference.</text>
+        </g>
+
+        <g transform="translate(630, 430)">
+          <rect width="510" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="20" y="35" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">02 · CODE AGENT</text>
+          <text x="20" y="70" font-family="Fraunces, serif" font-style="italic" font-size="24" font-weight="700" fill="#1f1a14">ReAct over UC tools.</text>
+          <text x="20" y="105" font-family="Spectral, serif" font-size="15" fill="#4a4239">llm = ChatDatabricks(endpoint=…)</text>
+          <text x="20" y="125" font-family="Spectral, serif" font-size="15" fill="#4a4239">tools = UCFunctionToolkit(["system.ai.*"]).tools</text>
+          <text x="20" y="145" font-family="Spectral, serif" font-size="15" fill="#4a4239">create_react_agent(model=llm, tools=tools)</text>
+          <text x="20" y="180" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">python_exec, ai_query, ai_classify,</text>
+          <text x="20" y="200" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">ai_extract, ai_summarize, vector_search…</text>
+        </g>
+
+        <g transform="translate(60, 680)">
+          <rect width="510" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="20" y="35" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">03 · SUPERVISOR</text>
+          <text x="20" y="70" font-family="Fraunces, serif" font-style="italic" font-size="24" font-weight="700" fill="#1f1a14">LangGraph node, multi-route.</text>
+          <text x="20" y="105" font-family="Spectral, serif" font-size="15" fill="#4a4239">workflow.add_conditional_edges(</text>
+          <text x="20" y="125" font-family="Spectral, serif" font-size="15" fill="#4a4239">  "supervisor", route_fn,</text>
+          <text x="20" y="145" font-family="Spectral, serif" font-size="15" fill="#4a4239">  {**workers, "FINISH": "final_answer"})</text>
+          <text x="20" y="180" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">.with_structured_output(Route) +</text>
+          <text x="20" y="200" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">iteration_count ≥ 3 → FINISH safety cap.</text>
+        </g>
+
+        <g transform="translate(630, 680)">
+          <rect width="510" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="20" y="35" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">04 · CHATAGENT WRAPPER</text>
+          <text x="20" y="70" font-family="Fraunces, serif" font-style="italic" font-size="24" font-weight="700" fill="#1f1a14">From MLflow, not Databricks.</text>
+          <text x="20" y="105" font-family="Spectral, serif" font-size="15" fill="#4a4239">class LangGraphChatAgent(ChatAgent):</text>
+          <text x="20" y="125" font-family="Spectral, serif" font-size="15" fill="#4a4239">    def predict(self, messages, …):</text>
+          <text x="20" y="145" font-family="Spectral, serif" font-size="15" fill="#4a4239">        return ChatAgentResponse(…)</text>
+          <text x="20" y="180" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">Twenty lines of glue. Unlocks autolog, eval,</text>
+          <text x="20" y="200" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">Mosaic AI deployment, multi-turn tracking.</text>
+        </g>
+
+        <!-- Pipeline strip -->
+        <line x1="60" y1="950" x2="1140" y2="950" stroke="#1f1a14" stroke-width="1"/>
+        <text x="60" y="990" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="3" fill="#b8472e" font-weight="700">THE EIGHT-STEP CANONICAL ORDER</text>
+
+        <g font-family="Spectral, serif" font-size="14" fill="#4a4239">
+          <text x="60" y="1030"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">01</tspan>  Create Genie space; copy ID</text>
+          <text x="60" y="1055"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">02</tspan>  GenieAgent(space_id=…)  (no model)</text>
+          <text x="60" y="1080"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">03</tspan>  ChatDatabricks(endpoint=…)</text>
+          <text x="60" y="1105"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">04</tspan>  UCFunctionToolkit(["system.ai.*"])</text>
+          <text x="620" y="1030"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">05</tspan>  create_react_agent(llm, tools)</text>
+          <text x="620" y="1055"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">06</tspan>  Optional: custom worker functions</text>
+          <text x="620" y="1080"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">07</tspan>  Supervisor + StateGraph + compile</text>
+          <text x="620" y="1105"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">08</tspan>  Wrap in LangGraphChatAgent(ChatAgent)</text>
+        </g>
+
+        <!-- Corrections strip -->
+        <line x1="60" y1="1150" x2="1140" y2="1150" stroke="#1f1a14" stroke-width="1"/>
+        <text x="60" y="1190" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="3" fill="#b8472e" font-weight="700">CORRECTIONS VS THE TRANSCRIPT</text>
+
+        <g font-family="Spectral, serif" font-size="13" fill="#4a4239">
+          <text x="60" y="1230"><tspan fill="#b8472e" font-weight="700">·</tspan>  "Mujaik AI" → <tspan fill="#1f1a14" font-weight="700">Mosaic AI</tspan>  (AssemblyAI mishearing)</text>
+          <text x="60" y="1255"><tspan fill="#b8472e" font-weight="700">·</tspan>  "chart Databricks" / "chart Agent" → <tspan fill="#1f1a14" font-weight="700">ChatDatabricks / ChatAgent</tspan></text>
+          <text x="60" y="1280"><tspan fill="#b8472e" font-weight="700">·</tspan>  "databricks Lang 2 Chain" → <tspan fill="#1f1a14" font-weight="700">databricks-langchain</tspan>  (PyPI)</text>
+          <text x="60" y="1305"><tspan fill="#b8472e" font-weight="700">·</tspan>  "GPT-OS 120 billion" → <tspan fill="#1f1a14" font-weight="700">gpt-oss-120b</tspan>  (OpenAI, Aug 2025)</text>
+          <text x="620" y="1230"><tspan fill="#b8472e" font-weight="700">·</tspan>  "ChatAgent by Databricks" → <tspan fill="#1f1a14" font-weight="700">by MLflow</tspan></text>
+          <text x="620" y="1255"><tspan fill="#b8472e" font-weight="700">·</tspan>  "supervisor by Databricks" → <tspan fill="#1f1a14" font-weight="700">LangGraph pattern</tspan></text>
+          <text x="620" y="1280"><tspan fill="#b8472e" font-weight="700">·</tspan>  "3 iterations is the limit" → <tspan fill="#1f1a14" font-weight="700">lecturer's chosen cap</tspan></text>
+          <text x="620" y="1305"><tspan fill="#b8472e" font-weight="700">·</tspan>  "100% MLflow, not LangFuse" → <tspan fill="#1f1a14" font-weight="700">both work</tspan></text>
+        </g>
+
+        <!-- Footer -->
+        <line x1="60" y1="1380" x2="1140" y2="1380" stroke="#1f1a14" stroke-width="2"/>
+        <text x="60" y="1420" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" fill="#8b7d65">SASMITA COURSE · SESSION 24 · 2026-05-20 · REV V1</text>
+        <text x="60" y="1442" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" fill="#8b7d65">PREVIOUS · S23 DATABRICKS INTRO</text>
+        <text x="60" y="1464" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" fill="#8b7d65">NEXT · S25 NEW YORK TAXI + CUSTOMER-SALES MULTI-AGENT BUILD</text>
+      </svg>
+      <figcaption>SESSION 24 INFOGRAPHIC · STANDALONE FILE AT <code>Session24-infographic.svg</code></figcaption>
+    </figure>
+
+    <section class="chapter" id="selfcheck">
+      <div class="chapter-marker">10 · SELF-CHECK</div>
+      <h2>Self-check</h2>
+      <div class="selfcheck">
+        <div class="selfcheck-label">SELF-CHECK · TAKE ~5 MIN</div>
+        <ol>
+          <li>What's the practical difference between <code>GenieAgent</code> and <code>create_react_agent</code> — and why does only one of them take a <code>model=</code> parameter?</li>
+          <li>In the supervisor pattern, what would happen if you removed the <code>iteration_count</code> check? Describe a concrete failure mode and how you'd notice it.</li>
+          <li>The <code>ChatAgent</code> wrapper exposes a <code>predict()</code> method. Name two Databricks-side features that stop working if you log the raw LangGraph instead of the wrapped agent.</li>
+          <li>You point your Genie space at a table that has columns but <em>no column descriptions in Unity Catalog</em>. What goes wrong, and where do you fix it — the prompt, the Genie space <em>Instructions</em>, or the catalog metadata?</li>
+          <li>When does <code>UCFunctionToolkit(function_names=["system.ai.*"])</code> <em>not</em> include the function you wrote? Hint: think about catalog namespacing.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="glossary" id="glossary">
+      <h2>Glossary</h2>
+      <dl>
+        <dt>Agent Bricks</dt>
+        <dd>Databricks' governed agent-platform layer; provides Unity Catalog access control, MLflow CLEARS-style evaluation, supervisor-agent orchestration helpers, and one-step deployment. Not a LangGraph replacement; sits above the authoring framework.</dd>
+
+        <dt>ChatAgent</dt>
+        <dd>Abstract class in <code>mlflow.pyfunc</code> that defines the interface (<code>predict</code>, <code>predict_stream</code>) Databricks expects from any conversational agent. The recommended deployment wrapper.</dd>
+
+        <dt>ChatDatabricks</dt>
+        <dd>Chat-model class in <code>databricks-langchain</code> that wraps a Databricks foundation-model endpoint behind LangChain's chat-model interface.</dd>
+
+        <dt>create_react_agent</dt>
+        <dd>LangGraph prebuilt (<code>langgraph.prebuilt.create_react_agent</code>) that constructs a ReAct-pattern agent: LLM node + tool node + loop until the LLM returns no tool call.</dd>
+
+        <dt>GenieAgent</dt>
+        <dd>Class in <code>databricks-langchain</code> that wraps a Genie Space as a LangGraph-callable agent. Holds the space ID; contains no LLM of its own.</dd>
+
+        <dt>Genie space</dt>
+        <dd>A configured bundle of Unity Catalog tables + descriptions + example (NL → SQL) pairs that becomes a text-to-SQL agent on Databricks.</dd>
+
+        <dt>gpt-oss-120b</dt>
+        <dd>OpenAI's open-weight 120B-parameter model (Apache 2.0, August 2025). Available as a foundation-model endpoint in Databricks.</dd>
+
+        <dt>Mosaic AI Agent Framework</dt>
+        <dd>Databricks' framework for building, evaluating, and deploying production AI agents. Recommends <code>mlflow.pyfunc.ChatAgent</code> as the agent interface.</dd>
+
+        <dt>MLflow</dt>
+        <dd>Open-source ML lifecycle platform (LF AI Foundation). Bundled into Databricks. Provides experiment tracking, model registry, deployment, evaluation, and the <code>ChatAgent</code> agent interface.</dd>
+
+        <dt>ReAct pattern</dt>
+        <dd>Agent design where the LLM alternates between reasoning steps and tool calls until it produces a final answer. Canonical loop: LLM → tool node → LLM → tool node → … → final answer.</dd>
+
+        <dt>Supervisor agent</dt>
+        <dd>A routing agent that, on each step, picks which worker agent should run next. Implemented here as a LangGraph node with a structured-output LLM picking from <code>Literal[worker_name, …, "FINISH"]</code>.</dd>
+
+        <dt>Structured output</dt>
+        <dd><code>.with_structured_output(Schema)</code> on a LangChain chat model — forces the LLM to return an object conforming to the Pydantic schema instead of free text.</dd>
+
+        <dt>Unity Catalog</dt>
+        <dd>Databricks' unified governance layer for data and AI assets. Three-level namespacing: <code>catalog.schema.object</code>. Stores tables, volumes, models, and functions (including <code>system.ai.*</code>).</dd>
+
+        <dt>UCFunctionToolkit</dt>
+        <dd>Class in <code>databricks-langchain</code> that turns a list of Unity Catalog function names (or a <code>*</code> wildcard) into a list of LangChain <code>Tool</code> objects an LLM agent can call.</dd>
+
+        <dt>WorkspaceClient</dt>
+        <dd>Entry-point class in <code>databricks-sdk</code> for talking to a Databricks workspace from outside (e.g., from VS Code). Reads <code>DATABRICKS_HOST</code> and <code>DATABRICKS_TOKEN</code> from the environment.</dd>
+      </dl>
+    </section>
+
+    <div class="sources">
+      <p><b>Sources</b> · all retrieved 2026-05-20</p>
+      <p>Databricks docs — <em>Mosaic AI Agent Framework</em>; <em>Use the Genie Spaces API</em>; <em>Unity Catalog AI functions</em> (<code>ai_query</code>, <code>ai_classify</code>, <code>ai_extract</code>, <code>ai_summarize</code>, <code>ai_translate</code>, <code>ai_gen</code>, <code>vector_search</code>, <code>python_exec</code>).</p>
+      <p>MLflow docs — <em>ChatAgent reference</em>; <code>mlflow.pyfunc.ChatAgent</code> class.</p>
+      <p>PyPI — <code>databricks-langchain</code>; <code>databricks-agents</code>; <code>databricks-sdk</code>.</p>
+      <p>LangGraph docs — <em>create_react_agent</em>; <em>multi-agent supervisor</em> tutorial.</p>
+      <p>OpenAI — <em>Introducing gpt-oss</em> (August 2025).</p>
+      <p>Databricks blog — <em>Supervisor Agent Architecture: Orchestrating Enterprise AI at Scale</em>.</p>
+    </div>
+
+    <section id="changelog">
+      <h2>Changelog vs source</h2>
+      <p>v1, 2026-05-20. Substantive deviations from the raw transcript (<code>Session24-2026-05-20.md</code>), with sources. The transcript is an AssemblyAI <code>universal-3-pro</code> diarized single-speaker recording; many entries below are AssemblyAI mishearings of specific technical terms (<em>"Mosaic" → "Mujaik"</em>, <em>"chat" → "chart"</em>).</p>
+      <table>
+        <thead><tr><th>#</th><th>Location</th><th>Lecturer's framing</th><th>Revised</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>§1, throughout</td><td>"Mujaik AI"</td><td><b>Mosaic AI</b> — Databricks acquired MosaicML in July 2023; the tutorial is the Mosaic AI Agent Framework.</td><td>Databricks acquisition (Jul 2023); Mosaic AI Agent Framework docs.</td></tr>
+          <tr><td>2</td><td>§2 / §4 / throughout</td><td>"chart Databricks", "chart Agent", "chart agent state"</td><td><code>ChatDatabricks</code>, <code>ChatAgent</code>, <code>ChatAgentState</code> — chat, not chart (AssemblyAI mishearing).</td><td><code>databricks-langchain</code> source; <code>mlflow.pyfunc.ChatAgent</code>.</td></tr>
+          <tr><td>3</td><td>§2 install list</td><td>"databricks Lang 2 Chain"</td><td><code>databricks-langchain</code> — single hyphenated PyPI package.</td><td>PyPI: <code>pypi.org/project/databricks-langchain/</code>.</td></tr>
+          <tr><td>4</td><td>§3, §4 system.ai</td><td>"System AI has all the built-in tools, like python.exe execution"</td><td><code>system.ai</code> is the Unity Catalog schema; functions: <code>python_exec</code>, <code>ai_query</code>, <code>ai_classify</code>, <code>ai_extract</code>, <code>ai_summarize</code>, <code>ai_translate</code>, <code>ai_gen</code>, <code>vector_search</code>.</td><td>Databricks docs — Unity Catalog AI functions.</td></tr>
+          <tr><td>5</td><td>§5 iteration cap</td><td>"3 times maximum iterations… otherwise it falls in infinite loop"</td><td>3 is the lecturer's chosen cap (Python literal in user code), not a Databricks constraint.</td><td>Inspection of tutorial code.</td></tr>
+          <tr><td>6</td><td>§6 ChatAgent attribution</td><td>"ChatAgent is by Databricks"</td><td><code>ChatAgent</code> is from <b>MLflow</b> (<code>mlflow.pyfunc.ChatAgent</code>); Databricks recommends it but did not author it.</td><td>MLflow source on GitHub.</td></tr>
+          <tr><td>7</td><td>§5 supervisor origin</td><td>"Supervisor is built-in, coming from Databricks"</td><td>The pattern is documented by both; the code is a <b>LangGraph implementation</b>. No magic <code>SupervisorAgent</code> class.</td><td>LangGraph multi-agent supervisor tutorial; Databricks blog.</td></tr>
+          <tr><td>8</td><td>§3 SDK reference</td><td>"GPT-OS 120 billion"</td><td><code>gpt-oss-120b</code> — OpenAI's open-weight 120B model (Apache 2.0, August 2025).</td><td>OpenAI <em>Introducing gpt-oss</em> (Aug 2025).</td></tr>
+          <tr><td>9</td><td>§6 observability</td><td>"100% MLflow only, not LangFuse"</td><td>Both work; MLflow is bundled on Databricks but LangFuse is widely used. The absolute framing overstates Databricks' position.</td><td>Databricks MLflow docs; LangFuse production references.</td></tr>
+          <tr><td>10</td><td>§8 Get-Code feature</td><td>"Genie Code only will create this whole code for you"</td><td>Most plausibly: Databricks Assistant or the Playground's <em>Export agent notebook</em> button. "Genie Code" is not a Databricks product.</td><td>Databricks Assistant docs; Playground <em>Export agent</em>.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Additions (filling gaps in the transcript)</h3>
+      <ul>
+        <li><b>§3</b> — Explicit table of <code>system.ai</code> functions; the transcript only named two.</li>
+        <li><b>§5</b> — Runnable LangGraph supervisor implementation with structured-output schema and conditional-edge routing.</li>
+        <li><b>§6</b> — Full <code>LangGraphChatAgent(ChatAgent)</code> wrapper class with <code>predict</code> and <code>predict_stream</code>.</li>
+        <li><b>§7</b> — Four-variable env file recipe (<code>DATABRICKS_HOST</code>, <code>DATABRICKS_TOKEN</code>, <code>DATABRICKS_GENIE_API_HOST</code>, <code>DATABRICKS_GENIE_SPACE_ID</code>).</li>
+        <li><b>§8</b> — Agent Bricks "Export agent" vs hand-coded LangGraph decision table.</li>
+        <li><b>§9</b> — Eight-step canonical assembly order.</li>
+        <li><b>§5</b> — Inline SVG of supervisor topology with iteration-cap badge.</li>
+      </ul>
+
+      <h3>Changes considered but not made</h3>
+      <ul>
+        <li>Full New York Taxi build — deferred to Session 25 per the lecturer.</li>
+        <li>Genie Conversation API REST endpoints — covered in Session 23 already.</li>
+        <li><code>mlflow.evaluate</code> for agent evaluation — flagged for "later" in the course.</li>
+        <li>MCP servers as Databricks tools — covered in the dedicated <code>MCP/</code> folder.</li>
+        <li>Databricks Assistant in-notebook code-gen — out of scope; mentioned but not demoed.</li>
+        <li><code>databricks-agents</code> evaluation framework (CLEARS) — Session 23 README forward-references it.</li>
+      </ul>
+
+      <h3>Stopping condition</h3>
+      <p>Met 2026-05-20. All three trio artifacts exist in <code>Session24-LangGraph-MosaicAI/</code>: notes.md, notes.html, infographic.svg. The raw transcript stays as input. No source images → media audit vacuous. HTML has no inline <code>&lt;script&gt;</code> blocks → script check N/A. SVG XML-parses cleanly. Cross-references resolve to prior session and forward-reference Session 25. v1.</p>
+
+      <h3>Retouch — v1 → trio shape (2026-05-20, late session)</h3>
+      <p>Same content, restructured to match the unified style: standalone <code>Session24-changelog.md</code> folded into this section; <code>README.md</code> dropped (metadata moved to the .md opener); folder renamed <code>Session24/</code> → <code>Session24-LangGraph-MosaicAI/</code> with files re-prefixed; HTML already in the locked vintage-paper palette so no re-render needed.</p>
+    </section>
+
+    <footer>
+      <div>SASMITA COURSE · SESSION 24 · 2026-05-20 · REV V1</div>
+      <div>NEXT · SESSION 25 — TAXI + CUSTOMER-SALES MULTI-AGENT</div>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

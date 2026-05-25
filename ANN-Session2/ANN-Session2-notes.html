@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANN-Session 2 — How a neural network actually learns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 22px; color: var(--ink); margin-bottom: 28px; line-height: 1.15; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 12px; font-family: 'Spectral', serif; font-size: 13px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+
+main { padding: 80px 80px 120px; max-width: 880px; }
+
+.hero { margin-bottom: 60px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(44px, 6.6vw, 76px); line-height: 0.98; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 620px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 560px; flex-wrap: wrap; }
+
+.where { background: rgba(42, 93, 98, 0.06); border-left: 4px solid var(--teal); padding: 20px 26px; margin: 0 0 56px; font-size: 16px; color: var(--ink-soft); }
+.where-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--teal); font-weight: 700; margin-bottom: 8px; }
+.where p { margin-bottom: 10px; }
+.where p:last-child { margin-bottom: 0; }
+.where strong { color: var(--ink); }
+
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 36px 0 36px 30px; border-left: 4px solid var(--terracotta); margin: 30px 0 72px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -28px; font-size: 92px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+
+section.chapter { margin-bottom: 88px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.05; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 14px 0 22px 32px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter ul li, .chapter ol li { margin-bottom: 8px; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.55; border-radius: 3px; }
+pre code { background: transparent; border: none; color: inherit; padding: 0; }
+
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 15px; }
+table th, table td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+table th { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--terracotta); font-weight: 700; text-transform: uppercase; border-bottom: 2px solid var(--ink); }
+table tbody tr:hover { background: rgba(248, 230, 207, 0.25); }
+table code { font-size: 0.9em; }
+
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15px; color: var(--ink); line-height: 1.6; }
+.correction strong { color: var(--terracotta); }
+.correction p { color: var(--ink); font-size: 15px; margin-bottom: 10px; line-height: 1.6; }
+.correction p:last-child { margin-bottom: 0; }
+.correction table { font-size: 13px; margin: 14px 0 6px; }
+.correction table th { font-size: 10px; color: var(--terracotta); }
+
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 28px; margin: 32px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--ochre); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 16px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 20px 24px; margin: 26px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+
+figure.reference { margin: 32px -16px; padding: 0; }
+figure.reference img { width: 100%; height: auto; display: block; border: 1px solid var(--line); background: var(--paper); box-shadow: 0 8px 24px rgba(31, 26, 20, 0.08); }
+figure.reference figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); margin-top: 12px; padding: 0 16px; line-height: 1.55; }
+
+figure.diagram { margin: 32px 0; padding: 0; }
+figure.diagram svg { width: 100%; height: auto; display: block; background: var(--paper); border: 1px solid var(--line); }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); margin-top: 10px; line-height: 1.55; }
+
+figure.infographic { margin: 40px -40px 40px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg { width: 100%; height: auto; display: block; }
+figure.infographic figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); padding: 16px 32px; background: var(--paper-2); border-top: 1px solid var(--line); }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+
+.equation { background: var(--ink); color: var(--paper); padding: 22px 30px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 17px; margin: 28px 0; letter-spacing: 0.5px; line-height: 1.6; }
+.equation .l1 { color: var(--teal-light); }
+.equation .l2 { color: var(--ochre); }
+.equation .l3 { color: var(--terracotta-light); }
+
+.glossary { margin-top: 72px; padding-top: 44px; border-top: 2px solid var(--ink); }
+.glossary h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 32px; margin-bottom: 24px; }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 16px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+
+footer { margin-top: 90px; padding-top: 30px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 44px; }
+  .thesis { font-size: 22px; padding-left: 20px; }
+  .chapter h2 { font-size: 30px; }
+  figure.reference { margin: 24px 0; }
+}
+
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">ANN · SESSION 02</div>
+    <div class="toc-title">How a neural network actually learns</div>
+    <ol>
+      <li><a href="#s1">Quick recap</a></li>
+      <li><a href="#s2">Why activation functions</a></li>
+      <li><a href="#s3">Hidden layers</a></li>
+      <li><a href="#s4">The training loop</a></li>
+      <li><a href="#s5">Gradient descent</a></li>
+      <li><a href="#s6">Deriving the update rule</a></li>
+      <li><a href="#s7">Epoch, batch, iteration</a></li>
+      <li><a href="#s8">Momentum</a></li>
+      <li><a href="#s9">Vanishing gradient</a></li>
+      <li><a href="#svg">Visual summary</a></li>
+      <li><a href="#s10">From here to LLMs</a></li>
+      <li><a href="#s11">Career aside</a></li>
+      <li><a href="#s12">Interview cheat-sheet</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+      <li><a href="#next">For Session 3</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      155 MIN<br>
+      2 SPEAKERS<br>
+      2026-05-18
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">ANN · SESSION 02 · STUDY NOTES</div>
+      <h1>How a neural network<span class="accent">actually learns</span></h1>
+      <p class="hero-sub">Activation functions, hidden layers, gradient descent — the procedure that turns "find good values of W and b" from a slogan into an algorithm.</p>
+      <div class="hero-meta">
+        <span>PERCEPTRON → MLP</span>
+        <span>FORWARD + BACKPROP</span>
+        <span>GRADIENT DESCENT</span>
+      </div>
+    </header>
+
+    <div class="where">
+      <div class="where-label">WHERE WE ARE</div>
+      <p>Session 1 (ANN intro) covered the <strong>perceptron</strong>: one neuron, weights and a bias, a linear output <code>ŷ = Σwᵢxᵢ + b</code>. We knew the equation but had no idea where the weights came from.</p>
+      <p>Today fills that gap. We add the missing pieces — activation functions, hidden layers, a loss function, and the algorithm that actually adjusts the weights (gradient descent). By the end, the lecturer's claim that <strong>"training a model means finding good values of W and b"</strong> stops being a slogan and starts being a procedure you could write yourself.</p>
+      <p><em>Next session</em> (Session 3, coding): end-to-end TensorFlow — pick a dataset, declare a network, fit, predict.</p>
+    </div>
+
+    <div class="thesis">
+      A neural network learns by <em>guessing weights, scoring how wrong it is,</em> and using calculus to <em>nudge each weight in the direction that reduces error</em> — repeated thousands of times. Everything else — activation functions, hidden layers, learning rates, dropout — is <em>machinery wrapped around that one loop.</em>
+    </div>
+
+    <!-- ============ §01 ============ -->
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">§ 01 — STARTING POINT</div>
+      <h2>Quick recap (60 seconds)</h2>
+      <ul>
+        <li><strong>AI ⊃ ML ⊃ DL ⊃ Generative AI ⊃ LLMs.</strong> Each is a strict subset of the next.</li>
+        <li><strong>Supervised</strong> problems give the model both X (inputs) and Y (correct answer). The model's job is to learn the pattern linking X to Y. Once locked in, new X → predicted Y.</li>
+        <li>Supervised splits by the type of Y: <strong>regression</strong> (Y is a number) vs <strong>classification</strong> (Y is a class).</li>
+        <li><strong>Perceptron</strong> = a single neuron. Takes inputs x₁, x₂, …, xₙ, multiplies each by a learned weight, adds a learned bias: <code>ŷ = Σᵢ wᵢxᵢ + b</code>. That equation can only produce a number. So as it stands, a perceptron is a regressor only.</li>
+      </ul>
+
+      <figure class="reference">
+        <img src="handout-perceptron.jpg" alt="Handout: biological neuron diagram (dendrites, axon, cell body) on top, perceptron schematic below with inputs x₁..xₘ, weights w₁..wₘ, and a single output neuron computing f(x).">
+        <figcaption>The handout's mapping: dendrites → input wires, cell body → the linear combination + activation, axon → the output.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============ §02 ============ -->
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">§ 02 — NON-LINEARITY</div>
+      <h2>Why we need activation functions</h2>
+
+      <p>The perceptron equation <code>ŷ = Σwᵢxᵢ + b</code> is a <strong>linear function</strong> of its inputs. It can only ever produce a number, and that number can be any real value. Two problems with that:</p>
+
+      <ol>
+        <li><strong>Classification needs a class, not a number.</strong> If the answer is "spam / not spam," a raw number like <code>2003.4</code> is not useful.</li>
+        <li><strong>Stacking linear functions gains nothing.</strong> Algebraically, <code>A·(B·x + c) + d = (AB)·x + (Ac + d)</code> — one linear transform with different constants. Without a non-linearity between layers, a 100-layer network is mathematically identical to a single layer.</li>
+      </ol>
+
+      <p>The fix is to wrap the linear output in a <strong>non-linear function</strong> called the <strong>activation function</strong>:</p>
+
+      <div class="equation">
+        <div><span class="l1">z = Σ wᵢxᵢ + b</span>   ← linear part</div>
+        <div><span class="l3">ŷ = φ(z)</span>          ← φ adds the non-linearity</div>
+      </div>
+
+      <p>The activation function <code>φ</code> is <em>chosen</em>, not learned — you pick it as part of designing the network.</p>
+
+      <h3>The activation menu</h3>
+
+      <table>
+        <thead><tr><th>Function</th><th>Formula</th><th>Output range</th><th>Where it's used</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Step / Heaviside</strong></td><td><code>φ(z) = 1 if z ≥ 0 else 0</code></td><td>{0, 1}</td><td>Historical only — see correction below</td></tr>
+          <tr><td><strong>Sigmoid</strong></td><td><code>1 / (1 + e⁻ᶻ)</code></td><td>(0, 1)</td><td><strong>Binary classification output</strong> layer</td></tr>
+          <tr><td><strong>Tanh</strong></td><td><code>(eᶻ − e⁻ᶻ)/(eᶻ + e⁻ᶻ)</code></td><td>(−1, 1)</td><td>Hidden layers in older networks (RNNs)</td></tr>
+          <tr><td><strong>ReLU</strong></td><td><code>max(0, z)</code></td><td>[0, ∞)</td><td><strong>Default hidden-layer activation</strong> in modern networks</td></tr>
+          <tr><td><strong>Leaky ReLU</strong></td><td><code>max(0.01z, z)</code></td><td>(−∞, ∞)</td><td>When ReLU "dies" (always-zero neurons)</td></tr>
+          <tr><td><strong>Parametric ReLU</strong></td><td><code>max(α·z, z)</code>, α learned</td><td>(−∞, ∞)</td><td>Same use as Leaky ReLU, α tuned by network</td></tr>
+          <tr><td><strong>Softmax</strong> <em>(added — not covered in lecture)</em></td><td><code>eᶻⁱ / Σⱼeᶻʲ</code></td><td>each (0,1), sums to 1</td><td><strong>Multi-class classification output</strong> layer</td></tr>
+        </tbody>
+      </table>
+
+      <figure class="reference">
+        <img src="handout-activation-step-sigmoid.jpg" alt="Handout: step function plot (0 below, 1 above the threshold) and sigmoid S-curve (output between 0 and 1).">
+        <figcaption>From the handout. Step jumps from 0 to 1 at the threshold; sigmoid smooths that jump into an S-curve.</figcaption>
+      </figure>
+
+      <div class="correction">
+        <strong>Correction — the step function isn't "outdated," it's untrainable.</strong>
+        <p>The lecturer called the step function "old" and moved on. The real reason no modern network uses it: its <strong>derivative is zero almost everywhere</strong> (and undefined at <code>z=0</code>). Gradient descent — the algorithm we're about to learn — works by following the derivative. A function whose derivative is zero everywhere gives gradient descent no signal: every weight update is multiplied by 0, no learning happens. ReLU has the same problem at exactly <code>z=0</code>, but the slope is 1 everywhere on the positive side, so signal flows freely.</p>
+      </div>
+
+      <div class="correction">
+        <strong>Correction — sigmoid output is strictly between 0 and 1, never <em>equal</em> to them.</strong>
+        <p>The lecturer said "you may get 0 or 1." Mathematically, <code>1/(1+e⁻ᶻ)</code> approaches 0 as z → −∞ and approaches 1 as z → +∞ but never reaches either. Open interval (0, 1). The lecturer also flagged that the sigmoid plot in her slide was drawn wrong with negative values — she's right; sigmoid is always positive.</p>
+      </div>
+
+      <div class="correction">
+        <strong>Correction — "ReLU is for regression, sigmoid is for classification" mixes up two different roles.</strong>
+        <p>ReLU is a <strong>hidden-layer</strong> activation; it introduces non-linearity inside the network regardless of what task you're solving. The activation on the <strong>output layer</strong> is what's task-specific. A standard image-classifier uses ReLU in every hidden layer <em>and</em> softmax on the output. The clean mental model:</p>
+        <table>
+          <thead><tr><th>Layer</th><th>Regression</th><th>Binary class.</th><th>Multi-class</th></tr></thead>
+          <tbody>
+            <tr><td>Hidden</td><td>ReLU</td><td>ReLU</td><td>ReLU</td></tr>
+            <tr><td>Output</td><td>none (identity)</td><td>sigmoid</td><td>softmax</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="correction">
+        <strong>Correction — multi-class is softmax, not "bucketed sigmoid."</strong>
+        <p>The lecturer suggested slicing sigmoid's (0,1) output into thresholds — 0–0.3 → class A, 0.3–0.6 → class B, 0.6–1.0 → class C — as a multi-class scheme. This is not how anyone does it. The standard approach is a <strong>softmax output layer with one neuron per class</strong>: each neuron outputs the probability that the input belongs to that class, and the probabilities sum to 1. Take <code>argmax</code> (the index of the largest) to pick the predicted class. Bucketed sigmoid is not used in practice.</p>
+      </div>
+
+      <h3>Why ReLU dominates modern networks</h3>
+
+      <p>ReLU is dead simple — <code>max(0, z)</code> — and that's its strength.</p>
+      <ul>
+        <li><strong>Cheap to compute.</strong> No exponentials, no division. Modern networks compute ReLU billions of times per training step; cheap arithmetic compounds.</li>
+        <li><strong>No vanishing gradient on the positive side.</strong> Sigmoid and tanh saturate — for large <code>|z|</code>, their derivatives are essentially zero, which kills gradient flow through deep stacks (see §09). ReLU's derivative on the positive side is exactly 1, so gradients pass through unattenuated.</li>
+        <li><strong>Sparsity.</strong> Roughly half the neurons in a ReLU layer output 0 on any given input. Sparse activations are easier to interpret and faster to compute downstream.</li>
+      </ul>
+      <p>The trade-off: ReLU outputs 0 for all negative inputs. If a neuron's weights drift to a region where its input is always negative, that neuron is permanently dead — outputs 0 forever, gradient is 0, never recovers. Leaky ReLU and PReLU keep a tiny slope on the negative side specifically to avoid that.</p>
+    </section>
+
+    <!-- ============ §03 ============ -->
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">§ 03 — REPRESENTATION</div>
+      <h2>Hidden layers: where the actual learning lives</h2>
+
+      <p>A perceptron has only two layers: input and output. Every input column connects directly to the output, and every column carries equal weight in the calculation. That's a problem.</p>
+
+      <h3>Real datasets are mostly noise</h3>
+
+      <p>The lecturer used a house-price example with three input columns:</p>
+      <ul>
+        <li><code>square_feet</code> — strongly predictive (bigger house → higher price)</li>
+        <li><code>city_distance</code> — strongly predictive, inversely (further from city → lower price)</li>
+        <li><code>number_of_doors</code> — basically noise (a 50-door house isn't worth 16× a 3-door house)</li>
+      </ul>
+      <p>A perceptron has no way to structurally <em>down-weight</em> <code>number_of_doors</code>. It just multiplies it by some learned weight and adds it in. If that column is genuinely noise, the best it can do is learn a weight near zero — but it can't ignore the column.</p>
+
+      <h3>What hidden layers buy you</h3>
+
+      <p>A <strong>hidden layer</strong> is one or more rows of neurons sitting between input and output. Each hidden neuron is a tiny perceptron: it sees all the inputs from the previous layer, computes its own weighted sum, applies its own activation, and passes the result forward. Every input connects to every hidden neuron (that's why it's called <strong>fully connected</strong> or <strong>dense</strong>). Every hidden neuron connects to every output neuron.</p>
+
+      <p><strong>What this actually does:</strong> each hidden neuron learns to combine the raw inputs into a more useful <em>intermediate feature</em>. One neuron might end up combining <code>square_feet</code> and <code>city_distance</code> into a "value-per-km" signal; another might do something we'd never think of. The output layer then reads these learned features instead of the raw inputs.</p>
+
+      <p>This is called <strong>representation learning</strong> — the network discovers its own internal vocabulary for describing the data, and that vocabulary is what makes deep networks powerful. It's also what the <strong>Universal Approximation Theorem</strong> (Cybenko 1989) is about: a sufficiently wide single-hidden-layer network can approximate any continuous function. Hidden layers aren't a nice-to-have; they're what separates a neural network from linear regression.</p>
+
+      <div class="correction">
+        <strong>Correction — hidden layers help with much more than feature selection.</strong>
+        <p>The lecturer framed hidden layers as enabling "feature selection via dropout." That's a partial truth. Hidden layers are essential <strong>even without dropout</strong> — they provide the non-linearity that lets the network model complex relationships (as the activation-function section above explained, stacking linear layers without non-linearity collapses to a single linear layer). Dropout is a separate technique, layered on top.</p>
+      </div>
+
+      <h3>How big? How deep?</h3>
+
+      <p>There's no formula. Two practical rules of thumb:</p>
+      <ol>
+        <li><strong>Hidden-layer size in the same ballpark as the input.</strong> If you have 3 input columns, 4–5 hidden neurons is a reasonable start. With 50 columns, try 50–60 in the hidden layer. Don't go from 50 columns to a 3-neuron hidden layer — that's a brutal bottleneck.</li>
+        <li><strong>Start with one hidden layer.</strong> Add a second only if performance plateaus. Each additional layer multiplies the parameter count (and training time, and memory) — there is no free depth.</li>
+      </ol>
+
+      <p>The <strong>cost-vs-accuracy trade-off</strong> is real:</p>
+      <ul>
+        <li>More layers / more neurons → more parameters → more training time, more memory, more compute cost.</li>
+        <li>More parameters → more capacity to fit training data, but also more capacity to <strong>overfit</strong> (memorise training, fail on new data).</li>
+        <li>The "best" architecture for your problem is found empirically. There is no analytical answer.</li>
+      </ul>
+
+      <h3>Counting parameters</h3>
+
+      <p><strong>Number of parameters = number of connections (one weight each) + number of non-input neurons (one bias each).</strong></p>
+
+      <p>Quick check from the lecturer's example: 3 inputs → 4 hidden → 1 output is <code>3×4 + 4×1 = 16</code> weights, plus <code>4 + 1 = 5</code> biases. Total <strong>21 parameters</strong>. The lecturer's "16 links → 32 parameters" framing counted each link as having both a weight and a bias, which is the older textbook convention — modern frameworks (TensorFlow, PyTorch) attach one bias per <em>neuron</em>, not one per <em>link</em>. Either way you arrive at the same model, just labelled differently.</p>
+
+      <p>Now scale this up. When you read that <strong>GPT-3 has 175 billion parameters</strong> or <strong>Llama 3 405B has 405 billion</strong> — those are weights and biases just like these. Same machinery; many more of them.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA/SPRING BRIDGE</div>
+        <p><strong>Weights are the cream of the model.</strong> If you have the trained W and b for a network, you have the model — you can load them and predict from any input. Same as having the compiled <code>.jar</code> plus its serialised state: you can rehydrate the running app from those two things. This is also why companies guard model weights so carefully (and why Meta's release of Llama weights was a big deal — they shipped the <code>.jar</code>).</p>
+      </div>
+
+      <h3>Dropout, properly</h3>
+
+      <p><strong>Dropout</strong> is a regularisation technique introduced by Srivastava et al. (2014). During training, at each step, you randomly <em>delete</em> (set output to 0) a fraction <code>p</code> of neurons in a layer — say 20% or 30%. The remaining neurons take up the slack. Next step, a different random 20% are dropped.</p>
+
+      <p>The point is <strong>not</strong> that the network "learns which links matter." The point is to <strong>prevent co-adaptation</strong>: when you train without dropout, neurons can become dependent on the exact presence of other specific neurons (one neuron only works if its three buddies are also active). That over-coupling makes the network brittle on new data. By randomly dropping neurons, you force each one to learn something useful on its own.</p>
+
+      <div class="correction">
+        <strong>Correction — dropout's job is regularisation, not feature selection.</strong>
+        <p>The lecturer's framing ("the network eventually figures out the right architecture") is a useful intuition but it isn't the textbook explanation. Read it as: <em>dropout makes the network more robust by training many slightly different sub-networks and averaging their behaviour.</em> Mathematically it approximates training an ensemble — at test time, the full network with no dropout behaves like the average of those sub-networks.</p>
+      </div>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA/SPRING BRIDGE</div>
+        <p><strong>Dropout ≈ Chaos Monkey for neurons.</strong> Netflix's Chaos Monkey kills random production instances to force engineers to build resilient services. Dropout kills random neurons to force the network to build resilient representations. Same idea, smaller scale.</p>
+      </div>
+    </section>
+
+    <!-- ============ §04 ============ -->
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">§ 04 — THE LOOP</div>
+      <h2>The training loop</h2>
+
+      <p>We have the architecture. We need the algorithm that finds good W and b. The training loop has three movements: <strong>forward pass → measure error → update weights</strong>, repeated for the whole dataset, repeated again, and again, for many <em>epochs</em>.</p>
+
+      <h3>Step 1 — forward pass (feedforward)</h3>
+
+      <p>For one row of training data (one example):</p>
+<pre><code>Input vector x = (x₁, x₂, ..., xₙ)
+   ↓ apply layer 1: z₁ = W₁x + b₁; a₁ = φ(z₁)
+   ↓ apply layer 2: z₂ = W₂a₁ + b₂; a₂ = φ(z₂)
+   ↓ ...
+   ↓ apply output layer: ŷ = φ(W_L · a_{L-1} + b_L)</code></pre>
+
+      <p>This is just matrix multiplication and elementwise activation — fast on a GPU because GPUs are built for matrix math. The output <code>ŷ</code> is the network's current best guess for this example, given the <em>current</em> W and b. On the very first pass, W and b are random; <code>ŷ</code> will be garbage.</p>
+
+      <h3>Step 2 — measure the error</h3>
+
+      <p>Compare <code>ŷ</code> (what the network said) against <code>y</code> (the truth, given by the supervised dataset). The function that quantifies the gap is the <strong>loss function</strong>. For regression problems the canonical choice is <strong>squared error</strong>:</p>
+
+      <div class="equation">
+        <div><span class="l3">loss<sub>i</sub> = (ŷ<sub>i</sub> − y<sub>i</sub>)²</span></div>
+      </div>
+
+      <p>The square does two useful things: (1) it makes positive and negative errors both count (so 5-too-high and 5-too-low don't cancel), and (2) it grows faster than linearly, so big mistakes get punished harder than small ones.</p>
+
+      <p>The <strong>loss</strong> is computed per example. The <strong>cost</strong> is the average loss across all examples in the dataset (or batch — see §07):</p>
+
+      <div class="equation">
+        <div><span class="l1">cost</span> <span class="l2">J(W, b)</span> = (1/N) · Σ<sub>i</sub> <span class="l3">(ŷ<sub>i</sub> − y<sub>i</sub>)²</span></div>
+      </div>
+
+      <figure class="reference">
+        <img src="handout-cost-function.jpg" alt="Handout: cost function definition with note distinguishing loss (single example) from cost (average across all examples). Goal: minimize the cost function.">
+        <figcaption>Handout's clean statement of the cost function. The 1/2 vs 1/N debate from the transcript settles here: it's 1/N (mean), not 1/2.</figcaption>
+      </figure>
+
+      <div class="callout">
+        <div class="callout-label">SIDE NOTE — THE 1/2 VS 1/N CONFUSION</div>
+        <p>The transcript had a moment where the cost was first written as <code>(1/2) · Σ(ŷ−y)²</code>, then corrected to <code>(1/N) · Σ(ŷ−y)²</code>. Both forms appear in textbooks. The <code>1/N</code> form gives the true average (mean squared error, MSE) — this is what <code>tf.keras.losses.MeanSquaredError</code> returns. Some textbooks write <code>(1/2N) · Σ(...)²</code> instead — the extra 1/2 has no effect on optimisation (the gradient just scales by ½, which the learning rate absorbs) but cleans up the derivative algebra (the chain rule's factor of 2 cancels the 1/2). They're the same optimisation problem; use whichever your framework uses.</p>
+      </div>
+
+      <h3>Step 3 — update the weights</h3>
+
+      <p>This is the part that wasn't possible to explain in Session 1. Now we have the machinery. The cost <code>J(W, b)</code> is a function of every weight and bias in the network. We want to find the W and b that <em>minimise</em> J. The algorithm that does this is <strong>gradient descent</strong>. The next two sections build it from scratch.</p>
+    </section>
+
+    <!-- ============ §05 ============ -->
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">§ 05 — DOWNHILL</div>
+      <h2>Gradient descent</h2>
+
+      <h3>The intuition (one parameter at a time)</h3>
+
+      <p>Imagine the cost function for a single weight <code>w</code>. Plot it: x-axis is <code>w</code>, y-axis is the cost <code>J(w)</code>. For squared-error loss with a linear model, this curve is a parabola — bowl-shaped with one minimum.</p>
+
+      <p>You don't know where the minimum <code>w*</code> is. You start at some random <code>w</code> and want to <em>walk downhill</em>. Two questions:</p>
+      <ol>
+        <li><strong>Which direction?</strong> Left or right?</li>
+        <li><strong>How big a step?</strong></li>
+      </ol>
+
+      <p><strong>Gradient descent answers (1).</strong> The <strong>gradient</strong> is the slope of the curve at your current location. If the slope is positive (curve going up to the right), the minimum is to your left, so you decrease <code>w</code>. If the slope is negative, the minimum is to your right, so you increase <code>w</code>. In both cases, the rule is <strong>"step opposite the gradient"</strong> — hence the name <em>descent</em>.</p>
+
+      <p><strong>The learning rate answers (2).</strong> The gradient tells you direction. The <strong>learning rate</strong> <code>η</code> (sometimes <code>α</code> or <code>lr</code>) is a number you choose that controls how big a step to take in that direction. Combined:</p>
+
+      <div class="equation">
+        <div><span class="l1">w_new</span> = <span class="l2">w_old</span> − <span class="l3">η · (gradient of cost at w_old)</span></div>
+      </div>
+
+      <figure class="reference">
+        <img src="handout-loss-landscape.jpg" alt="Two plots from the handout: top is the 2D parabola showing the single-parameter case, bottom is a 3D loss landscape over (w, b) showing the bowl-shaped surface gradient descent walks down.">
+        <figcaption>The cost surface in 1D (parabola) and 2D (bowl). Gradient descent is the algorithm that walks from any starting point toward the bottom.</figcaption>
+      </figure>
+
+      <h3>What the learning rate actually controls</h3>
+
+      <p>This is worth dwelling on, because it's the single most-tuned hyperparameter in deep learning.</p>
+
+      <table>
+        <thead><tr><th>Learning rate</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Too small</strong></td><td>Training works but is glacially slow. You take baby steps toward the minimum. Real-world cost: weeks of GPU time instead of hours.</td></tr>
+          <tr><td><strong>Too big</strong></td><td>You overshoot the minimum on every step. The cost can <em>increase</em> over training — the network bounces around in the bowl. In the worst case the cost diverges to infinity ("blowing up").</td></tr>
+          <tr><td><strong>Just right</strong></td><td>Big steps when far from the minimum (high cost), small steps as you approach (low cost).</td></tr>
+        </tbody>
+      </table>
+
+      <p>In practice you don't pick a single learning rate by hand — you use a <strong>scheduler</strong> (start high, decay over time) or an <strong>adaptive optimiser</strong> (Adam, RMSProp — they adjust the step per parameter based on recent gradients).</p>
+
+      <figure class="reference">
+        <img src="handout-gradient-intuition.jpg" alt="Handout: parabola Y = X² with the 'away from minimum' and 'towards minimum' tangent intuition shown. Steeper slope → bigger steps; flatter slope → smaller steps.">
+        <figcaption>The slope itself gives a built-in step-size hint: steep slope ≈ far from the minimum, so a bigger correction is appropriate; flat slope ≈ close to the minimum, so a smaller correction. Adaptive optimisers exploit this directly.</figcaption>
+      </figure>
+
+      <h3>Local minima and saddle points</h3>
+
+      <p>The parabola picture is the friendly case. The real cost surface of a deep network is high-dimensional (millions of parameters) and lumpy. You might descend into a <strong>local minimum</strong> that isn't the global one. Or land on a <strong>saddle point</strong> where the gradient is zero but you're not at a true minimum.</p>
+
+      <p>In practice deep networks rarely get stuck in bad local minima — the high dimensionality means most "minima" are actually saddles you can escape from, and the local minima you do find tend to give similar test performance. This is more reassuring empirically than it sounds in theory.</p>
+
+      <div class="correction">
+        <strong>Correction — "train until error = 0" isn't the right stopping rule.</strong>
+        <p>The lecturer described training as repeating epochs until the cost reaches 0. In practice, reaching exactly 0 means you've <strong>memorised</strong> the training data (overfit), and the model will perform terribly on new data. Real stopping rules: (a) the validation loss stops decreasing for N epochs (<em>early stopping</em>), (b) the gradient magnitude drops below a threshold, or (c) you hit a fixed epoch budget. Aim for the cost to plateau, not to vanish.</p>
+      </div>
+    </section>
+
+    <!-- ============ §06 ============ -->
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">§ 06 — THE CALCULUS</div>
+      <h2>Deriving the update rule</h2>
+
+      <p>This section is optional if you trust the formula and want to skip to coding. It's worth following once so you've seen the derivation, then you can forget it (TensorFlow and PyTorch handle this for you via <strong>autograd</strong>).</p>
+
+      <h3>Setup</h3>
+
+      <p>Take the simplest possible model — a one-input, one-output linear model with no activation:</p>
+      <div class="equation"><div><span class="l1">ŷ = w·x + b</span></div></div>
+
+      <p>Cost (squared error, one example for clarity — the average drops out cleanly):</p>
+      <div class="equation"><div><span class="l2">J(w, b) = (ŷ − y)² = (w·x + b − y)²</span></div></div>
+
+      <p>Define <code>error = ŷ − y</code>. Then <code>J = error²</code>.</p>
+
+      <h3>Derive ∂J/∂w using the chain rule</h3>
+
+      <p>The chain rule: if <code>J = f(g(w))</code>, then <code>dJ/dw = f'(g) · g'(w)</code>. Here <code>f(u) = u²</code> and <code>g(w) = error = w·x + b − y</code>:</p>
+
+      <div class="equation">
+        <div>∂J/∂w = 2 · error · ∂(error)/∂w</div>
+        <div>      = 2 · error · ∂(w·x + b − y)/∂w</div>
+        <div>      = <span class="l3">2 · error · x</span>     ← ∂(wx)/∂w = x; b and y don't depend on w</div>
+      </div>
+
+      <h3>Derive ∂J/∂b the same way</h3>
+
+      <div class="equation">
+        <div>∂J/∂b = 2 · error · ∂(error)/∂b</div>
+        <div>      = 2 · error · ∂(w·x + b − y)/∂b</div>
+        <div>      = <span class="l3">2 · error · 1 = 2 · error</span></div>
+      </div>
+
+      <h3>The update rules</h3>
+
+      <p>Plug these into <code>param_new = param_old − η · gradient</code>. The factor of 2 just gets absorbed into the learning rate (it's a constant):</p>
+
+      <div class="equation">
+        <div><span class="l1">w_new = w_old − η · error · x</span></div>
+        <div><span class="l1">b_new = b_old − η · error</span></div>
+      </div>
+
+      <p>That matches what the handout has:</p>
+
+      <figure class="reference">
+        <img src="handout-update-rules.jpg" alt="Handout: derivative of error w.r.t. b is 1, so ∂J/∂b = 2·error. Final boxed update rules: m' = m_old - error·x·learning_rate; b' = b_old - error·learning_rate.">
+        <figcaption>The two boxed equations are the punchline of the whole session.</figcaption>
+      </figure>
+
+      <div class="correction">
+        <strong>Correction — these update rules are for a single linear neuron, not a multi-layer network.</strong>
+        <p>What we just derived works for a perceptron (no activation, one neuron). For a multi-layer network with activation functions, the same idea applies but the chain rule has more links — the gradient has to flow backwards through every layer's activation derivative. That fuller algorithm is called <strong>backpropagation</strong> (Rumelhart, Hinton, Williams, 1986). The intuition is identical; the bookkeeping is more elaborate. TensorFlow and PyTorch do it for you.</p>
+      </div>
+
+      <p>After applying the update to every example in the dataset, you've completed <strong>one epoch</strong>. Then you do it again, and again. Typically networks train for tens to hundreds of epochs.</p>
+    </section>
+
+    <!-- ============ §07 ============ -->
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">§ 07 — BOOKKEEPING</div>
+      <h2>Epoch, batch, iteration</h2>
+
+      <p>These three terms get mixed up constantly. The handout has the cleanest definition; here it is.</p>
+      <ul>
+        <li><strong>Epoch</strong> — one complete pass through the entire training dataset.</li>
+        <li><strong>Batch size</strong> — how many training examples you process before updating the weights once.</li>
+        <li><strong>Iteration</strong> — one weight update. Equivalently, one batch processed.</li>
+      </ul>
+
+      <div class="callout">
+        <div class="callout-label">WORKED EXAMPLE</div>
+        <p>You have 2,000 training examples. You set batch size = 500. Then <strong>one epoch = 4 iterations</strong>, because the dataset divides into 4 batches of 500. If you train for 10 epochs, you've done <strong>40 iterations</strong> = 40 weight updates total.</p>
+      </div>
+
+      <p>This decomposition gives three flavours of gradient descent:</p>
+
+      <table>
+        <thead><tr><th>Variant</th><th>Batch size</th><th>Updates</th><th>Trade-off</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Batch GD</strong> (full-batch)</td><td>Entire dataset</td><td>Once per epoch</td><td>Most stable; slowest; can't fit large datasets in memory</td></tr>
+          <tr><td><strong>Stochastic GD</strong></td><td>1 example</td><td>Once per example</td><td>Fastest updates; very noisy; never settles cleanly</td></tr>
+          <tr><td><strong>Mini-batch GD</strong></td><td>Typically 32–512</td><td>Once per batch</td><td><strong>The modern default</strong> — balances stability and speed; matches GPU memory layout</td></tr>
+        </tbody>
+      </table>
+
+      <p>When TensorFlow/PyTorch documentation says "SGD," they almost always mean mini-batch GD with a batch size &gt; 1 — the name has drifted to cover all stochastic variants.</p>
+
+      <div class="callout">
+        <div class="callout-label">NOTE ON THE LECTURER'S EPOCH DESCRIPTION</div>
+        <p>The transcript describes "one epoch" as guessing W and b, predicting for all rows, computing the cost, then doing one update with backprop. That matches <strong>batch GD</strong> specifically. In <strong>mini-batch GD</strong> (what your TensorFlow code will run tomorrow), you update <em>multiple times within a single epoch</em> — once per batch. Same idea, finer-grained.</p>
+      </div>
+    </section>
+
+    <!-- ============ §08 ============ -->
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">§ 08 — INERTIA</div>
+      <h2>Momentum (preview)</h2>
+
+      <p>The handout introduces <strong>momentum-based gradient descent</strong> but the transcript only mentioned it briefly. Worth a paragraph so you recognise it tomorrow when TensorFlow's optimiser list has <code>SGD(momentum=0.9)</code> and <code>Adam</code>.</p>
+
+      <p>Vanilla gradient descent uses only the <em>current</em> gradient to decide which way to step. Momentum-based gradient descent keeps a moving average of recent gradients and uses that instead:</p>
+
+      <div class="equation">
+        <div><span class="l1">v_t = γ · v_{t-1} + η · ∇w_t</span>   ← v is the "velocity"; γ ∈ (0, 1), typically 0.9</div>
+        <div><span class="l3">w_{t+1} = w_t − v_t</span></div>
+      </div>
+
+      <p>The <code>γ · v_{t-1}</code> term is the <em>history</em>. If you've been moving consistently in one direction, momentum keeps you moving that way — the velocity builds. If the gradient suddenly flips, momentum smooths the change rather than jerking instantly.</p>
+
+      <p><strong>Why it helps:</strong> in long shallow valleys (very common in loss landscapes), vanilla GD oscillates back and forth across the valley walls while creeping slowly forward. Momentum dampens the oscillation and accelerates the forward motion. Empirically it converges 2–10× faster than vanilla GD on typical problems.</p>
+
+      <p><strong>The downside:</strong> momentum can overshoot the minimum the same way a rolling ball overshoots the bottom of a valley. You see a few u-turns at the end of training, but it still converges faster than vanilla GD.</p>
+
+      <p><strong>Adam</strong> (Kingma &amp; Ba, 2014) extends this: it tracks a moving average of gradients (momentum) <em>and</em> a moving average of squared gradients (adaptive per-parameter learning rate). Adam is the default optimiser in most modern deep learning code.</p>
+    </section>
+
+    <!-- ============ §09 ============ -->
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">§ 09 — THE 50-YEAR DELAY</div>
+      <h2>Vanishing gradient: why deep learning took 50 years</h2>
+
+      <p>The lecturer mentioned that the perceptron was introduced by Rosenblatt in 1957, and that nothing much happened in deep learning until around 2010. The single-most-cited reason for the 50-year delay is the <strong>vanishing gradient problem</strong>.</p>
+
+      <h3>What it is</h3>
+
+      <p>Gradient descent works by computing <code>∂J/∂w</code> for every weight and propagating that signal backwards through the network. In a deep network, that signal goes through many layers — and at each layer, it gets multiplied by the layer's activation derivative.</p>
+
+      <p>Sigmoid and tanh both have derivatives <strong>at most 0.25</strong> (sigmoid) or 1 (tanh) — but for most input values, both derivatives are very close to 0 because the curves saturate at their asymptotes. When you multiply 10 small numbers together, you get a <em>very</em> small number. By the time the gradient signal reaches the early layers of a deep network, it's effectively zero — those layers stop learning. This is <strong>vanishing gradient</strong>.</p>
+
+      <h3>What actually unblocked deep learning</h3>
+
+      <p>The "ReLU solved it" framing in the transcript is partially right, but the deep-learning revival circa 2006–2012 had <strong>three legs</strong>, not one:</p>
+      <ol>
+        <li><strong>ReLU</strong> (Glorot, Bordes, Bengio, 2011). Derivative is exactly 1 on the positive side — gradients pass through unattenuated. This is the activation-function piece.</li>
+        <li><strong>Better weight initialisation</strong> (Glorot/Xavier init 2010, He init 2015). Random weights drawn from a distribution scaled to keep activation variances roughly constant across layers — prevents the signal from blowing up or dying as it propagates forward.</li>
+        <li><strong>GPUs + big data</strong> (ImageNet 2012, AlexNet). Without GPUs to do the matrix math fast, even with the algorithmic fixes you couldn't train large networks in reasonable time.</li>
+      </ol>
+
+      <p>You also have <strong>batch normalisation</strong> (Ioffe &amp; Szegedy 2015), <strong>residual/skip connections</strong> (ResNet, He et al. 2015), and the <strong>Adam optimiser</strong> (Kingma &amp; Ba 2014) as further unlocks. Modern deep learning is the <em>combination</em> of these fixes — no single one of them by itself.</p>
+
+      <figure class="reference">
+        <img src="handout-vanishing-gradient.jpg" alt="Handout: vanishing gradient chain rule expression showing the product of partial derivatives down a deep network, then a timeline with key dates 1989-1991 (UAT, backprop), 2006 (Hinton's revival), 2019, plus sidebar notes on Better Learning Algorithms / Better Initialisation / Better Activations / Better Regularisation.">
+        <figcaption>Handout's timeline matches the multi-cause story: it's not one fix, it's a stack.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============ visual summary ============ -->
+    <figure class="infographic" id="svg">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-labelledby="infoTitle infoDesc">
+        <title id="infoTitle">ANN-Session 2 — The training loop, on one page</title>
+        <desc id="infoDesc">Visual summary of the neural network training loop: random initialization, forward pass, loss, backpropagation, weight update; plus activation functions, hidden layers, gradient descent, and learning rate.</desc>
+
+        <defs>
+          <style>
+            .ig-bg { fill: #f5efe6; }
+            .ig-ink { fill: #1f1a14; }
+            .ig-ink-soft { fill: #4a4239; }
+            .ig-ink-mute { fill: #8b7d65; }
+            .ig-terra { fill: #b8472e; }
+            .ig-terra-light { fill: #d96d4a; }
+            .ig-teal { fill: #2a5d62; }
+            .ig-teal-light { fill: #5ba0a8; }
+            .ig-ochre { fill: #c89b3c; }
+            .ig-line { stroke: #d4c9b5; }
+            .ig-highlight { fill: #f8e6cf; }
+            .ig-spring { fill: #6db33f; }
+            .display { font-family: 'Fraunces', 'Iowan Old Style', Georgia, serif; font-style: italic; font-weight: 700; }
+            .display-r { font-family: 'Fraunces', serif; font-weight: 700; }
+            .body { font-family: 'Spectral', Georgia, serif; }
+            .mono { font-family: 'JetBrains Mono', 'Menlo', monospace; }
+          </style>
+
+          <marker id="arrowDark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#1f1a14" />
+          </marker>
+          <marker id="arrowTerra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#b8472e" />
+          </marker>
+          <marker id="arrowTeal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#2a5d62" />
+          </marker>
+        </defs>
+
+        <!-- background -->
+        <rect class="ig-bg" width="1200" height="1500" />
+
+        <!-- ============ header ============ -->
+        <g>
+          <text x="60" y="80" class="mono ig-terra" font-size="13" letter-spacing="6" font-weight="700">ANN · SESSION 02 · VISUAL SUMMARY</text>
+          <text x="60" y="160" class="display ig-ink" font-size="64">How a neural network</text>
+          <text x="60" y="222" class="display ig-terra" font-size="64">actually learns.</text>
+          <line x1="60" y1="260" x2="1140" y2="260" stroke="#1f1a14" stroke-width="2"/>
+          <text x="60" y="295" class="body ig-ink-soft" font-size="20" font-style="italic">Forward pass, measure error, nudge the weights opposite the gradient — repeat.</text>
+        </g>
+
+        <!-- ============ central training loop (cycle) ============ -->
+        <g transform="translate(600, 600)">
+          <!-- title -->
+          <text x="0" y="-235" class="mono ig-terra" font-size="12" letter-spacing="4" font-weight="700" text-anchor="middle">THE TRAINING LOOP</text>
+
+          <!-- five nodes in a pentagon arrangement, but readable as a cycle -->
+          <!-- positions: top, upper-right, lower-right, lower-left, upper-left -->
+          <!-- Node 1: Random init (top) -->
+          <g transform="translate(0,-180)">
+            <circle r="68" fill="#1f1a14"/>
+            <text y="-12" class="mono" font-size="11" letter-spacing="2" fill="#c89b3c" text-anchor="middle" font-weight="700">STEP 0</text>
+            <text y="8" class="display-r" font-size="16" fill="#f5efe6" text-anchor="middle">Random</text>
+            <text y="28" class="display-r" font-size="16" fill="#f5efe6" text-anchor="middle">init</text>
+          </g>
+
+          <!-- Node 2: Forward pass (upper-right) -->
+          <g transform="translate(170,-56)">
+            <circle r="68" fill="#2a5d62"/>
+            <text y="-18" class="mono" font-size="11" letter-spacing="2" fill="#f5efe6" text-anchor="middle" font-weight="700">STEP 1</text>
+            <text y="4" class="display-r" font-size="16" fill="#f5efe6" text-anchor="middle">Forward</text>
+            <text y="24" class="display-r" font-size="16" fill="#f5efe6" text-anchor="middle">pass</text>
+            <text y="42" class="mono" font-size="10" fill="#f5efe6" text-anchor="middle">ŷ = φ(Wx+b)</text>
+          </g>
+
+          <!-- Node 3: Compute loss (lower-right) -->
+          <g transform="translate(105,150)">
+            <circle r="68" fill="#c89b3c"/>
+            <text y="-18" class="mono" font-size="11" letter-spacing="2" fill="#1f1a14" text-anchor="middle" font-weight="700">STEP 2</text>
+            <text y="4" class="display-r" font-size="16" fill="#1f1a14" text-anchor="middle">Measure</text>
+            <text y="24" class="display-r" font-size="16" fill="#1f1a14" text-anchor="middle">error</text>
+            <text y="42" class="mono" font-size="10" fill="#1f1a14" text-anchor="middle">J = (ŷ−y)²</text>
+          </g>
+
+          <!-- Node 4: Backprop (lower-left) -->
+          <g transform="translate(-105,150)">
+            <circle r="68" fill="#b8472e"/>
+            <text y="-18" class="mono" font-size="11" letter-spacing="2" fill="#f5efe6" text-anchor="middle" font-weight="700">STEP 3</text>
+            <text y="4" class="display-r" font-size="16" fill="#f5efe6" text-anchor="middle">Back-</text>
+            <text y="24" class="display-r" font-size="16" fill="#f5efe6" text-anchor="middle">prop</text>
+            <text y="42" class="mono" font-size="10" fill="#f5efe6" text-anchor="middle">∂J/∂w via chain</text>
+          </g>
+
+          <!-- Node 5: Update (upper-left) -->
+          <g transform="translate(-170,-56)">
+            <circle r="68" fill="#6db33f"/>
+            <text y="-18" class="mono" font-size="11" letter-spacing="2" fill="#1f1a14" text-anchor="middle" font-weight="700">STEP 4</text>
+            <text y="4" class="display-r" font-size="16" fill="#1f1a14" text-anchor="middle">Update</text>
+            <text y="24" class="display-r" font-size="16" fill="#1f1a14" text-anchor="middle">weights</text>
+            <text y="42" class="mono" font-size="10" fill="#1f1a14" text-anchor="middle">w ← w − η·∂J/∂w</text>
+          </g>
+
+          <!-- Connecting arrows around the cycle -->
+          <!-- Init → Forward -->
+          <path d="M 55 -150 A 180 180 0 0 1 130 -100" fill="none" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrowDark)"/>
+          <!-- Forward → Loss -->
+          <path d="M 175 12 A 180 180 0 0 1 145 105" fill="none" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrowDark)"/>
+          <!-- Loss → Backprop -->
+          <path d="M 40 175 A 100 100 0 0 1 -55 175" fill="none" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrowDark)"/>
+          <!-- Backprop → Update -->
+          <path d="M -150 100 A 180 180 0 0 1 -180 10" fill="none" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrowDark)"/>
+          <!-- Update → Forward (the LOOP — bigger curve, highlight) -->
+          <path d="M -130 -95 A 220 220 0 0 1 110 -100" fill="none" stroke="#b8472e" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowTerra)"/>
+          <text x="0" y="-65" class="mono ig-terra" font-size="12" text-anchor="middle" font-weight="700">repeat · 1000s of times</text>
+
+          <!-- center note -->
+          <text x="0" y="10" class="display ig-ink" font-size="22" text-anchor="middle">This is</text>
+          <text x="0" y="42" class="display ig-terra" font-size="22" text-anchor="middle">the whole game.</text>
+        </g>
+
+        <!-- ============ activation menu (left side, below loop) ============ -->
+        <g transform="translate(60, 880)">
+          <text x="0" y="0" class="mono ig-terra" font-size="11" letter-spacing="3" font-weight="700">§02 · ACTIVATION MENU</text>
+          <text x="0" y="32" class="display ig-ink" font-size="22">Hidden vs output layer</text>
+
+          <!-- ReLU mini plot -->
+          <g transform="translate(0, 60)">
+            <rect x="0" y="0" width="170" height="120" fill="#ffffff" stroke="#d4c9b5"/>
+            <text x="10" y="22" class="mono ig-ink" font-size="12" font-weight="700">ReLU</text>
+            <text x="10" y="38" class="mono ig-ink-mute" font-size="10">max(0, z)</text>
+            <line x1="20" y1="100" x2="160" y2="100" stroke="#8b7d65" stroke-width="1"/>
+            <line x1="90" y1="50" x2="90" y2="110" stroke="#8b7d65" stroke-width="1"/>
+            <polyline points="20,100 90,100 160,50" fill="none" stroke="#b8472e" stroke-width="3"/>
+          </g>
+
+          <!-- Sigmoid mini plot -->
+          <g transform="translate(190, 60)">
+            <rect x="0" y="0" width="170" height="120" fill="#ffffff" stroke="#d4c9b5"/>
+            <text x="10" y="22" class="mono ig-ink" font-size="12" font-weight="700">Sigmoid</text>
+            <text x="10" y="38" class="mono ig-ink-mute" font-size="10">1/(1+e⁻ᶻ) ∈ (0,1)</text>
+            <line x1="20" y1="95" x2="160" y2="95" stroke="#8b7d65" stroke-width="1"/>
+            <line x1="90" y1="50" x2="90" y2="110" stroke="#8b7d65" stroke-width="1"/>
+            <path d="M 20 92 C 60 92, 70 90, 90 70 C 110 50, 120 50, 160 50" fill="none" stroke="#2a5d62" stroke-width="3"/>
+          </g>
+
+          <!-- Tanh mini plot -->
+          <g transform="translate(0, 200)">
+            <rect x="0" y="0" width="170" height="120" fill="#ffffff" stroke="#d4c9b5"/>
+            <text x="10" y="22" class="mono ig-ink" font-size="12" font-weight="700">Tanh</text>
+            <text x="10" y="38" class="mono ig-ink-mute" font-size="10">∈ (−1, 1)</text>
+            <line x1="20" y1="80" x2="160" y2="80" stroke="#8b7d65" stroke-width="1"/>
+            <line x1="90" y1="50" x2="90" y2="110" stroke="#8b7d65" stroke-width="1"/>
+            <path d="M 20 110 C 60 110, 70 105, 90 80 C 110 55, 120 50, 160 50" fill="none" stroke="#c89b3c" stroke-width="3"/>
+          </g>
+
+          <!-- Softmax (multi-class) -->
+          <g transform="translate(190, 200)">
+            <rect x="0" y="0" width="170" height="120" fill="#ffffff" stroke="#d4c9b5"/>
+            <text x="10" y="22" class="mono ig-ink" font-size="12" font-weight="700">Softmax</text>
+            <text x="10" y="38" class="mono ig-ink-mute" font-size="10">eᶻⁱ / Σⱼeᶻʲ · sums to 1</text>
+            <rect x="22" y="60" width="20" height="40" fill="#b8472e"/>
+            <rect x="50" y="76" width="20" height="24" fill="#5ba0a8"/>
+            <rect x="78" y="84" width="20" height="16" fill="#5ba0a8"/>
+            <rect x="106" y="90" width="20" height="10" fill="#5ba0a8"/>
+            <rect x="134" y="74" width="20" height="26" fill="#5ba0a8"/>
+            <text x="32" y="56" class="mono ig-terra" font-size="9" text-anchor="middle">argmax</text>
+          </g>
+
+          <!-- Table -->
+          <g transform="translate(0, 350)">
+            <text x="0" y="0" class="mono ig-ink" font-size="11" font-weight="700">USE WHICH WHERE</text>
+            <rect x="0" y="14" width="360" height="106" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="14" y="36" class="mono ig-ink-soft" font-size="11">                       hidden        output</text>
+            <line x1="14" y1="42" x2="346" y2="42" stroke="#d4c9b5"/>
+            <text x="14" y="60" class="mono ig-ink" font-size="11">Regression             ReLU          none (identity)</text>
+            <text x="14" y="80" class="mono ig-ink" font-size="11">Binary classif.        ReLU          sigmoid</text>
+            <text x="14" y="100" class="mono ig-ink" font-size="11">Multi-class classif.   ReLU          softmax</text>
+          </g>
+        </g>
+
+        <!-- ============ parameter math (right side) ============ -->
+        <g transform="translate(680, 880)">
+          <text x="0" y="0" class="mono ig-terra" font-size="11" letter-spacing="3" font-weight="700">§03 · COUNTING PARAMETERS</text>
+          <text x="0" y="32" class="display ig-ink" font-size="22">What's actually learned</text>
+
+          <!-- diagram -->
+          <g transform="translate(0, 60)">
+            <!-- input nodes -->
+            <circle cx="40" cy="40" r="16" fill="#2a5d62"/>
+            <circle cx="40" cy="100" r="16" fill="#2a5d62"/>
+            <circle cx="40" cy="160" r="16" fill="#2a5d62"/>
+            <text x="40" y="44" class="mono" font-size="11" fill="#f5efe6" text-anchor="middle">x₁</text>
+            <text x="40" y="104" class="mono" font-size="11" fill="#f5efe6" text-anchor="middle">x₂</text>
+            <text x="40" y="164" class="mono" font-size="11" fill="#f5efe6" text-anchor="middle">x₃</text>
+
+            <!-- hidden nodes -->
+            <circle cx="200" cy="30" r="16" fill="#c89b3c"/>
+            <circle cx="200" cy="80" r="16" fill="#c89b3c"/>
+            <circle cx="200" cy="130" r="16" fill="#c89b3c"/>
+            <circle cx="200" cy="180" r="16" fill="#c89b3c"/>
+
+            <!-- output node -->
+            <circle cx="360" cy="100" r="20" fill="#b8472e"/>
+            <text x="360" y="105" class="mono" font-size="13" fill="#f5efe6" text-anchor="middle" font-weight="700">ŷ</text>
+
+            <!-- connections from input to hidden (3x4=12) -->
+            <g stroke="#8b7d65" stroke-width="0.8" opacity="0.5">
+              <line x1="56" y1="40" x2="184" y2="30"/>
+              <line x1="56" y1="40" x2="184" y2="80"/>
+              <line x1="56" y1="40" x2="184" y2="130"/>
+              <line x1="56" y1="40" x2="184" y2="180"/>
+              <line x1="56" y1="100" x2="184" y2="30"/>
+              <line x1="56" y1="100" x2="184" y2="80"/>
+              <line x1="56" y1="100" x2="184" y2="130"/>
+              <line x1="56" y1="100" x2="184" y2="180"/>
+              <line x1="56" y1="160" x2="184" y2="30"/>
+              <line x1="56" y1="160" x2="184" y2="80"/>
+              <line x1="56" y1="160" x2="184" y2="130"/>
+              <line x1="56" y1="160" x2="184" y2="180"/>
+            </g>
+
+            <!-- connections from hidden to output (4) -->
+            <g stroke="#8b7d65" stroke-width="0.8" opacity="0.5">
+              <line x1="216" y1="30" x2="340" y2="100"/>
+              <line x1="216" y1="80" x2="340" y2="100"/>
+              <line x1="216" y1="130" x2="340" y2="100"/>
+              <line x1="216" y1="180" x2="340" y2="100"/>
+            </g>
+
+            <!-- labels -->
+            <text x="40" y="220" class="mono ig-ink-mute" font-size="10" text-anchor="middle">3 INPUTS</text>
+            <text x="200" y="220" class="mono ig-ink-mute" font-size="10" text-anchor="middle">4 HIDDEN</text>
+            <text x="360" y="140" class="mono ig-ink-mute" font-size="10" text-anchor="middle">1 OUTPUT</text>
+          </g>
+
+          <!-- Math -->
+          <g transform="translate(0, 320)">
+            <text x="0" y="0" class="mono ig-ink" font-size="11" font-weight="700">THE COUNT</text>
+            <rect x="0" y="14" width="440" height="156" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="14" y="38" class="mono ig-ink-soft" font-size="12">weights:  3×4 + 4×1 = 16</text>
+            <text x="14" y="58" class="mono ig-ink-soft" font-size="12">biases:   4 + 1     = 5</text>
+            <text x="14" y="84" class="mono ig-ink" font-size="13" font-weight="700">total parameters    = 21</text>
+
+            <line x1="14" y1="100" x2="426" y2="100" stroke="#d4c9b5"/>
+            <text x="14" y="122" class="mono ig-terra" font-size="11" font-weight="700">SAME MACHINERY, MORE PARAMETERS</text>
+            <text x="14" y="142" class="mono ig-ink-soft" font-size="11">GPT-3 .............  175,000,000,000</text>
+            <text x="14" y="160" class="mono ig-ink-soft" font-size="11">Llama 3 405B ......  405,000,000,000</text>
+          </g>
+        </g>
+
+        <!-- ============ gradient descent + learning rate (bottom-left) ============ -->
+        <g transform="translate(60, 1280)">
+          <text x="0" y="0" class="mono ig-terra" font-size="11" letter-spacing="3" font-weight="700">§05 · GRADIENT DESCENT</text>
+          <text x="0" y="32" class="display ig-ink" font-size="22">Direction + step size</text>
+
+          <!-- parabola -->
+          <g transform="translate(0, 60)">
+            <rect x="0" y="0" width="500" height="160" fill="#ffffff" stroke="#d4c9b5"/>
+            <!-- axes -->
+            <line x1="40" y1="140" x2="460" y2="140" stroke="#8b7d65" stroke-width="1"/>
+            <line x1="250" y1="20" x2="250" y2="150" stroke="#8b7d65" stroke-width="1"/>
+            <text x="465" y="144" class="mono ig-ink-mute" font-size="10">w</text>
+            <text x="240" y="18" class="mono ig-ink-mute" font-size="10">J(w)</text>
+            <!-- parabola path -->
+            <path d="M 60 30 Q 250 240, 440 30" fill="none" stroke="#1f1a14" stroke-width="2"/>
+            <!-- minimum -->
+            <circle cx="250" cy="135" r="5" fill="#b8472e"/>
+            <text x="250" y="158" class="mono ig-terra" font-size="10" text-anchor="middle" font-weight="700">w*</text>
+
+            <!-- too-big-step trajectory -->
+            <circle cx="110" cy="78" r="4" fill="#c89b3c"/>
+            <path d="M 110 78 L 380 60" fill="none" stroke="#c89b3c" stroke-width="2" stroke-dasharray="3 3" marker-end="url(#arrowDark)"/>
+            <text x="105" y="62" class="mono ig-ochre" font-size="10" font-weight="700">too big →</text>
+            <text x="320" y="50" class="mono ig-ochre" font-size="10">overshoots</text>
+
+            <!-- just-right trajectory -->
+            <circle cx="110" cy="78" r="4" fill="#2a5d62"/>
+            <path d="M 110 78 Q 170 100, 200 120 Q 230 132, 248 134" fill="none" stroke="#2a5d62" stroke-width="2" marker-end="url(#arrowTeal)"/>
+            <text x="170" y="116" class="mono ig-teal" font-size="10" font-weight="700">just right ↘</text>
+
+            <!-- too-small trajectory -->
+            <circle cx="380" cy="60" r="4" fill="#1f1a14"/>
+            <path d="M 380 60 L 360 70 L 340 78 L 320 84 L 305 88" fill="none" stroke="#1f1a14" stroke-width="1" stroke-dasharray="2 2"/>
+            <text x="335" y="105" class="mono ig-ink" font-size="10">too small → slow</text>
+          </g>
+
+          <text x="0" y="245" class="body ig-ink-soft" font-size="14" font-style="italic">Gradient = direction. Learning rate η = step size.</text>
+        </g>
+
+        <!-- ============ correction strip (bottom right) ============ -->
+        <g transform="translate(620, 1280)">
+          <text x="0" y="0" class="mono ig-terra" font-size="11" letter-spacing="3" font-weight="700">FIVE CORRECTIONS YOU SHOULD CARRY</text>
+          <rect x="0" y="14" width="520" height="190" fill="#f8e6cf" stroke="#b8472e" stroke-dasharray="4 3"/>
+
+          <g transform="translate(14, 36)">
+            <text x="0" y="0" class="mono ig-terra" font-size="11" font-weight="700">1.</text>
+            <text x="22" y="0" class="mono ig-ink" font-size="11">Train until loss <tspan font-style="italic">plateaus</tspan>, not until it = 0.</text>
+
+            <text x="0" y="32" class="mono ig-terra" font-size="11" font-weight="700">2.</text>
+            <text x="22" y="32" class="mono ig-ink" font-size="11">Multi-class uses softmax, not bucketed sigmoid.</text>
+
+            <text x="0" y="64" class="mono ig-terra" font-size="11" font-weight="700">3.</text>
+            <text x="22" y="64" class="mono ig-ink" font-size="11">ReLU is for hidden layers; the output activation is</text>
+            <text x="22" y="78" class="mono ig-ink" font-size="11">task-specific (identity / sigmoid / softmax).</text>
+
+            <text x="0" y="110" class="mono ig-terra" font-size="11" font-weight="700">4.</text>
+            <text x="22" y="110" class="mono ig-ink" font-size="11">Dropout is regularisation, not feature selection.</text>
+
+            <text x="0" y="142" class="mono ig-terra" font-size="11" font-weight="700">5.</text>
+            <text x="22" y="142" class="mono ig-ink" font-size="11">Hidden layers add non-linearity (UAT), independent</text>
+            <text x="22" y="156" class="mono ig-ink" font-size="11">of dropout.</text>
+          </g>
+        </g>
+
+        <!-- footer -->
+        <g transform="translate(60, 1480)">
+          <text x="0" y="0" class="mono ig-ink-mute" font-size="10" letter-spacing="2">ANN-SESSION 02 · 2026-05-18 · SASMITA COURSE</text>
+          <text x="1080" y="0" class="mono ig-ink-mute" font-size="10" letter-spacing="2" text-anchor="end">NEXT → SESSION 03 · TENSORFLOW</text>
+        </g>
+      </svg>
+      <figcaption>The training loop, on one page. The repeat arrow is the whole story; everything else is detail.</figcaption>
+    </figure>
+
+    <!-- ============ §10 ============ -->
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">§ 10 — BRIDGE</div>
+      <h2>From here to LLMs</h2>
+
+      <p>The Q&amp;A near the end of the session was about whether a generic LLM "knows" a specific bank's data. This is worth answering crisply because it connects everything we've done.</p>
+
+      <p>A modern LLM (GPT-4, Claude, Llama, Gemini) is a giant neural network — <strong>decoder-only transformer</strong>, hundreds of billions of parameters — trained on hundreds of billions of words from the public internet, books, code, etc. The training procedure is the same loop we just covered: forward pass, compute loss, backpropagate, update weights. Repeat for trillions of training tokens.</p>
+
+      <p>What you get out the other end is a <code>.bin</code> file (or several) full of weights and biases — exactly the same kind of W and b we've been talking about. Just a <em>lot</em> more of them.</p>
+
+      <h3>Why an off-the-shelf LLM is bad at your domain</h3>
+
+      <p>The model has been trained on generic data. It doesn't know that in your bank, FICO scores below 580 are flagged for manual review, or that your customer schema renames <code>created_at</code> to <code>originated_on</code>. When asked, it will <em>confabulate</em> — produce plausible-sounding answers that don't reflect your actual data. This is called <strong>hallucination</strong>; it's not a bug, it's the default behaviour of a probabilistic text generator that has no ground-truth check.</p>
+
+      <h3>Fine-tuning is "retraining, partially"</h3>
+
+      <p>To give the model your domain knowledge, you can <strong>fine-tune</strong> it: take the pre-trained W and b, then continue the same training loop on a smaller dataset of your domain examples. The weights shift to accommodate your data without throwing away the general knowledge. This is what JPMorgan's FinBot, Bloomberg's BloombergGPT, and similar domain LLMs are.</p>
+
+      <div class="callout">
+        <div class="callout-label">REMEMBER THIS</div>
+        <p>Fine-tuning is exactly the loop from this session, run again on different data. Forward pass, loss, backprop, update. That's why we spent 155 minutes on the perceptron — because the same algorithm scales to 175 billion parameters.</p>
+      </div>
+
+      <p><strong>Retrieval-augmented generation (RAG)</strong> is a different and often cheaper approach: don't retrain the model, just fetch the relevant company-specific documents at query time and stuff them into the prompt. We'll cover this in a future session.</p>
+
+      <div class="correction">
+        <strong>Verify — "10 lakh open-source LLMs on Hugging Face."</strong>
+        <p>Hugging Face passed 1 million model uploads in mid-2024 and the count has grown since; by May 2026 it's closer to <strong>2 million+</strong>. Note that the catalogue counts <em>any</em> uploaded model — most are fine-tunes or small derivatives of a handful of base models (Llama, Mistral, Qwen, …). The number of genuinely distinct base models is in the dozens.</p>
+      </div>
+    </section>
+
+    <!-- ============ §11 ============ -->
+    <section class="chapter" id="s11">
+      <div class="chapter-marker">§ 11 — ASIDE</div>
+      <h2>Career aside (the 1% / 99% split)</h2>
+
+      <p>The lecturer spent a chunk of the session on industry context. The short version, paraphrased:</p>
+      <ul>
+        <li><strong>Application engineers (the 99%)</strong> — build products on top of pre-trained models. Skills: framework usage (TensorFlow, PyTorch, the OpenAI/Anthropic APIs), fine-tuning, RAG, prompt engineering, integration. Salary growth flattens because the toolchain commoditises the work.</li>
+        <li><strong>Foundation builders (the 1%)</strong> — research and build the base models themselves. Skills: deep maths (linear algebra, optimisation, information theory), CUDA-level systems knowledge, distributed training, novel architecture research. Salary growth is super-linear because the supply is tiny and the leverage is enormous.</li>
+        <li><strong>The bridge between the two is solid foundations.</strong> Application engineers with deep foundational knowledge can sometimes move into the 1%. The reason this session spent 155 minutes on the perceptron — the simplest possible network — is that everything you'll touch in your career sits on top of the same machinery.</li>
+      </ul>
+
+      <p>Whether the lecturer's specific prediction (heavy automation of coding, redistribution of senior salaries, etc.) plays out exactly as described is debatable. The directional point is grounded: the leverage of building base models has been increasing for a decade, and so has the leverage of building applications on top of them — both grow, but per-person leverage of the 1% grows faster.</p>
+    </section>
+
+    <!-- ============ §12 ============ -->
+    <section class="chapter" id="s12">
+      <div class="chapter-marker">§ 12 — TL;DR</div>
+      <h2>Interview cheat-sheet</h2>
+
+      <p>If somebody asks you in an interview "how does a neural network learn?" here's the 30-second answer:</p>
+
+      <div class="callout">
+        <p><em>"It guesses initial weights, runs a forward pass to predict, computes a loss against the truth, computes the gradient of the loss with respect to every weight using the chain rule (this is called backpropagation), and updates each weight by stepping opposite the gradient with a small learning rate. Repeat for many epochs until the loss stops decreasing."</em></p>
+      </div>
+
+      <p>If they push further, you can name:</p>
+      <ul>
+        <li><strong>MSE</strong> for regression, <strong>cross-entropy</strong> for classification (we'll meet cross-entropy in a later session)</li>
+        <li><strong>ReLU</strong> for hidden layers, <strong>softmax</strong> for multi-class output</li>
+        <li><strong>Adam</strong> as the default optimiser (improvement on vanilla SGD)</li>
+        <li><strong>Dropout</strong> and <strong>batch norm</strong> as standard regularisers</li>
+        <li><strong>Mini-batch</strong> as the default GD variant (not full-batch, not pure stochastic)</li>
+        <li><strong>Vanishing gradient</strong> as the historical problem that ReLU + better init solved</li>
+      </ul>
+    </section>
+
+    <!-- ============ glossary ============ -->
+    <section class="glossary" id="glossary">
+      <h2>Glossary</h2>
+      <dl>
+        <dt>Activation function</dt><dd>A non-linear function applied to a neuron's linear output. Without it, stacking layers gains nothing. Common: ReLU (hidden), sigmoid (binary output), softmax (multi-class output), tanh (older hidden), step (historical).</dd>
+        <dt>Backpropagation</dt><dd>The algorithm that propagates the loss gradient backwards through the network's layers using the chain rule, so every weight can be updated. The multi-layer generalisation of the derivative we worked out in §06.</dd>
+        <dt>Batch / batch size</dt><dd>A chunk of training examples processed together before one weight update. Mini-batch size (32–512) is the modern default.</dd>
+        <dt>Bias (b)</dt><dd>A learned constant added to a neuron's linear combination of inputs. Lets the activation shift independently of the input.</dd>
+        <dt>Cost function</dt><dd>Average of the loss over a dataset (or batch). Gradient descent minimises it.</dd>
+        <dt>Dropout</dt><dd>Randomly zeroing the output of a fraction of neurons during training. Regulariser that prevents co-adaptation. Default rate 0.2–0.5.</dd>
+        <dt>Epoch</dt><dd>One complete pass through the entire training dataset.</dd>
+        <dt>Feedforward (forward pass)</dt><dd>Computing the network's prediction by applying layers from input to output.</dd>
+        <dt>Fully connected (dense) layer</dt><dd>A layer where every neuron is connected to every neuron in the previous layer.</dd>
+        <dt>Gradient</dt><dd>The vector of partial derivatives of the cost with respect to every weight. The "direction of steepest increase." Gradient descent steps <em>opposite</em> the gradient.</dd>
+        <dt>Gradient descent</dt><dd>The optimisation algorithm: <code>param_new = param_old − η · gradient</code>. From operations research / optimisation; deep learning uses it.</dd>
+        <dt>Hidden layer</dt><dd>Any neuron layer that isn't the input or output. Where representation learning happens.</dd>
+        <dt>Hyperparameter</dt><dd>A setting of the training process that you choose, not the network learns. Learning rate, batch size, number of layers, dropout rate, optimiser, etc.</dd>
+        <dt>Iteration</dt><dd>One weight update. Equivalently, one batch of training data processed.</dd>
+        <dt>Learning rate (η, α, lr)</dt><dd>The step-size multiplier in gradient descent. Single most-tuned hyperparameter.</dd>
+        <dt>Loss function</dt><dd>The per-example error measure. Sum (or average) over examples gives the cost.</dd>
+        <dt>Mini-batch gradient descent</dt><dd>Gradient descent that updates after each mini-batch (typically 32–512 examples). Modern default.</dd>
+        <dt>Momentum</dt><dd>A modification of GD that keeps a moving average of recent gradients — trajectory has "inertia." Helps in long shallow valleys.</dd>
+        <dt>MSE (mean squared error)</dt><dd><code>(1/N)·Σ(ŷ−y)²</code>. The standard regression loss.</dd>
+        <dt>Optimiser</dt><dd>The algorithm that uses the gradient to update weights. SGD, SGD with momentum, Adam, RMSProp, AdaGrad.</dd>
+        <dt>Overfitting</dt><dd>When a network learns the training data so well it stops generalising. Symptoms: training cost drops, validation cost rises. Cures: more data, regularisation, early stopping.</dd>
+        <dt>Parameter</dt><dd>A weight or bias. What the network <em>learns</em>. Contrast with hyperparameters (chosen).</dd>
+        <dt>Perceptron</dt><dd>A single neuron with weights, bias, and (in modern usage) an activation. Rosenblatt, 1957.</dd>
+        <dt>ReLU (Rectified Linear Unit)</dt><dd><code>max(0, z)</code>. Default hidden-layer activation in modern networks.</dd>
+        <dt>Sigmoid</dt><dd><code>1/(1+e⁻ᶻ)</code>. Outputs in (0, 1). Used on the output layer of binary classifiers.</dd>
+        <dt>Softmax</dt><dd>Generalises sigmoid to multi-class: produces a probability distribution over K classes. Used on the output layer of multi-class classifiers.</dd>
+        <dt>Step / Heaviside function</dt><dd><code>1 if z ≥ 0 else 0</code>. Historical; not used in modern networks — derivative is 0 almost everywhere.</dd>
+        <dt>Stochastic gradient descent (SGD)</dt><dd>Strictly: GD that updates after each single example. In practice the term is used loosely to mean mini-batch GD.</dd>
+        <dt>Tanh</dt><dd>Hyperbolic tangent, outputs in (−1, 1). Used as a hidden activation in older networks (RNNs).</dd>
+        <dt>Universal Approximation Theorem (UAT)</dt><dd>Cybenko 1989. A sufficiently wide single-hidden-layer network can approximate any continuous function. Explains why hidden layers are essential.</dd>
+        <dt>Vanishing gradient</dt><dd>In deep networks with saturating activations, the gradient becomes vanishingly small as it propagates backwards. Early layers stop learning. Solved by ReLU + better init + skip connections.</dd>
+        <dt>Weight (w)</dt><dd>A learned coefficient multiplying one input to a neuron. With bias and activation, defines what the neuron computes.</dd>
+      </dl>
+    </section>
+
+    <!-- ============ next ============ -->
+    <section class="chapter" id="next">
+      <div class="chapter-marker">§ NEXT — SESSION 03</div>
+      <h2>For Session 3</h2>
+
+      <p>Hands-on coding. We'll use <strong>TensorFlow</strong> to build, train, and evaluate two neural networks: one regression model (predict a numerical target) and one classification model. Every concept from today — activation choice, hidden layer count, epochs, batch size, learning rate, loss function — becomes a constructor argument or a <code>model.compile</code> flag.</p>
+
+      <p>If you remember nothing else, remember the loop:</p>
+
+<pre><code>for epoch in range(num_epochs):
+    for batch in dataset:
+        ŷ = forward(batch.x)                      # §04 step 1
+        loss = mse(ŷ, batch.y)                    # §04 step 2
+        gradients = backprop(loss)                # §06
+        weights -= learning_rate * gradients      # §05</code></pre>
+
+      <p>That's the whole game.</p>
+    </section>
+
+    <footer>
+      <span>ANN-SESSION 02 · 155 MIN · 2026-05-18</span>
+      <span>STUDY NOTES · SASMITA COURSE</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

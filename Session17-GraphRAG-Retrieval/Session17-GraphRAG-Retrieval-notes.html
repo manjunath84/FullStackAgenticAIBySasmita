@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 17 — GraphRAG, Part 3: The Retrieval Half</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px; line-height: 1.7; -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 64px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(48px, 7vw, 84px); line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 640px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 520px; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 32px 0 32px 32px; border-left: 4px solid var(--terracotta); margin: 40px 0 60px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -30px; font-size: 100px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 88px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.05; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 12px 0 22px 22px; color: var(--ink-soft); }
+.chapter li { margin-bottom: 8px; line-height: 1.65; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { font-family: 'JetBrains Mono', monospace; font-size: 13px; background: var(--ink); color: #e5dcc8; padding: 22px 26px; border-radius: 3px; overflow-x: auto; margin: 22px 0; line-height: 1.6; }
+pre code { background: transparent; border: none; padding: 0; color: inherit; font-size: inherit; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 15px; }
+table th, table td { border-bottom: 1px solid var(--line); padding: 10px 14px; text-align: left; vertical-align: top; }
+table th { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); font-weight: 700; border-bottom: 2px solid var(--ink); }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 28px; margin: 28px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 16px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 20px 24px; margin: 24px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+.bridge.warn { background: rgba(184, 71, 46, 0.05); border-left-color: var(--terracotta); border-color: rgba(184, 71, 46, 0.3); }
+.bridge.warn .bridge-label { color: var(--terracotta); }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 16px 22px; margin: 22px 0; font-size: 15px; color: var(--ink); }
+.correction strong { color: var(--terracotta); }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0; }
+.compare-cell { padding: 24px; background: rgba(251, 247, 239, 0.8); border: 1px solid var(--line); }
+.compare-cell.highlight { border: 2px solid var(--terracotta); background: rgba(248, 230, 207, 0.4); }
+.compare-cell .tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--ink-mute); font-weight: 700; margin-bottom: 8px; }
+.compare-cell.highlight .tag { color: var(--terracotta); }
+.compare-cell h4 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 20px; margin-bottom: 12px; }
+.compare-cell ul { list-style: none; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; color: var(--ink-soft); margin: 0; }
+.compare-cell ul li { margin-bottom: 6px; }
+figure.diagram { margin: 32px 0; padding: 8px; background: rgba(251, 247, 239, 0.6); border: 1px solid var(--line); }
+figure.diagram svg { width: 100%; height: auto; display: block; }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); letter-spacing: 1px; padding: 8px 12px 4px; text-align: center; }
+figure.infographic { margin: 40px -40px 40px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+.glossary { margin-top: 80px; padding-top: 40px; border-top: 2px solid var(--ink); }
+.glossary h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 32px; margin-bottom: 20px; }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 16px; }
+.glossary dd { font-size: 15px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 80px; padding-top: 32px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 44px; }
+  .thesis { font-size: 20px; padding-left: 20px; }
+  .chapter h2 { font-size: 28px; }
+  .compare { grid-template-columns: 1fr; }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 17</div>
+    <div class="toc-title">GraphRAG &mdash;<br>The Retrieval Half</div>
+    <ol>
+      <li><a href="#s1">The two-channel picture</a></li>
+      <li><a href="#s2">Two indexes, two jobs</a></li>
+      <li><a href="#infographic">Visual reference</a></li>
+      <li><a href="#s3">Entity extraction</a></li>
+      <li><a href="#s4">Lucene fuzzy queries</a></li>
+      <li><a href="#s5">The full-text index DDL</a></li>
+      <li><a href="#s6">The structured retriever</a></li>
+      <li><a href="#s7">The vector channel</a></li>
+      <li><a href="#s8">Combining both</a></li>
+      <li><a href="#s9"><code>RunnableParallel</code> honestly</a></li>
+      <li><a href="#s10">The demo trace</a></li>
+      <li><a href="#s11">Operational tail</a></li>
+      <li><a href="#s12">Recap</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      63.5 MIN<br>
+      3 SPEAKERS<br>
+      2026-05-06
+      <div class="rev-badge">REV v1</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 17 &middot; STUDY NOTES &middot; GRAPHRAG PART 3</div>
+      <h1>The retrieval<span class="accent">half.</span></h1>
+      <p class="hero-sub">Take the knowledge graph from Session 16. Wire entity extraction, fuzzy graph search, and vector similarity into one chain that produces grounded answers.</p>
+      <div class="hero-meta">
+        <span>GRAPHRAG PART 3</span>
+        <span>NEO4J &middot; LANGCHAIN &middot; LUCENE &middot; LCEL</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      Two retrieval channels feed one prompt. The <em>graph channel</em> anchors entities and their relationships; the <em>vector channel</em> rescues prose-buried rules. They fail differently &mdash; that is what makes them useful together.
+    </div>
+
+    <div class="correction">
+      <strong>Where we are.</strong> Session 15 introduced graph databases, Cypher, and the GraphRAG end-state. Session 16 built the indexing half &mdash; three policy documents chunked, run through <code>LLMGraphTransformer</code> to extract triples, loaded into Neo4j alongside per-chunk embeddings. Session 17 builds the retrieval half: at runtime, take a question, identify the entities the LLM sees, fuzzy-match them against the graph, walk one hop outward, run vector search in parallel, fuse both into one context, generate an answer.
+    </div>
+
+    <figure class="infographic" id="infographic">
+      <img src="Session17-GraphRAG-Retrieval-infographic.svg" alt="Session 17 infographic &mdash; from question to answer through two retrieval channels.">
+    </figure>
+
+    <!-- ============ §01 ============ -->
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">&sect; 01 &mdash; THE PICTURE</div>
+      <h2>The two-channel retriever, before any code</h2>
+
+      <p>Goal: a function that takes a user question and returns a single context string assembled from two complementary lookups against the same Neo4j database.</p>
+
+      <ol>
+        <li><strong>Structured (graph) retrieval.</strong> Identify the entities the question is asking about. Look them up in the graph. Walk one hop outward along their relationships. Return a list of relationship triples (<code>source - REL_TYPE -&gt; target</code>) as text.</li>
+        <li><strong>Unstructured (vector) retrieval.</strong> Embed the whole question. Cosine-match it against the chunk embeddings on the <code>:Document</code> nodes. Return the top-<em>k</em> chunks as text.</li>
+      </ol>
+
+      <p>Concatenate both into one block, feed it as <code>{context}</code> to a prompt template, send it to the LLM with the original <code>{question}</code>, return the answer.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="12">
+          <rect width="900" height="320" fill="#fbf7ef"/>
+          <rect x="340" y="20" width="220" height="40" fill="#1f1a14"/>
+          <text x="450" y="44" text-anchor="middle" fill="#f5efe6" font-weight="700">USER QUESTION</text>
+          <line x1="450" y1="62" x2="450" y2="78" stroke="#1f1a14" stroke-width="2"/>
+          <line x1="450" y1="80" x2="180" y2="100" stroke="#b8472e" stroke-width="1.5"/>
+          <line x1="450" y1="80" x2="720" y2="100" stroke="#2a5d62" stroke-width="1.5"/>
+          <rect x="60" y="110" width="240" height="40" fill="#ede5d6" stroke="#b8472e" stroke-width="2"/>
+          <text x="180" y="135" text-anchor="middle" fill="#1f1a14" font-weight="700">extract entities (LLM)</text>
+          <rect x="60" y="160" width="240" height="40" fill="#ede5d6" stroke="#b8472e" stroke-width="2"/>
+          <text x="180" y="185" text-anchor="middle" fill="#1f1a14" font-weight="700">fuzzy fulltext: __Entity__.id</text>
+          <rect x="60" y="210" width="240" height="40" fill="#ede5d6" stroke="#b8472e" stroke-width="2"/>
+          <text x="180" y="235" text-anchor="middle" fill="#1f1a14" font-weight="700">1-hop !MENTIONS traversal</text>
+          <line x1="180" y1="150" x2="180" y2="160" stroke="#b8472e"/>
+          <line x1="180" y1="200" x2="180" y2="210" stroke="#b8472e"/>
+          <rect x="600" y="110" width="240" height="40" fill="#ede5d6" stroke="#2a5d62" stroke-width="2"/>
+          <text x="720" y="135" text-anchor="middle" fill="#1f1a14" font-weight="700">embed question</text>
+          <rect x="600" y="160" width="240" height="40" fill="#ede5d6" stroke="#2a5d62" stroke-width="2"/>
+          <text x="720" y="185" text-anchor="middle" fill="#1f1a14" font-weight="700">cosine match: :Document</text>
+          <rect x="600" y="210" width="240" height="40" fill="#ede5d6" stroke="#2a5d62" stroke-width="2"/>
+          <text x="720" y="235" text-anchor="middle" fill="#1f1a14" font-weight="700">top k=4 chunks</text>
+          <line x1="720" y1="150" x2="720" y2="160" stroke="#2a5d62"/>
+          <line x1="720" y1="200" x2="720" y2="210" stroke="#2a5d62"/>
+          <line x1="180" y1="250" x2="430" y2="275" stroke="#1f1a14"/>
+          <line x1="720" y1="250" x2="470" y2="275" stroke="#1f1a14"/>
+          <rect x="320" y="278" width="260" height="32" fill="#f8e6cf" stroke="#c89b3c"/>
+          <text x="450" y="299" text-anchor="middle" fill="#1f1a14" font-weight="700">merged context &rarr; prompt &rarr; LLM</text>
+        </svg>
+        <figcaption>Two channels, one context block, one LLM call.</figcaption>
+      </figure>
+
+      <p>The two channels fail differently. Vector search is robust to paraphrase but blind to multi-hop reasoning. Graph search nails relational questions but only finds entities that were extracted at indexing time and that the LLM also extracts at query time. Feeding both gives the LLM the best chance of having the right facts in context.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>The retriever function is a service-layer method that orchestrates two repositories &mdash; one for graph queries, one for vector queries &mdash; and assembles a DTO (the context string) for a downstream collaborator (the LLM). The chain at the bottom of this page is the wiring; the prompt template is configuration.</p>
+      </div>
+    </section>
+
+    <!-- ============ §02 ============ -->
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">&sect; 02 &mdash; TWO INDEXES</div>
+      <h2>One database, two completely different lookups</h2>
+
+      <p>By the end of Session 16 the database has <em>one</em> index &mdash; the <strong>vector index</strong> the lecturer named <code>graphrag_classnote_vector</code>, created by <code>Neo4jVector.from_documents(...)</code>. It sits on <code>:Document</code> nodes' <code>embedding</code> property and powers the unstructured channel.</p>
+
+      <p>For the structured channel we need a second, separate index: a Lucene <strong>full-text index</strong> on the <code>id</code> property of every entity node. Without it, "find the graph node whose name matches <code>MedFreze</code>" is a full scan &mdash; slow, and only an exact-string match. With it, we get sub-second fuzzy lookup.</p>
+
+      <table>
+        <thead><tr><th></th><th>Vector index</th><th>Full-text index</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Purpose</strong></td><td>Semantic similarity over chunks</td><td>Approximate keyword match on entity names</td></tr>
+          <tr><td><strong>Built on</strong></td><td><code>:Document.embedding</code> (1536-d vectors)</td><td><code>:__Entity__.id</code> (strings)</td></tr>
+          <tr><td><strong>Created by</strong></td><td><code>Neo4jVector.from_documents(...)</code> &mdash; Session 16</td><td>One-line Cypher <code>CREATE FULLTEXT INDEX &hellip;</code> &mdash; this session</td></tr>
+          <tr><td><strong>Queried by</strong></td><td><code>vector_index.similarity_search(question)</code></td><td><code>db.index.fulltext.queryNodes(name, query)</code></td></tr>
+          <tr><td><strong>Match style</strong></td><td>Cosine distance between embedding vectors</td><td>Lucene tokeniser + optional fuzzy edit distance</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <div class="callout-label">WHY <code>__ENTITY__</code></div>
+        <p>When Session 16 called <code>kg.add_graph_documents(graph_documents, include_source=True, baseEntityLabel=True)</code>, the <code>baseEntityLabel=True</code> flag told <code>langchain-neo4j</code> to attach the uniform label <code>:__Entity__</code> to <em>every</em> node extracted from text. Without it each node would only carry its specific label (<code>:Company</code>, <code>:Contract</code>, <code>:Batch</code>, &hellip;) and we'd have no single anchor to put a fulltext index on. The lecturer's phrase "every node has a secondary label called entity" is exactly this <code>__Entity__</code> label.</p>
+      </div>
+    </section>
+
+    <!-- ============ §03 ============ -->
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">&sect; 03 &mdash; STEP 1</div>
+      <h2>Extract entities from the question</h2>
+
+      <p>A question like <em>"Per the policy pack, must batch B-4421 be quarantined, or can it be pre-released to a hospital back-order?"</em> contains roughly two entities a graph search can do something with: <code>B-4421</code> and <code>NordicCare</code>. The verbs and conditionals are not nodes &mdash; they're queries about nodes.</p>
+
+      <p>We use an LLM to do the extraction, with a Pydantic schema that tells the LLM exactly what shape to return.</p>
+
+<pre><code>from pydantic import BaseModel, Field
+from typing import List
+
+class Entities(BaseModel):
+    """Identifying information about entities."""
+    names: List[str] = Field(
+        ...,                    # Ellipsis = REQUIRED. No default, LLM must return a list.
+        description="Person, organization, product, or key technical concept "
+                    "names that appear in the text (for graph-aware retrieval).",
+    )</code></pre>
+
+      <p>The three dots are Pydantic's "no default value, this field is mandatory." If you set it to <code>None</code> instead, the field becomes optional and the LLM is allowed to skip it. The <code>description</code> is passed to the LLM as part of the schema and shapes what it considers an "entity."</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>This is a typed response DTO with a <code>@NotNull List&lt;String&gt; names</code> field &mdash; except instead of validating an incoming JSON request, it's validating an outgoing LLM completion. The "validator" is the LangChain <code>with_structured_output</code> wrapper below.</p>
+      </div>
+
+      <p>A prompt template plus the LLM with the schema attached:</p>
+
+<pre><code>prompt = ChatPromptTemplate.from_messages([
+    ("system",
+     "You extract person, organization, product, and notable concept entities "
+     "from the user's question for knowledge-graph lookup."),
+    ("human",
+     "Extract entities from: {question}"),
+])
+
+entity_chain = prompt | chat.with_structured_output(Entities)</code></pre>
+
+      <p><code>chat.with_structured_output(Entities)</code> does two things behind the scenes: it sends the JSON schema of <code>Entities</code> to the chat model (via OpenAI's <code>response_format</code> / function-calling mechanism), and it parses the response back into an <code>Entities</code> instance. The output of <code>entity_chain.invoke({"question": "&hellip;"})</code> is a Python <code>Entities</code> object whose <code>.names</code> attribute is the extracted list.</p>
+
+      <div class="correction">
+        <strong>Honest framing.</strong> <code>with_structured_output</code> is <em>not</em> a guarantee. It pins the JSON schema and validates the result. The LLM can still extract the wrong entities, hallucinate one that isn't in the graph, or miss one. We accept this and rely on the fuzzy match downstream to be forgiving.
+      </div>
+    </section>
+
+    <!-- ============ §04 ============ -->
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">&sect; 04 &mdash; STEP 2</div>
+      <h2>Make the search forgiving with Lucene fuzzy queries</h2>
+
+      <p>A user asking about <code>"MedFreeze"</code> should still match the node <code>MedFridge</code> in the graph. Exact-string matching can't do that; Lucene's fuzzy operator can.</p>
+
+<pre><code>from langchain_neo4j.vectorstores.neo4j_vector import remove_lucene_chars
+
+def generate_full_text_query(input: str) -> str:
+    """Convert free text into a Lucene fuzzy query.
+
+    Example: "MedFridge NordicCare" -> "MedFridge~2 AND NordicCare~2"
+    """
+    full_text_query = ""
+    words = [el for el in remove_lucene_chars(input).split() if el]
+    if not words:
+        return ""
+    for word in words[:-1]:
+        full_text_query += f" {word}~2 AND"
+    full_text_query += f" {words[-1]}~2"
+    return full_text_query.strip()</code></pre>
+
+      <p>Three things happen:</p>
+      <ol>
+        <li><strong><code>remove_lucene_chars(input)</code></strong> strips characters that have special meaning in Lucene syntax &mdash; <code>+ - &amp;&amp; || ! ( ) { } [ ] ^ " ~ * ? : \ /</code>. Leaving them in would either crash the parser or change query semantics.</li>
+        <li><strong>Tokenise on whitespace.</strong></li>
+        <li><strong>Append <code>~2</code></strong> to each token and join them with <code>AND</code>.</li>
+      </ol>
+
+      <p>The <code>~2</code> is the load-bearing part. In Apache Lucene, <code>term~N</code> is a <strong>fuzzy match with up to N edit operations</strong> allowed, where an edit is one insertion, deletion, substitution, or transposition (Damerau-Levenshtein distance, not plain Levenshtein). <em>N</em> must be 0, 1, or 2; the default if omitted is 2.</p>
+
+      <p>So <code>MedFreze~2</code> matches <code>MedFridge</code> because the two strings differ by two edits (insert <code>i</code>, delete <code>e</code>). <code>NodiCare~2</code> matches <code>NordicCare</code> (insert <code>r</code>, delete <code>i</code>). <code>Nodi~2</code> does <em>not</em> match <code>NordicCare</code> because the distance exceeds 2.</p>
+
+      <div class="correction">
+        <strong>Correction worth flagging.</strong> The lecturer described <code>~2</code> as "plus 2, minus 2 characters." That's a useful intuition but not literally what Lucene does. <code>~2</code> means "at most 2 edit operations allowed across the whole term," not "two characters can be anything." For two-word queries connected by <code>AND</code>, both fuzzy clauses must match. Source: Apache Lucene QueryParser Syntax documentation, "Fuzzy Searches."
+      </div>
+    </section>
+
+    <!-- ============ §05 ============ -->
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">&sect; 05 &mdash; STEP 3</div>
+      <h2>Create the full-text index on <code>__Entity__.id</code></h2>
+
+      <p>One line of Cypher, idempotent:</p>
+
+<pre><code>kg.query(
+    "CREATE FULLTEXT INDEX entity IF NOT EXISTS FOR (e:__Entity__) ON EACH [e.id]"
+)</code></pre>
+
+      <p>Parse it as: <code>CREATE FULLTEXT INDEX entity</code> names the index <code>entity</code>; <code>IF NOT EXISTS</code> makes re-runs safe; <code>FOR (e:__Entity__)</code> scopes it to every node with the uniform entity label; <code>ON EACH [e.id]</code> indexes the <code>id</code> property of each one. (<code>ON EACH [a, b]</code> would index two properties independently.)</p>
+
+      <p>A full-text index in Neo4j 5 is a Lucene index wrapped in a Cypher-callable procedure. Once created, you query it via <code>db.index.fulltext.queryNodes(indexName, queryString, options)</code>.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">OPERATIONAL NOTE</div>
+        <p>Run this once per database. The <code>IF NOT EXISTS</code> clause makes it safe to leave in the code &mdash; re-runs are no-ops.</p>
+      </div>
+    </section>
+
+    <!-- ============ §06 ============ -->
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">&sect; 06 &mdash; STEP 4</div>
+      <h2>The structured retriever</h2>
+
+      <p>For each entity the LLM extracted, search the fulltext index, take the top hits, and walk one hop outward along every relationship that isn't <code>:MENTIONS</code>.</p>
+
+<pre><code>def structured_retriever(question: str) -> str:
+    """Graph-based retrieval: extract entities, find them in the graph by
+    fulltext search, then traverse their relationships."""
+    result = ""
+    entities = entity_chain.invoke({"question": question})
+    for entity in entities.names:
+        print(f" Getting Entity: {entity}")
+        response = kg.query(
+            """CALL db.index.fulltext.queryNodes('entity', $query, {limit:2})
+            YIELD node, score
+            CALL {
+              WITH node
+              MATCH (node)-[r:!MENTIONS]-&gt;(neighbor)
+              RETURN node.id + ' - ' + type(r) + ' -&gt; ' + neighbor.id AS output
+              UNION ALL
+              WITH node
+              MATCH (node)&lt;-[r:!MENTIONS]-(neighbor)
+              RETURN neighbor.id + ' - ' + type(r) + ' -&gt; ' + node.id AS output
+            }
+            RETURN output LIMIT 50
+            """,
+            {"query": generate_full_text_query(entity)},
+        )
+        result += "\n".join([el["output"] for el in response])
+    return result</code></pre>
+
+      <p>Going through the Cypher:</p>
+      <ul>
+        <li><strong><code>CALL db.index.fulltext.queryNodes('entity', $query, {limit:2}) YIELD node, score</code></strong> &mdash; call the Lucene procedure on the <code>entity</code> index with the fuzzy query string. <code>{limit:2}</code> says "return at most 2 fuzzy-matched nodes per call." <code>YIELD node, score</code> exposes both &mdash; we ignore the score and keep the node.</li>
+        <li><strong>Subquery with <code>UNION ALL</code></strong> &mdash; two <code>MATCH</code> clauses, one for each direction. Without <code>UNION ALL</code> we'd only see outgoing edges and miss the ones where our entity is the target.</li>
+        <li><strong><code>[r:!MENTIONS]</code></strong> &mdash; the <code>!</code> is Cypher's relationship-type negation. <code>r:!MENTIONS</code> means "any relationship type <em>except</em> <code>MENTIONS</code>."</li>
+        <li><strong><code>RETURN output LIMIT 50</code></strong> &mdash; cap at 50 lines per entity to keep the prompt size sane.</li>
+      </ul>
+
+      <p>The output for a single entity looks like this:</p>
+
+<pre><code>B-4421 - PART_OF -&gt; MF-Insulin-Pro
+B-4421 - CARRIED_BY -&gt; Apex Cold
+B-4421 - QUARANTINED_BY -&gt; NordicCare
+NordicCare - RELEASED -&gt; B-4421
+&hellip;</code></pre>
+
+      <h3>6.1 &mdash; Why <code>:MENTIONS</code> is excluded</h3>
+
+      <p>Session 16's <code>add_graph_documents(..., include_source=True)</code> call attached the source document to each extracted entity with a <code>(:Document)-[:MENTIONS]-&gt;(:__Entity__)</code> edge. That edge is provenance metadata, not a domain relationship. Following it would walk you back to the raw chunk text &mdash; useful for citation, useless for "what is this entity connected to?" The <code>!MENTIONS</code> filter keeps the traversal inside the entity graph.</p>
+
+      <div class="callout">
+        <div class="callout-label">DIRECTION SUBTLETY</div>
+        <p><code>MENTIONS</code> always points <em>from Document to Entity</em>, not the other way. So the outgoing leg <code>MATCH (node)-[r:!MENTIONS]-&gt;(neighbor)</code> is already free of <code>:MENTIONS</code> when <code>node</code> is an <code>:__Entity__</code> (entities don't have outgoing <code>:MENTIONS</code>). The <code>!MENTIONS</code> filter does its real work in the <em>incoming</em> leg, which would otherwise pull in every <code>:Document</code> that mentioned this entity. Excluding both directions is harmless and defensive.</p>
+      </div>
+
+      <h3>6.2 &mdash; What "neighbor" means here</h3>
+      <p>The lecturer used "neighbor" loosely. In this Cypher, neighbor = <strong>the node on the other end of one relationship</strong> (one hop). The query does <em>not</em> recurse &mdash; <code>B-4421 -&gt; Apex Cold</code> is captured, but <code>Apex Cold</code>'s own relationships are not, unless the LLM also extracted <code>Apex Cold</code> from the question. For two hops you'd write <code>(node)-[r1:!MENTIONS]-&gt;(mid)-[r2:!MENTIONS]-&gt;(neighbor)</code> and pay the cost in both traversal time and prompt size.</p>
+    </section>
+
+    <!-- ============ §07 ============ -->
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">&sect; 07 &mdash; STEP 5</div>
+      <h2>The vector channel</h2>
+
+      <p>Same as Sessions 12&ndash;14, against the index Session 16 built.</p>
+
+<pre><code>unstructured_data = [
+    el.page_content for el in vector_index.similarity_search(question)
+]</code></pre>
+
+      <p><code>Neo4jVector.similarity_search(query)</code> defaults to <strong><code>k=4</code></strong> &mdash; top 4 most cosine-similar chunks. The lecturer guessed "5 or 6"; the actual <code>langchain-neo4j</code> default is 4. Pass <code>k=N</code> to override.</p>
+
+      <p>Two reminders:</p>
+      <ul>
+        <li><strong>The question gets embedded inside <code>similarity_search</code>.</strong> You hand it the raw question string; under the hood it calls the same embeddings model (<code>text-embedding-3-small</code>) to turn the question into a vector, then runs cosine similarity against the stored chunk vectors.</li>
+        <li><strong>The <code>:Document</code> nodes hold the raw text in their <code>text</code> property</strong> (<code>text_node_property="text"</code> in Session 16). <code>.page_content</code> exposes it.</li>
+      </ul>
+    </section>
+
+    <!-- ============ §08 ============ -->
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">&sect; 08 &mdash; FUSION</div>
+      <h2>Combining both into one context string</h2>
+
+<pre><code>def retriever(question: str):
+    print(f"Search query: {question}")
+    structured_data = structured_retriever(question)
+    unstructured_data = [
+        el.page_content for el in vector_index.similarity_search(question)
+    ]
+    final_data = f"""Structured data:
+{structured_data}
+Unstructured data:
+{chr(10).join(f"--- doc chunk ---{chr(10)}{t}" for t in unstructured_data)}
+"""
+    return final_data</code></pre>
+
+      <p>Both calls run; results are concatenated under section headers; the string goes into the prompt. The headers (<code>Structured data:</code> / <code>Unstructured data:</code>) are themselves part of the prompt &mdash; they help the model interpret what each block is.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>This is a <code>ContextAssembler</code> service whose collaborators are a <code>GraphRepository</code> (returns triples) and a <code>VectorRepository</code> (returns chunks), and whose product is a <code>String</code> formatted for the next stage. Pure composition, no state.</p>
+      </div>
+    </section>
+
+    <!-- ============ §09 ============ -->
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">&sect; 09 &mdash; LCEL</div>
+      <h2><code>RunnableParallel</code>, honestly explained</h2>
+
+      <p>The full chain:</p>
+
+<pre><code>from operator import itemgetter
+from langchain_core.runnables import RunnableLambda, RunnableParallel
+from langchain_core.output_parsers import StrOutputParser
+
+template = """Answer using ONLY the context below. Apply stated policies, numbers, and conditional rules explicitly.
+If the context is insufficient, say what is missing - do not invent facts.
+
+Context:
+{context}
+
+Question: {question}
+
+Answer (clear and concise):"""
+qa_prompt = ChatPromptTemplate.from_template(template)
+
+chain = (
+    RunnableParallel(
+        {
+            "context":  RunnableLambda(itemgetter("question")) | RunnableLambda(retriever),
+            "question": RunnableLambda(itemgetter("question")),
+        }
+    )
+    | qa_prompt
+    | chat
+    | StrOutputParser()
+)</code></pre>
+
+      <p>Invoke with <code>chain.invoke({"question": "&hellip;"})</code> &rarr; get a plain string back.</p>
+
+      <h3>9.1 &mdash; Why <code>RunnableParallel</code> is needed</h3>
+
+      <p>The lecturer's framing &mdash; <em>"the question is getting lost without Runnable"</em> &mdash; is loose. The honest mechanism:</p>
+      <ul>
+        <li><strong><code>qa_prompt</code> is a template with two placeholders</strong> &mdash; <code>{context}</code> and <code>{question}</code>. Filling it requires a dict shaped <code>{"context": &lt;str&gt;, "question": &lt;str&gt;}</code>.</li>
+        <li><strong>The caller invokes the chain with <code>{"question": "&hellip;"}</code> only.</strong> There is no <code>context</code> yet &mdash; it has to be computed from the question.</li>
+        <li><strong><code>RunnableParallel({...})</code> runs each value of its dict on the same input and assembles a new dict</strong> from the results. It's the adapter that turns the input dict into the dict shape the prompt template needs.</li>
+      </ul>
+
+      <div class="compare">
+        <div class="compare-cell">
+          <div class="tag">BRANCH 1 &mdash; <code>"context"</code></div>
+          <h4>build the merged block</h4>
+          <ul>
+            <li>itemgetter("question") &mdash; pulls the question string out of the input dict</li>
+            <li>&rarr; <code>retriever(question)</code></li>
+            <li>= structured + unstructured concatenated</li>
+          </ul>
+        </div>
+        <div class="compare-cell">
+          <div class="tag">BRANCH 2 &mdash; <code>"question"</code></div>
+          <h4>pass through unchanged</h4>
+          <ul>
+            <li>itemgetter("question") &mdash; pulls the question out of the input dict</li>
+            <li>no further transformation</li>
+            <li>= raw question string</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>The downstream stages are the standard LCEL chain: <code>| qa_prompt</code> fills the template, <code>| chat</code> calls the LLM and returns an <code>AIMessage</code>, <code>| StrOutputParser()</code> extracts <code>.content</code> as a plain <code>str</code>.</p>
+
+      <div class="bridge warn">
+        <div class="bridge-label">BRIDGE &mdash; AND WHERE IT BREAKS</div>
+        <p>Composition with <code>|</code> is structurally similar to a Spring <code>WebFilter</code> chain or a Servlet <code>FilterChain</code> &mdash; each stage takes the previous stage's output and produces input for the next. The mismatch: each stage here may run an LLM call or a database query, and the output of <code>chat</code> is non-deterministic by nature. The plumbing is familiar; the determinism guarantee isn't.</p>
+      </div>
+
+      <h3>9.2 &mdash; <code>RunnableLambda</code> vs <code>RunnablePassthrough</code> vs <code>RunnableParallel</code></h3>
+
+      <p>Three small classes from <code>langchain_core.runnables</code> appear across the RAG chains:</p>
+
+      <ul>
+        <li><strong><code>RunnableLambda(fn)</code></strong> wraps any plain Python callable so it can sit inside a <code>|</code> chain. <code>RunnableLambda(itemgetter("question"))</code> wraps <code>operator.itemgetter("question")</code>. <code>RunnableLambda(retriever)</code> wraps our <code>retriever</code> function.</li>
+        <li><strong><code>RunnablePassthrough</code></strong> returns its input unchanged. The "identity" wire. The simpler RAG chain in Session 13 might do <code>{"context": retriever, "question": RunnablePassthrough()}</code>. We don't use it here only because our input is a dict (<code>{"question": "&hellip;"}</code>) rather than a raw string, so we need <code>itemgetter</code> to dig out the value.</li>
+        <li><strong><code>RunnableParallel({...})</code></strong> runs the values of its dict in parallel on the same input and emits a new dict.</li>
+      </ul>
+
+      <div class="callout">
+        <div class="callout-label">FORWARD REFERENCE</div>
+        <p>The lecturer flagged Runnable as an open assignment for Session 18 &mdash; "first you go through it, then I'll explain with visualization." The above is the working mental model; the deep-dive class will probably look at the LCEL source for these classes.</p>
+      </div>
+    </section>
+
+    <!-- ============ §10 ============ -->
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">&sect; 10 &mdash; DEMO TRACE</div>
+      <h2>What the chain actually does on a real question</h2>
+
+      <p>The lecturer ran four hand-crafted questions through the chain. The first:</p>
+
+      <div class="callout">
+        <div class="callout-label">QUESTION 1 &mdash; MEDFRIDGE / NORDICCARE</div>
+        <p><em>"Batch B-4421 (MF-Insulin-Pro) had a single contiguous temperature excursion of 22 minutes above 8&nbsp;&deg;C before NordicCare received it. Per the policy pack, must the pallet be quarantined, or can it be pre-released to a hospital back-order &mdash; and what three conditions must be met for pre-release?"</em></p>
+      </div>
+
+      <p>The trace shows three things in sequence:</p>
+      <ol>
+        <li><strong>Entity extraction.</strong> <code>entity_chain</code> returns <code>Entities(names=["B-4421", "NordicCare", "MF-Insulin-Pro"])</code> (printed as <code>Getting Entity: &hellip;</code> lines).</li>
+        <li><strong>Per-entity fulltext search + traversal.</strong> For <code>B-4421</code> the structured retriever produces lines like <code>MedFridge - RELEASED -&gt; B-4421</code>, <code>B-4421 - PART_OF -&gt; MF-Insulin-Pro</code>, <code>B-4421 - CARRIED_BY -&gt; Apex Cold</code>. Same for <code>NordicCare</code>.</li>
+        <li><strong>Vector retrieval</strong> returns four chunks of the policy pack &mdash; including the paragraph listing the three conditions for pre-release.</li>
+        <li><strong>LLM call</strong> with both blocks in <code>{context}</code>. The model returns: <em>"The pallet must be quarantined because the excursion exceeds 20 minutes. It can be pre-released to hospital back-order if (a) the excursion is at most 25 minutes, (b) MedFridge Medical Affairs emails written exception referencing batch stability report SR-B4421-REV-C, and (c) the hospital accepts residual risk form RF-77."</em></li>
+      </ol>
+
+      <p>The answer is correct because the relevant chunk made it into the unstructured block. The graph block confirmed which batch was being discussed and tied it to MedFridge / NordicCare / Apex Cold, but the three conditions themselves are prose &mdash; they live in the chunk, not in the graph triples. Both channels contributed.</p>
+
+      <div class="correction">
+        <strong>Important honest note.</strong> The lecturer's gloss "more than model, context matters a lot" is correct in spirit but worth sharpening: a stronger model would have <em>less trouble</em> extracting the three conditions from a noisier context, and a stronger context retriever helps a weaker model. They're complements, not substitutes. The example also uses <code>temperature=0</code> &mdash; this reduces sampling variance but does <em>not</em> make the LLM deterministic; identical inputs can still produce different outputs across runs.
+      </div>
+
+      <h3>10.1 &mdash; The other three questions</h3>
+      <p>HelioStack / ACME (<code>EA-2024-771</code>) &mdash; graph linked <code>ACME</code> to the contract and to <code>ACME Baltics</code>; vector chunk supplied the prospective-not-retrospective rule from <code>FIN-HS-09</code>. Final answer correctly named "prospective adjustment, no clawback of cash already collected."</p>
+      <p>FobCo / RhineChem LC &mdash; entities <code>FobCo</code>, <code>RhineChem</code>, <code>CTR-RH-303</code>, <code>LCI-9001</code>. Vector chunk supplied the discrepancy-indemnity rule (<code>DI-IND-01</code> signed before presentation). Graph confirmed the relationships between contracts, banks, and Incoterms.</p>
+      <p>Cross-check &mdash; "Does MedFridge recognize revenue when NordicCare only quarantines?" The graph held the rule as a triple; the answer (no, until <code>Available for sale</code> is posted in <code>NCF-AS-01</code>) came out of the merged context.</p>
+
+      <p>The pattern: graph channel anchors <em>which</em> entities to talk about; vector channel supplies the <em>prose</em> containing the rule.</p>
+    </section>
+
+    <!-- ============ §11 ============ -->
+    <section class="chapter" id="s11">
+      <div class="chapter-marker">&sect; 11 &mdash; OPERATIONAL TAIL</div>
+      <h2>A few details worth pinning down</h2>
+
+      <ul>
+        <li><strong><code>pre_delete_collection=True</code></strong> in the <code>Neo4jVector.from_documents(...)</code> call drops and recreates the vector index on every run. Useful during development; <em>never</em> in production &mdash; you'd re-embed everything for nothing (and pay OpenAI for the privilege). Lecturer's note: "I just want to show you end-to-end once."</li>
+        <li><strong><code>temperature=0</code></strong> on <code>ChatOpenAI</code> reduces sampling randomness but is not a determinism guarantee. The OpenAI API still introduces small non-deterministic effects from server-side batching and floating-point order. For closer reproducibility you need <code>seed=&lt;int&gt;</code> plus <code>temperature=0</code> &mdash; and even then OpenAI documents "mostly deterministic."</li>
+        <li><strong><code>include_source=True</code></strong> in <code>add_graph_documents</code> (Session 16) is what created the <code>:MENTIONS</code> edges we now exclude. Without it you wouldn't need <code>!MENTIONS</code> in your Cypher &mdash; but you'd also lose citation back to the source chunk if you wanted it later.</li>
+        <li><strong><code>StrOutputParser()</code></strong> at the tail unwraps the <code>AIMessage</code> returned by <code>chat</code> into its <code>.content</code> string. Without it the chain emits an <code>AIMessage</code> object; with it, a plain <code>str</code>.</li>
+      </ul>
+    </section>
+
+    <!-- ============ §12 ============ -->
+    <section class="chapter" id="s12">
+      <div class="chapter-marker">&sect; 12 &mdash; RECAP</div>
+      <h2>What to remember</h2>
+
+      <ol>
+        <li><strong>GraphRAG retrieval has two channels.</strong> A structured retriever walks the knowledge graph; an unstructured retriever runs vector similarity over chunks. Both go into the LLM's prompt.</li>
+        <li><strong>Two indexes serve those two channels.</strong> A vector index on <code>:Document.embedding</code> and a Lucene full-text index on <code>:__Entity__.id</code>.</li>
+        <li><strong>Entity extraction is an LLM step.</strong> A Pydantic class plus <code>chat.with_structured_output(...)</code> shapes the LLM into returning a typed list of entity names.</li>
+        <li><strong>Lucene <code>term~2</code></strong> allows up to 2 Damerau-Levenshtein edits per fuzzy term. <code>MedFreze~2</code> matches <code>MedFridge</code>. <code>remove_lucene_chars</code> strips special characters before query construction.</li>
+        <li><strong><code>!MENTIONS</code> keeps the traversal inside the entity graph</strong> &mdash; the <code>:MENTIONS</code> edge is provenance back to source documents, not a domain relationship.</li>
+        <li><strong><code>RunnableParallel</code> is the adapter</strong> that turns <code>{"question": "&hellip;"}</code> into the <code>{"context": "&hellip;", "question": "&hellip;"}</code> shape the prompt template expects.</li>
+        <li><strong>Both channels failing differently</strong> is what makes the combination valuable.</li>
+        <li><strong>Production caveats.</strong> <code>pre_delete_collection=True</code> is for demos. <code>temperature=0</code> doesn't guarantee determinism. Keep <code>IF NOT EXISTS</code> on your fulltext-index DDL so re-runs are safe.</li>
+      </ol>
+
+      <div class="callout">
+        <div class="callout-label">SCOPE NOTE</div>
+        <p>The <code>Langgraph/</code> folder in the project root contains tutorial notebooks and code (LangChain agent tutorial, customer-service conditional-edge graph, coding-assistant human-in-the-loop). <em>None of that material was discussed in Session 17</em>, so none of it appears in these notes. Session 17 stays entirely on GraphRAG retrieval.</p>
+      </div>
+    </section>
+
+    <!-- ============ GLOSSARY ============ -->
+    <section class="glossary" id="glossary">
+      <h2>Glossary</h2>
+      <dl>
+        <dt>Structured retrieval</dt>
+        <dd>In the GraphRAG context, the channel that extracts entities from the question, looks them up in the graph, and returns relationship triples as text.</dd>
+        <dt>Unstructured retrieval</dt>
+        <dd>The vector-similarity channel that returns raw text chunks from the index.</dd>
+        <dt>Full-text index</dt>
+        <dd>A Lucene-backed index in Neo4j 5 on one or more string properties. Queried via <code>db.index.fulltext.queryNodes(name, query, options)</code>. Created with <code>CREATE FULLTEXT INDEX name FOR (e:Label) ON EACH [e.prop]</code>.</dd>
+        <dt><code>__Entity__</code></dt>
+        <dd>The uniform label that <code>langchain-neo4j</code>'s <code>add_graph_documents(..., baseEntityLabel=True)</code> attaches to every node extracted from text. Gives the fulltext index a single anchor.</dd>
+        <dt>Lucene fuzzy operator (<code>~N</code>)</dt>
+        <dd>Suffix that turns an exact-match term into a fuzzy match allowing up to <em>N</em> edit operations (Damerau-Levenshtein distance). <em>N</em> &isin; {0, 1, 2}; default 2. Source: Apache Lucene QueryParser Syntax.</dd>
+        <dt><code>remove_lucene_chars</code></dt>
+        <dd><code>langchain_neo4j.vectorstores.neo4j_vector.remove_lucene_chars</code>. Strips Lucene's reserved characters from a string before it's used as a query term.</dd>
+        <dt><code>!MENTIONS</code></dt>
+        <dd>Cypher relationship-type negation. Matches any relationship type <em>except</em> <code>MENTIONS</code>. Extends to <code>:!TYPE_A&amp;!TYPE_B</code> for multiple exclusions.</dd>
+        <dt><code>db.index.fulltext.queryNodes</code></dt>
+        <dd>The Neo4j 5 procedure that runs a Lucene query against a named fulltext index. Returns <code>(node, score)</code> rows. Accepts <code>{limit:N}</code>, <code>{skip:N}</code>, <code>{analyzer:"&hellip;"}</code> as options.</dd>
+        <dt><code>MENTIONS</code> edge</dt>
+        <dd>Created by <code>add_graph_documents(..., include_source=True)</code>. Direction is always <code>(:Document)-[:MENTIONS]-&gt;(:__Entity__)</code>. Used for provenance, excluded from domain traversal.</dd>
+        <dt><code>Entities</code> (Pydantic class)</dt>
+        <dd>Response schema for the entity-extraction LLM call. <code>names: List[str] = Field(..., description=...)</code>. Ellipsis means required.</dd>
+        <dt><code>with_structured_output(schema)</code></dt>
+        <dd>LangChain chat-model method that pins the response to a JSON schema (via OpenAI function-calling) and parses the result into a typed object.</dd>
+        <dt><code>RunnableParallel({...})</code></dt>
+        <dd>LCEL primitive that runs each value of its dict on the same input and assembles a new dict from the results. Used to map one input shape into another.</dd>
+        <dt><code>RunnableLambda(fn)</code></dt>
+        <dd>LCEL wrapper that lets any plain Python callable sit inside a <code>|</code> chain.</dd>
+        <dt><code>RunnablePassthrough()</code></dt>
+        <dd>LCEL primitive that returns its input unchanged. The "identity" wire. Appears in simpler RAG chains where the input is a raw string.</dd>
+        <dt><code>StrOutputParser</code></dt>
+        <dd>Final-stage LCEL parser that extracts the <code>.content</code> string from an <code>AIMessage</code>.</dd>
+        <dt><code>similarity_search(query, k=4)</code></dt>
+        <dd>Default top-<em>k</em> is 4 for <code>Neo4jVector</code>. Embeds the query under the hood and runs cosine similarity.</dd>
+        <dt><code>temperature=0</code></dt>
+        <dd>Sampling parameter that drives the LLM toward its highest-probability token at each step. Reduces variance, does not eliminate it.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <span>SESSION 17 &middot; 2026-05-06 &middot; GRAPHRAG PART 3</span>
+      <span>NEXT &mdash; RUNNABLE DEEP-DIVE, MCP, AGENTS</span>
+    </footer>
+
+  </main>
+
+</div>
+
+</body>
+</html>

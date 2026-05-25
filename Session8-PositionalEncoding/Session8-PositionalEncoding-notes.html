@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 8 — Positional Encoding (v2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 80px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(48px, 7vw, 84px); line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 600px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 580px; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.45; color: var(--ink); padding: 40px 0 40px 32px; border-left: 4px solid var(--terracotta); margin: 60px 0 80px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -30px; font-size: 100px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 96px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 42px; line-height: 1.05; margin-bottom: 28px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 24px; margin: 40px 0 16px; color: var(--ink); }
+.chapter p { margin-bottom: 20px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 16px 0 24px 24px; color: var(--ink-soft); }
+.chapter ul li, .chapter ol li { margin-bottom: 10px; font-size: 17px; line-height: 1.7; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.6; overflow-x: auto; border-left: 4px solid var(--ochre); }
+pre code { background: transparent; border: none; color: var(--paper); padding: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 22px 26px; margin: 28px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15.5px; color: var(--ink); line-height: 1.65; }
+.correction strong { color: var(--terracotta); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 28px 32px; margin: 36px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 17px; margin-bottom: 12px; }
+.callout p:last-child { margin-bottom: 0; }
+.equation { background: var(--ink); color: var(--paper); padding: 26px 28px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 17px; margin: 32px 0; letter-spacing: 0.5px; line-height: 1.9; }
+.equation .l1 { color: var(--teal-light); }
+.equation .l2 { color: var(--ochre); }
+.equation .small { font-size: 12px; color: var(--ink-mute); display: block; margin-top: 14px; letter-spacing: 1px; }
+table.tbl { width: 100%; border-collapse: collapse; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+table.tbl th, table.tbl td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--line); }
+table.tbl th { background: var(--paper-2); font-weight: 700; color: var(--ink); letter-spacing: 1px; font-size: 11px; text-transform: uppercase; }
+table.tbl td { color: var(--ink-soft); }
+table.tbl tr:hover td { background: rgba(248, 230, 207, 0.3); }
+.props { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 28px 0; }
+.prop { background: rgba(251, 247, 239, 0.7); border-left: 4px solid var(--teal-light); padding: 18px 22px; }
+.prop h4 { font-family: 'Fraunces', serif; font-style: italic; font-size: 20px; color: var(--ink); margin-bottom: 6px; }
+.prop p { font-size: 15px; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+.pipeline { display: flex; flex-wrap: wrap; gap: 0; align-items: stretch; margin: 32px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.pipeline-step { flex: 1; min-width: 110px; background: var(--ink); color: var(--paper); padding: 16px 12px; text-align: center; position: relative; }
+.pipeline-step.embed { background: var(--teal); }
+.pipeline-step.position { background: var(--ochre); color: var(--ink); }
+.pipeline-step.attention { background: var(--terracotta); }
+.pipeline-step:not(:last-child)::after { content: '→'; position: absolute; right: -8px; top: 50%; transform: translateY(-50%); color: var(--ink); font-size: 14px; z-index: 2; background: var(--paper); width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.pipeline-step .label { font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; font-size: 11px; }
+.pipeline-step .sub { font-size: 10px; opacity: 0.85; }
+figure.infographic { margin: 40px -40px 40px; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic img, figure.infographic svg { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+.glossary { margin-top: 80px; padding-top: 48px; border-top: 2px solid var(--ink); }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 18px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 100px; padding-top: 32px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 48px; }
+  .thesis { font-size: 22px; padding-left: 20px; }
+  .chapter h2 { font-size: 32px; }
+  .props { grid-template-columns: 1fr; }
+  .pipeline { flex-direction: column; }
+  .pipeline-step:not(:last-child)::after { content: '↓'; right: 50%; top: auto; bottom: -8px; transform: translateX(50%); }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 08</div>
+    <div class="toc-title">Positional<br>Encoding</div>
+    <ol>
+      <li><a href="#s1">Where we are</a></li>
+      <li><a href="#s2">Why integers fail</a></li>
+      <li><a href="#s3">Why binary fails</a></li>
+      <li><a href="#s4">Four properties</a></li>
+      <li><a href="#s5">One wave isn't enough</a></li>
+      <li><a href="#s6">The formula</a></li>
+      <li><a href="#s7">Worked example</a></li>
+      <li><a href="#s8">The heatmap pattern</a></li>
+      <li><a href="#s9">Add, don't concatenate</a></li>
+      <li><a href="#s10">Why 512?</a></li>
+      <li><a href="#s11">Token embedding</a></li>
+      <li><a href="#s12">Preview: attention</a></li>
+      <li><a href="#s13">What's changed since 2017</a></li>
+      <li><a href="#s14">Interview summary</a></li>
+      <li><a href="#svg">Visual reference</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      65.5 MIN<br>
+      2 SPEAKERS<br>
+      2026-05-17
+      <div class="rev-badge">REV v2</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 08 · TRANSFORMER ENCODER</div>
+      <h1>Positional<br><span class="accent">Encoding.</span></h1>
+      <p class="hero-sub">A Transformer sees every token in parallel. It has no clue what came first. Sine and cosine put order back in — without breaking the math.</p>
+      <div class="hero-meta">
+        <span>65.5 MIN</span>
+        <span>VASWANI ET AL. 2017 §3.5</span>
+        <span>d_model = 512</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      The encoder <em>adds</em> a position vector to every token's embedding. The 2017 paper picks that vector from sine and cosine waves at many different frequencies — giving every position a unique, bounded, smooth fingerprint that doesn't grow with sequence length.
+    </div>
+
+    <div class="correction" style="margin-bottom: 60px;">
+      <strong>WHERE THE LECTURER'S DIAGRAMS COME FROM</strong><br>
+      Most of the visuals and the "animal didn't cross the street" example trace back to Jay Alammar's <em>Illustrated Transformer</em>. His original positional-encoding figure shows the <strong>Tensor2Tensor implementation</strong>, which builds the position vector by concatenating a sin half with a cos half (left half = all sin, right half = all cos). The actual paper method — and these notes — <strong>interweaves</strong> sin and cos column-by-column (even dim = sin, odd dim = cos). Alammar himself added a July 2020 update flagging the difference. So when the lecturer said "concatenate," he was probably thinking of how Alammar's diagram is constructed, not how PE attaches to the embedding. Two different operations, same word.
+    </div>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">CHAPTER 01</div>
+      <h2>Where we are in the encoder</h2>
+      <p>One encoder block, in order:</p>
+
+      <div class="pipeline">
+        <div class="pipeline-step"><div class="label">TOKENIZE</div><div class="sub">text → token ids</div></div>
+        <div class="pipeline-step embed"><div class="label">EMBED</div><div class="sub">lookup → 512-vec</div></div>
+        <div class="pipeline-step position"><div class="label">+ POSITION</div><div class="sub">sin/cos vector</div></div>
+        <div class="pipeline-step attention"><div class="label">ATTENTION</div><div class="sub">cross-token mix</div></div>
+        <div class="pipeline-step"><div class="label">FEED-FWD</div><div class="sub">per-token MLP</div></div>
+      </div>
+
+      <p>Session 8 is the third step — what that positional encoding actually is, why it has that shape, and how the formula computes it.</p>
+
+      <div class="correction">
+        <strong>CORRECTION · UP FRONT</strong><br>
+        The lecturer repeatedly says the position vector is <em>concatenated</em> to the embedding. It isn't — it's <em>added</em> element-wise. The position vector must have the same dimensionality as the token embedding so they can be <strong>summed</strong>. Addition keeps the vector at <code>d_model</code> end-to-end; concatenation would double the size at every injection.<br><br>
+        <em>Vaswani et al. 2017, §3.5 — "the positional encodings have the same dimension d_model as the embeddings, so that the two can be summed." Alammar's July 2020 update confirms the paper interweaves rather than concatenates.</em>
+      </div>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">CHAPTER 02</div>
+      <h2>Why integer positions don't work</h2>
+      <p>The most naive scheme: position 0 → <code>0</code>, position 1 → <code>1</code>, and so on. This fails for two reasons.</p>
+
+      <h3>Magnitudes blow up</h3>
+      <p>A long document might have 5,000 tokens. Feeding <code>5000</code> into a neural network — alongside word-embedding components that sit around ±1 — wrecks training. Deep networks are extremely sensitive to input scale: large, unbounded inputs make gradients explode and weights skew.</p>
+
+      <p>This is why ML pipelines almost always <strong>normalize</strong> inputs first. The lecturer reached for min-max scaling:</p>
+
+      <pre><code>x_scaled = (x − min) / (max − min)</code></pre>
+
+      <p>The transcript example garbled the arithmetic. The correct version, with min = 1000 sq ft and max = 1500 sq ft:</p>
+
+      <table class="tbl">
+        <thead><tr><th>x (sq ft)</th><th>(x − 1000) / 500</th><th>scaled</th></tr></thead>
+        <tbody>
+          <tr><td>1000</td><td>0 / 500</td><td>0.0</td></tr>
+          <tr><td>1100</td><td>100 / 500</td><td>0.2</td></tr>
+          <tr><td>1500</td><td>500 / 500</td><td>1.0</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Position has to be input-length-independent</h3>
+      <p>A model trained on sequences up to length 100 should still produce a sensible encoding at position 5,000. Integer indexing has no upper bound, so the model has never seen large values during training and can't generalize to them.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA · SPRING BRIDGE</div>
+        <p>Think of it like a rate limiter that expects values in <code>[0, 1]</code> (a percentage). If you start handing it raw request counts in the millions, every downstream calculation derails. ML preprocessing is conceptually the same: normalize before the service consumes the input.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">CHAPTER 03</div>
+      <h2>Why binary encoding doesn't work either</h2>
+      <p>Next attempt: encode each position as its binary representation. Position 5 → <code>0101</code>, position 13 → <code>1101</code>. This is <strong>unique</strong> (every integer has a distinct binary form) and <strong>bounded</strong> (each bit is 0 or 1). But:</p>
+      <ul>
+        <li><strong>It's not smooth.</strong> Adjacent positions can differ in many bits — 7 → 8 flips four bits (<code>0111</code> → <code>1000</code>). The model can't easily learn "this position is one step after that one" from a representation that jumps around.</li>
+        <li><strong>Bit width depends on max length.</strong> To support up to 2<sup>16</sup> positions you need 16 bits; up to 2<sup>20</sup>, you need 20 bits. The encoding's size is fixed by a quantity the architect has to commit to up front.</li>
+      </ul>
+      <p>What we want instead is a continuous, smooth function — small step in position, small step in vector. Sine and cosine give exactly that.</p>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">CHAPTER 04</div>
+      <h2>The four properties we want</h2>
+      <div class="props">
+        <div class="prop"><h4>Bounded</h4><p>Values stay in a fixed range. <code>sin</code> and <code>cos</code> sit in <code>[−1, 1]</code>.</p></div>
+        <div class="prop"><h4>Small</h4><p>Same idea — values near zero, no gradient explosions.</p></div>
+        <div class="prop"><h4>Smooth</h4><p>Nearby positions get nearby vectors. Distance in position ≈ distance in vector.</p></div>
+        <div class="prop"><h4>Unique</h4><p>No two positions produce identical full vectors.</p></div>
+      </div>
+      <p>Sine and cosine give you bounded, small, and smooth automatically. Uniqueness is what the <strong>multi-frequency</strong> construction (next chapter) is built for.</p>
+    </section>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">CHAPTER 05</div>
+      <h2>Why a single sine wave isn't enough</h2>
+      <p><code>sin(pos)</code> is periodic with period 2π ≈ 6.28. After roughly six positions, the values start repeating. Two different positions can produce the same number — the encoding isn't unique.</p>
+      <p>Pairing it with cosine gives <code>(sin(pos), cos(pos))</code>. That pair is unique within one full period, but still repeats after 2π. One pair isn't enough either.</p>
+
+      <h3>The lecturer's uniqueness insight</h3>
+      <p>Even if a few entries of a 512-dimensional vector happen to coincide between two positions, the <em>full vector</em> is still distinct as long as some entries differ. He used this example:</p>
+      <pre><code>[0.1, 0.2, 0.3, 0.5]   vs   [0.1, 0.2, 0.3, 0.6]</code></pre>
+      <p>The first three entries are identical; the fourth differs. The vectors are different. With 512 entries, it would take <strong>every single one</strong> of them to collide for two positions to be indistinguishable. That's astronomically unlikely if each entry comes from a sine or cosine at a different frequency.</p>
+
+      <p><strong>The fix:</strong> use many <code>(sin, cos)</code> pairs at <strong>different frequencies</strong>. If the first pair completes one cycle every 2π positions, the second every ≈20π, the next every ≈200π, and so on. The chance that every pair across all frequencies aligns at two different positions is, for practical purposes, zero.</p>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">CHAPTER 06</div>
+      <h2>The formula</h2>
+      <p>The paper defines, for token position <code>pos</code> and pair index <code>i</code>:</p>
+
+      <div class="equation">
+        <span class="l1">PE(pos, 2i)&nbsp;&nbsp;&nbsp; = sin( pos / 10000<sup>(2i / d_model)</sup> )</span><br>
+        <span class="l2">PE(pos, 2i+1) = cos( pos / 10000<sup>(2i / d_model)</sup> )</span>
+        <span class="small">VASWANI ET AL. 2017 · §3.5</span>
+      </div>
+
+      <p>Notation, because the transcript wobbles here:</p>
+      <ul>
+        <li><code>pos</code> — position of the token in the input sequence (0, 1, 2, …).</li>
+        <li><code>d_model</code> — total embedding dimension (512 in the paper).</li>
+        <li><code>i</code> — the <strong>pair index</strong>, ranging from 0 to <code>d_model/2 − 1</code>. For <code>d_model = 512</code>, that's <code>i ∈ {0, 1, …, 255}</code> — exactly <strong>256 pairs</strong>.</li>
+        <li><code>2i</code> and <code>2i+1</code> index two adjacent dimensions of the output vector. Dimensions 0 and 1 form pair 0 (i = 0). Dimensions 2 and 3 form pair 1 (i = 1). …Dimensions 510 and 511 form pair 255.</li>
+      </ul>
+
+      <div class="correction">
+        <strong>WATCH FOR THIS SLIP</strong><br>
+        Even <em>dimensions</em> get sine, odd <em>dimensions</em> get cosine. The lecturer phrased this as "even positions get sine" — that's the dimension index inside the position vector, <strong>not</strong> the token's position in the sentence. Every position gets the same alternation pattern: sin, cos, sin, cos, … across its 512 slots.
+      </div>
+
+      <h3>The denominator is the wavelength controller</h3>
+      <table class="tbl">
+        <thead><tr><th>i</th><th>denominator</th><th>period (positions)</th><th>role</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>10000<sup>0</sup> = 1</td><td>2π ≈ 6.28</td><td>fastest oscillation — fine-grained position</td></tr>
+          <tr><td>128</td><td>10000<sup>0.5</sup> = 100</td><td>≈ 628</td><td>mid-scale</td></tr>
+          <tr><td>255</td><td>10000<sup>0.996</sup> ≈ 9647</td><td>≈ 60,000</td><td>slowest — coarse-grained position</td></tr>
+        </tbody>
+      </table>
+      <p>Low-index dimensions oscillate fast; high-index dimensions oscillate slowly. The encoding gives the model position information <strong>at every scale simultaneously</strong>.</p>
+    </section>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">CHAPTER 07</div>
+      <h2>Worked example (tiny: d_model = 4)</h2>
+      <p>The lecturer wanted to do a full worked example but postponed it. Here it is for a tiny model where <code>d_model = 4</code> — so 2 pairs, <code>i ∈ {0, 1}</code>. Compute the encoding for position 1:</p>
+      <table class="tbl">
+        <thead><tr><th>dim</th><th>func</th><th>i</th><th>denom</th><th>arg</th><th>value</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>sin</td><td>0</td><td>1</td><td>1 / 1 = 1</td><td>≈ 0.8415</td></tr>
+          <tr><td>1</td><td>cos</td><td>0</td><td>1</td><td>1</td><td>≈ 0.5403</td></tr>
+          <tr><td>2</td><td>sin</td><td>1</td><td>100</td><td>1 / 100 = 0.01</td><td>≈ 0.0100</td></tr>
+          <tr><td>3</td><td>cos</td><td>1</td><td>100</td><td>0.01</td><td>≈ 0.99995</td></tr>
+        </tbody>
+      </table>
+      <p>So <code>PE(pos=1) ≈ [0.8415, 0.5403, 0.0100, 0.99995]</code>.</p>
+      <p>For position 2:</p>
+      <table class="tbl">
+        <thead><tr><th>dim</th><th>value</th></tr></thead>
+        <tbody>
+          <tr><td>0 (sin 2)</td><td>≈ 0.9093</td></tr>
+          <tr><td>1 (cos 2)</td><td>≈ −0.4161</td></tr>
+          <tr><td>2 (sin 0.02)</td><td>≈ 0.0200</td></tr>
+          <tr><td>3 (cos 0.02)</td><td>≈ 0.9998</td></tr>
+        </tbody>
+      </table>
+      <p>Two distinct positions, two distinct vectors. Notice the high-index dimensions (slow frequency) barely move between consecutive positions — those are the "global" position channels. The low-index dimensions swing dramatically — those are the "local" position channels. The model gets both.</p>
+      <p>For the real <code>d_model = 512</code>, repeat with 256 pairs.</p>
+    </section>
+
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">CHAPTER 08</div>
+      <h2>The heatmap pattern</h2>
+      <p>The lecturer mentioned twice that "if you plot all the values in a heatmap, you'll see hidden patterns." Here's what he meant.</p>
+      <p>Stack the PE vectors row-by-row (one row per position) and color-shade each cell by its value (deep terracotta = −1, paper = 0, teal = +1). You get vertical stripes:</p>
+      <ul>
+        <li><strong>Left-side columns</strong> (small <code>i</code>, fast frequency) — tight, fast-cycling alternation as you scan down positions. The wave completes many full cycles in just a few rows.</li>
+        <li><strong>Right-side columns</strong> (large <code>i</code>, slow frequency) — almost constant. The wave's period is so long that, within the first few hundred positions, the value barely budges.</li>
+        <li>The transition from fast to slow is smooth across the dimension axis, because the wavelengths grow as a smooth exponential of <code>i</code>.</li>
+      </ul>
+      <p>This is the easiest way to see two properties at once: every column is bounded in <code>[−1, 1]</code> (the <strong>bounded</strong> property), and no two rows are identical (the <strong>uniqueness</strong> property). The infographic at the end of these notes has a computed version using real values.</p>
+      <div class="correction">
+        <strong>TWO VISUALIZATIONS EXIST</strong><br>
+        Alammar's classic image (the one most lecturers, including this one, end up showing) is rendered from the <strong>Tensor2Tensor implementation</strong>: sin values fill the left half of each row, cos values fill the right half — you can see a visible seam down the center. The <strong>actual paper</strong> interweaves sin and cos column-by-column (even dim = sin, odd dim = cos), which produces the alternating-stripe pattern in the infographic below. Both schemes contain the same values, just permuted across dimensions — the model behavior is identical — but the heatmap looks different. This is the most common point of confusion when reading PE visualizations across blog posts.
+      </div>
+    </section>
+
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">CHAPTER 09</div>
+      <h2>Add, don't concatenate</h2>
+      <p>After computing both:</p>
+      <ul>
+        <li><code>embedding(token)</code> — length 512 from the token-embedding lookup.</li>
+        <li><code>PE(pos)</code> — length 512 from the sin/cos formula.</li>
+      </ul>
+      <p>The encoder forms <code>embedding(token) + PE(pos)</code> element-wise. Result is still 512-dimensional. The same shape flows through every encoder block.</p>
+      <p>Positional encoding is added <strong>once</strong>, before the encoder stack. It is not re-added inside each of the 6 encoder layers.</p>
+    </section>
+
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">CHAPTER 10</div>
+      <h2>Why 512? (it's a choice, not a law)</h2>
+      <p><code>d_model = 512</code> is the hyperparameter the <em>Attention Is All You Need</em> authors picked. Modern models pick other values:</p>
+      <table class="tbl">
+        <thead><tr><th>model</th><th>embedding dim</th></tr></thead>
+        <tbody>
+          <tr><td>Original Transformer (2017)</td><td>512</td></tr>
+          <tr><td>BERT-base</td><td>768</td></tr>
+          <tr><td>BERT-large</td><td>1,024</td></tr>
+          <tr><td>GPT-3</td><td>12,288</td></tr>
+          <tr><td>OpenAI text-embedding-3-small</td><td>1,536</td></tr>
+          <tr><td>OpenAI text-embedding-3-large</td><td>3,072</td></tr>
+          <tr><td>all-MiniLM-L6-v2 (SBERT)</td><td>384</td></tr>
+        </tbody>
+      </table>
+      <div class="correction">
+        <strong>NOTED</strong><br>
+        The lecturer mentioned "BERT 356 dimensions" — that's misremembered. BERT-base is 768. The 384-dimensional MiniLM model is the likely confusion.<br><br>
+        He also conflated "more dimensions" with "more tokens." More dimensions = <strong>wider</strong> per-token vector. More tokens = <strong>longer</strong> sequence. Both cost compute, but they're independent knobs.
+      </div>
+      <p>Bigger <code>d_model</code> = more capacity for nuance, but quadratic-ish compute and memory cost. The choice is an accuracy-vs-cost trade-off, not a fixed rule.</p>
+    </section>
+
+    <section class="chapter" id="s11">
+      <div class="chapter-marker">CHAPTER 11</div>
+      <h2>What the token embedding actually is</h2>
+      <p>The lecturer hedged here — "it's pre-computed, you have an embedding for every English word" then later "no, it's actually a neural network." The honest picture:</p>
+      <ul>
+        <li>The token embedding is a <strong>learned lookup table</strong> — a matrix of shape <code>(vocab_size, d_model)</code>. Row <em>k</em> is the embedding for token <em>k</em>.</li>
+        <li>In the original Transformer, this lookup is <strong>trained jointly</strong> with the rest of the model on the end task (translation). It is not separately pre-trained the way Word2Vec is.</li>
+        <li>"Vocabulary" in modern Transformers means <strong>sub-word tokens</strong> (BPE, WordPiece, SentencePiece), not English words. ~30k–50k sub-word units is typical.</li>
+        <li>During training, the model adjusts these embedding rows via backpropagation, the same way it adjusts every other parameter.</li>
+      </ul>
+      <div class="correction">
+        <strong>TRAINING OBJECTIVE</strong><br>
+        The "mask a word, predict it" framing at the end of the session is <strong>masked language modeling</strong> — BERT's training objective, not the original Transformer's. The 2017 paper trains on translation (supervised seq2seq). The lecturer's example works as a teaching device, but the procedure is closer to BERT than to either Word2Vec or the 2017 paper.
+      </div>
+      <div class="bridge">
+        <div class="bridge-label">JAVA · SPRING BRIDGE</div>
+        <p>The token embedding is like a <code>Map&lt;Integer, float[]&gt;</code> loaded at application startup, where the values are learned during a separate "training" deployment. Once shipped, every request looks up the same vectors. Position encoding adds a deterministic per-request decoration on top.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s12">
+      <div class="chapter-marker">CHAPTER 12</div>
+      <h2>Preview of Session 9 — why attention repeats</h2>
+      <p>The lecturer closed with the canonical example for multi-head attention:</p>
+      <div class="callout">
+        <div class="callout-label">THE ANIMAL/STREET/IT EXAMPLE</div>
+        <p><em>"The animal didn't cross the street because it was too tired."</em></p>
+        <p>Humans resolve <em>it → animal</em> instantly. The model has to discover that <em>tired</em> is more associated with <em>animal</em> than with <em>street</em>, and that <em>cross the street</em> binds the verb to the street object, and so on.</p>
+      </div>
+      <p>Alammar's published attention-head visualization shows that, when encoding <em>it</em>, one head attends most strongly to <em>the animal</em> while another attends to <em>tired</em> — the model's representation of <em>it</em> ends up baking in some of both. That's the point of running attention with multiple heads in parallel.</p>
+      <p>The paper uses <strong>8 attention heads</strong> (multi-head attention with h = 8), and the encoder block is stacked <strong>6 times</strong> (N = 6).</p>
+      <div class="correction">
+        <strong>NUMBERS WORTH PINNING</strong><br>
+        The lecturer's casual "9 times" / "11 times" was off. The canonical numbers from Vaswani et al. §3.2.2 are <strong>h = 8 heads</strong> per attention layer, <strong>N = 6 layers</strong> in the encoder. One more useful number for next session: the Query / Key / Value vectors inside each head are <strong>64-dim</strong>, not 512 — the input is projected down by each head's learned <code>W_Q</code>/<code>W_K</code>/<code>W_V</code> matrices. 8 heads × 64 dims = 512, which is why the heads concatenate cleanly back to <code>d_model</code>.
+      </div>
+    </section>
+
+    <section class="chapter" id="s13">
+      <div class="chapter-marker">CHAPTER 13</div>
+      <h2>What's changed since 2017</h2>
+      <p>The lecturer mentioned in passing that "today there are other approaches." Worth knowing the names exist; you do not need the details for this course:</p>
+      <ul>
+        <li><strong>Learned absolute positions</strong> (BERT, GPT-1/2/3) — same shape as sinusoidal PE but the values are learned parameters, not a closed-form formula. Adds capacity, loses extrapolation beyond trained length.</li>
+        <li><strong>Relative position</strong> (Shaw et al. 2018, T5) — encode the <em>difference</em> between positions rather than absolute position. Better at length generalization.</li>
+        <li><strong>RoPE</strong> (Su et al. 2021, used in LLaMA, Mistral, GPT-NeoX) — rotate query and key vectors by an angle proportional to position. Now the most common choice in production LLMs.</li>
+        <li><strong>ALiBi</strong> (Press et al. 2022) — no positional vectors at all; instead add a fixed bias to attention scores that grows with distance.</li>
+      </ul>
+      <p>If you read a 2024+ model card and don't see sinusoidal positional encoding, this is why.</p>
+    </section>
+
+    <section class="chapter" id="s14">
+      <div class="chapter-marker">CHAPTER 14</div>
+      <h2>Interview-level summary</h2>
+      <div class="callout">
+        <div class="callout-label">WHAT TO ACTUALLY REMEMBER</div>
+        <p><em>"They won't ask you the formula. They'll ask why sin and cos. Answer: bounded, smooth, small, unique. They'll ask why pairs at different frequencies. Answer: a single wave repeats; many waves at different periods make the combined vector effectively unique."</em></p>
+      </div>
+      <h3>Keep clearly in head</h3>
+      <ul>
+        <li>Position is <strong>added</strong> to the embedding (not concatenated).</li>
+        <li>Even <strong>dimension</strong> = sin, odd <strong>dimension</strong> = cos (not even/odd <em>position</em> in the sentence).</li>
+        <li>256 pairs for <code>d_model = 512</code>.</li>
+        <li>sin/cos chosen for bounded + smooth + small + unique.</li>
+        <li>Multi-frequency for uniqueness across long sequences.</li>
+      </ul>
+      <h3>Don't bother memorizing</h3>
+      <p>The literal <code>10000^(2i/d_model)</code> denominator. You can re-derive that 10000 was the authors' choice to span wavelengths from 2π (i=0) to ~10000·2π (i=d_model/2), giving multi-scale coverage.</p>
+    </section>
+
+    <section class="chapter" id="svg">
+      <div class="chapter-marker">VISUAL REFERENCE</div>
+      <h2>The full picture</h2>
+      <p>Everything above, condensed into one visual — including a computed multi-frequency wave panel and a real-values heatmap. (Standalone file: <code>Session8-PositionalEncoding-infographic.svg</code>.)</p>
+      <figure class="infographic">
+        <img src="Session8-PositionalEncoding-infographic.svg" alt="Session 8 infographic: positional encoding flow, formula, multi-frequency waves, and a computed heatmap of PE values">
+      </figure>
+    </section>
+
+    <dl class="glossary" id="glossary">
+      <dt>pos</dt>
+      <dd>The token's position in the input sequence — 0, 1, 2, … up to the sequence length.</dd>
+      <dt>i (pair index)</dt>
+      <dd>Indexes which (sin, cos) pair we're computing. Range: 0 to d_model/2 − 1. For d_model = 512, i ∈ {0, …, 255}.</dd>
+      <dt>d_model</dt>
+      <dd>The dimensionality of the token embedding (and positional encoding, and every internal vector). 512 in the original paper; varies by model.</dd>
+      <dt>PE</dt>
+      <dd>Positional Encoding. The vector added to a token's embedding to inject its position into the input.</dd>
+      <dt>masked language modeling (MLM)</dt>
+      <dd>BERT's pre-training objective: hide a token, ask the model to predict it from surrounding context. Different from the original Transformer's seq2seq translation objective.</dd>
+      <dt>BPE / WordPiece / SentencePiece</dt>
+      <dd>Sub-word tokenization schemes used in modern Transformers. Break unknown words into known sub-units instead of OOV failures.</dd>
+      <dt>RoPE</dt>
+      <dd>Rotary Position Embedding. Instead of adding a position vector, rotate query/key vectors by an angle proportional to position. Default in LLaMA, Mistral, and most 2023+ LLMs.</dd>
+    </dl>
+
+    <footer>
+      <span>SESSION 08 · POSITIONAL ENCODING · REV v2</span>
+      <span>VASWANI ET AL. 2017 §3.5</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

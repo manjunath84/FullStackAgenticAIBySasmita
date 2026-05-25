@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 20 — LangGraph Part 2: Reflection &amp; Conditional Routing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px);
+  background-size: 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+
+main { padding: 80px 80px 120px; max-width: 880px; }
+
+.hero { margin-bottom: 60px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(48px, 6vw, 72px); line-height: 0.98; letter-spacing: -0.02em; margin-bottom: 28px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.45; max-width: 660px; margin-bottom: 24px; }
+.hero-meta { display: flex; gap: 28px; flex-wrap: wrap; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 600px; }
+
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 36px 0 36px 32px; border-left: 4px solid var(--terracotta); margin: 50px 0 70px; position: relative; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+
+.wherewe { background: rgba(42, 93, 98, 0.06); border-left: 4px solid var(--teal); padding: 20px 26px; margin: 0 0 50px; font-size: 16px; color: var(--ink-soft); }
+.wherewe-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--teal); font-weight: 700; margin-bottom: 8px; }
+
+section.chapter { margin-bottom: 80px; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.08; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 0 0 20px 28px; color: var(--ink-soft); }
+.chapter li { margin-bottom: 10px; font-size: 17px; line-height: 1.7; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.6; overflow-x: auto; border-left: 4px solid var(--ochre); border-radius: 2px; }
+pre code { background: transparent; border: none; color: var(--paper); padding: 0; font-size: inherit; }
+pre .c { color: var(--ink-mute); font-style: italic; }
+pre .k { color: var(--terracotta-light); }
+pre .s { color: var(--teal-light); }
+pre .n { color: var(--ochre); }
+
+table { width: 100%; border-collapse: collapse; margin: 28px 0; font-size: 15px; }
+table th { text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--terracotta); padding: 12px 14px; border-bottom: 2px solid var(--ink); background: rgba(248, 230, 207, 0.3); }
+table td { padding: 14px; border-bottom: 1px solid var(--line); color: var(--ink-soft); vertical-align: top; line-height: 1.55; }
+table td strong, table td b { color: var(--ink); }
+table td code { font-size: 12.5px; }
+
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 28px; margin: 28px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 8px; }
+.callout p { color: var(--ink); font-size: 16.5px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 22px 26px; margin: 26px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.65; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+.bridge.warn { background: rgba(184, 71, 46, 0.05); border-left-color: var(--terracotta); border-color: rgba(184, 71, 46, 0.3); }
+.bridge.warn .bridge-label { color: var(--terracotta); }
+
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15.5px; color: var(--ink); line-height: 1.6; }
+.correction strong { color: var(--terracotta); }
+
+figure.infographic { margin: 40px -40px 40px; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic img, figure.infographic svg { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+
+figure.reference { margin: 32px 0; background: #ffffff; border: 1px solid var(--line); padding: 16px; }
+figure.reference img { width: 100%; height: auto; display: block; }
+figure.reference figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); letter-spacing: 1px; margin-top: 10px; line-height: 1.5; text-align: center; }
+
+figure.diagram { margin: 36px -20px; background: var(--paper); border: 1px solid var(--line); padding: 20px 24px 16px; box-shadow: 0 8px 24px rgba(31, 26, 20, 0.06); }
+figure.diagram svg { width: 100%; height: auto; display: block; }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-mute); letter-spacing: 2px; margin-top: 14px; text-align: center; }
+@media (max-width: 900px) { figure.diagram { margin: 28px -16px; padding: 14px 14px 12px; } }
+
+.glossary { margin-top: 80px; padding-top: 48px; border-top: 2px solid var(--ink); }
+.glossary h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 32px; margin-bottom: 24px; }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 18px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+
+footer { margin-top: 80px; padding-top: 28px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 42px; }
+  .thesis { font-size: 22px; padding-left: 20px; }
+  .chapter h2 { font-size: 30px; }
+}
+
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 20</div>
+    <div class="toc-title">LangGraph, Part 2:<br>Reflection &amp; Routing</div>
+    <ol>
+      <li><a href="#s1">Re-foundation</a></li>
+      <li><a href="#s2">Reflection pattern</a></li>
+      <li><a href="#s3">Prebuilt <code>create_react_agent</code></a></li>
+      <li><a href="#s4">Customer-service routing</a></li>
+      <li><a href="#s5">Orchestration vs agent</a></li>
+      <li><a href="#s6">Next: HITL coding assistant</a></li>
+      <li><a href="#s7">Recap</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      63 MIN<br>
+      3 SPEAKERS<br>
+      2026-05-04
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 20 · STUDY NOTES</div>
+      <h1>Reflection<span class="accent">&amp; Routing</span></h1>
+      <p class="hero-sub">Two more graph shapes built from last week's four primitives — and the one-line helper that retires last week's hand-built ReAct loop.</p>
+      <div class="hero-meta">
+        <span>LANGGRAPH</span>
+        <span>REFLECTION</span>
+        <span>CONDITIONAL EDGES</span>
+        <span>PREBUILT REACT</span>
+      </div>
+    </header>
+
+    <div class="wherewe">
+      <div class="wherewe-label">WHERE WE ARE</div>
+      <p>Session 19 was the LangGraph foundation: <strong>state</strong>, <strong>nodes</strong>, <strong>edges</strong>, <strong>conditional edges</strong>, and a hand-built ReAct loop. Session 20 reuses those primitives to build two more patterns and shows you the prebuilt helper for the most common one. No new primitives — what's new is the <em>shape</em> of the graph you wire from them. Session 21 will add interrupts and checkpointed memory so a human can review and edit between nodes.</p>
+    </div>
+
+    <div class="thesis">
+      The four primitives don't change. What changes is the <em>shape</em> of the graph — reflection layers a critic over a draft; routing fans out by classification; ReAct loops between model and tools. Pattern is geometry.
+    </div>
+
+    <figure class="infographic">
+      <object data="Session20-LangGraph-Reflection-infographic.svg" type="image/svg+xml" aria-label="Session 20 infographic">
+        <img src="Session20-LangGraph-Reflection-infographic.svg" alt="Session 20 — Reflection and Conditional Routing — infographic" />
+      </object>
+    </figure>
+
+    <!-- ============ §01 ============ -->
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">§ 01 — RE-FOUNDATION</div>
+      <h2>The four primitives, one minute</h2>
+
+      <p>The lecturer opened with a tight recap of Session 19. If any of this feels new, go back to Session 19 §2 — the rest of this note assumes it.</p>
+
+      <table>
+        <thead>
+          <tr><th>Primitive</th><th>One-line definition</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>State</strong></td><td>A <code>TypedDict</code> shared across every node. Every node reads it; every node returns a partial dict that LangGraph merges back in.</td></tr>
+          <tr><td><strong>Node</strong></td><td>A function <code>state → dict</code>. Inside it you can call an LLM, run a tool, do plain Python — anything.</td></tr>
+          <tr><td><strong>Edge</strong></td><td>"After A, always run B." Fixed routing. <code>graph.add_edge("A", "B")</code>.</td></tr>
+          <tr><td><strong>Conditional edge</strong></td><td>"After A, look at state (via a small router function) and pick B <em>or</em> C <em>or</em> D." <code>graph.add_conditional_edges("A", router_fn, {...})</code>.</td></tr>
+          <tr><td><strong><code>START</code> / <code>END</code></strong></td><td>Markers for entry and exit. Not nodes you write.</td></tr>
+        </tbody>
+      </table>
+
+      <p>The build sequence is always the same: <code>StateGraph(SchemaClass)</code> → <code>add_node(...)</code> × N → <code>add_edge(...)</code> / <code>add_conditional_edges(...)</code> × M → <code>compile()</code> → <code>invoke(state_dict)</code>.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p><code>StateGraph(...).compile()</code> is the analogue of <code>ApplicationContext</code> refresh: you wire the beans (nodes), declare how they're connected (edges), and call <code>refresh()</code> (compile) once. After that, <code>invoke(...)</code> is just a method call on the assembled object — you don't re-wire on every request.</p>
+      </div>
+
+      <div class="bridge warn">
+        <div class="bridge-label">WHERE THE BRIDGE BREAKS</div>
+        <p>Spring's bean graph is a <em>static dependency graph</em> resolved once at startup. LangGraph's graph <strong>executes</strong>: nodes run in sequence (or branch / loop) every time you call <code>invoke</code>. The graph object is the program, not the wiring diagram.</p>
+      </div>
+    </section>
+
+    <!-- ============ §02 ============ -->
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">§ 02 — REFLECTION PATTERN</div>
+      <h2>Draft, critique, revise</h2>
+
+      <h3>2.1  The idea</h3>
+      <p>The lecturer's framing: take an LLM's first output, hand it to a second LLM acting as a <strong>critic</strong>, and let the critic either approve it (go to <code>END</code>) or request changes (run a <code>revise</code> step, then <code>END</code>). It's a useful pattern when the work is <strong>generation</strong> — writing prose, summarising, drafting a blog post, producing structured output — and you'd like a second pass for quality.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reflection pattern flow">
+          <defs>
+            <marker id="arr-s20-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f1a14"/>
+            </marker>
+          </defs>
+          <rect width="720" height="240" fill="#f5efe6"/>
+          <!-- START -->
+          <rect x="20" y="100" width="80" height="40" rx="20" fill="#1f1a14"/>
+          <text x="60" y="125" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6" letter-spacing="2">START</text>
+          <!-- DRAFT -->
+          <rect x="140" y="90" width="110" height="60" fill="#fff" stroke="#1f1a14" stroke-width="1.5"/>
+          <text x="195" y="118" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="16" fill="#1f1a14">draft</text>
+          <text x="195" y="135" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">LLM 1</text>
+          <!-- CRITIQUE -->
+          <rect x="290" y="90" width="120" height="60" fill="#fff" stroke="#2a5d62" stroke-width="2"/>
+          <text x="350" y="118" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="16" fill="#2a5d62">critique</text>
+          <text x="350" y="135" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">LLM 2 · judge</text>
+          <!-- REVISE -->
+          <rect x="460" y="90" width="110" height="60" fill="#fff" stroke="#b8472e" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="515" y="118" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="16" fill="#b8472e">revise</text>
+          <text x="515" y="135" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">LLM 1 (or 3)</text>
+          <!-- END -->
+          <rect x="610" y="100" width="80" height="40" rx="20" fill="#c89b3c"/>
+          <text x="650" y="125" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14" letter-spacing="2">END</text>
+          <!-- edges -->
+          <line x1="100" y1="120" x2="140" y2="120" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arr-s20-r)"/>
+          <line x1="250" y1="120" x2="290" y2="120" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arr-s20-r)"/>
+          <line x1="410" y1="120" x2="460" y2="120" stroke="#1f1a14" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arr-s20-r)"/>
+          <line x1="570" y1="120" x2="610" y2="120" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arr-s20-r)"/>
+          <!-- critique to end (looks good) -->
+          <path d="M 350 150 Q 350 200 600 200 L 640 150" fill="none" stroke="#1f1a14" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arr-s20-r)"/>
+          <text x="490" y="215" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b7d65">looks good (no "IMPROVE")</text>
+          <text x="430" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#b8472e">"IMPROVE"</text>
+          <!-- labels under START..END -->
+          <text x="195" y="80" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" fill="#8b7d65">edge</text>
+          <text x="350" y="80" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" fill="#2a5d62">conditional edge</text>
+        </svg>
+        <figcaption>FIG 1 · REFLECTION GRAPH — DASHED EDGES ARE CONDITIONAL</figcaption>
+      </figure>
+
+      <div class="callout">
+        <div class="callout-label">WHAT THIS IS CALLED IN THE LITERATURE</div>
+        <p>"LLM-as-judge" or "LLM-as-critic." The clearest survey is Zheng et al. 2023, <em>Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</em> (arXiv:2306.05685). The reflection-style multi-step variant traces back to Madaan et al. 2023, <em>Self-Refine: Iterative Refinement with Self-Feedback</em> (arXiv:2303.17651). LangGraph is just the orchestration; the pattern is independent of it.</p>
+      </div>
+
+      <h3>2.2  The state</h3>
+      <p>Three keys: the topic, the current draft, the critic's notes. <code>draft</code> and <code>critique</code> both get written <em>during</em> the run — the caller passes empty strings.</p>
+
+      <pre><code>from typing import Literal, TypedDict
+
+class ReflectState(TypedDict):
+    topic: str
+    draft: str
+    critique: str</code></pre>
+
+      <h3>2.3  The three nodes</h3>
+
+      <p><strong>Draft node.</strong> First LLM call. Writes a short answer to the topic.</p>
+      <pre><code>def write_draft(state: ReflectState) -> dict:
+    r = llm.invoke([HumanMessage(
+        content=f"Write a 3-sentence answer about: {state['topic']}"
+    )])
+    return {"draft": r.content}</code></pre>
+
+      <p><strong>Critique node.</strong> Second LLM call. Reads the draft and produces bullets. <strong>The prompt deliberately asks for the word <code>IMPROVE</code></strong> if changes are needed — that sentinel is what the conditional edge will look for.</p>
+      <pre><code>def critique_draft(state: ReflectState) -> dict:
+    r = llm.invoke([HumanMessage(content=(
+        f"Critique this answer briefly (bullets). "
+        f"Say IMPROVE if it needs work.\n\n"
+        f"{state['draft']}"
+    ))])
+    return {"critique": r.content}</code></pre>
+
+      <p><strong>Revise node.</strong> Third LLM call. Rewrites the draft given the critique. Writes back to the <code>draft</code> key so the final state ends up with the improved version.</p>
+      <pre><code>def revise(state: ReflectState) -> dict:
+    r = llm.invoke([HumanMessage(content=(
+        f"Improve the draft using the critique. Keep 3 sentences.\n"
+        f"Draft:\n{state['draft']}\n\nCritique:\n{state['critique']}"
+    ))])
+    return {"draft": r.content}</code></pre>
+
+      <h3>2.4  The conditional edge</h3>
+      <p>The only "smart" part. The router function reads the critique and returns one of two literal strings:</p>
+
+      <pre><code>def after_critique(state: ReflectState) -> Literal["revise", "__end__"]:
+    if "IMPROVE" in state["critique"].upper():
+        return "revise"
+    return END</code></pre>
+
+      <div class="callout">
+        <div class="callout-label">WHY THE "IMPROVE" SENTINEL?</div>
+        <p>The router function has to make a routing decision from data already in state. Asking the critic LLM to say a specific keyword if changes are needed gives you a cheap, deterministic substring check in the router. It's a trick, not a requirement — alternatives include adding a boolean <code>needs_revision</code> field to state, or asking the critic for structured JSON. The sentinel is the shortest path for a teaching example.</p>
+      </div>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>The router function is a <strong>strategy resolver</strong>. Conceptually the same shape as Spring's <code>@Conditional</code> resolving at startup, except this one resolves on every invocation and the input is mutable state, not a static <code>Environment</code>.</p>
+      </div>
+
+      <h3>2.5  Wiring it up</h3>
+      <pre><code>from langgraph.graph import END, START, StateGraph
+
+fb = StateGraph(ReflectState)
+fb.add_node("draft", write_draft)
+fb.add_node("critique", critique_draft)
+fb.add_node("revise", revise)
+
+fb.add_edge(START, "draft")
+fb.add_edge("draft", "critique")
+fb.add_conditional_edges(
+    "critique",
+    after_critique,
+    {"revise": "revise", END: END},
+)
+fb.add_edge("revise", END)
+
+reflect_app = fb.compile()
+
+final_state = reflect_app.invoke(
+    {"topic": "Why use graphs for agents?", "draft": "", "critique": ""}
+)</code></pre>
+
+      <p>Three things to notice. <strong>First</strong>, the conditional-edges call takes a <em>mapping</em> <code>{router_return_value: next_node}</code> — the router can return any string; the mapping translates it to a node name. <strong>Second</strong>, the conditional edge sits <strong>on the critique node</strong>, not on revise — the branch is "after critique, decide." <strong>Third</strong>, <code>START → draft</code> and <code>draft → critique</code> are plain <code>add_edge</code>. You only reach for <code>add_conditional_edges</code> where the graph actually branches.</p>
+
+      <h3>2.6  One revision pass — and a sharper claim than the lecturer made</h3>
+      <p>In the diagram above, <code>revise → END</code> is unconditional. So even if the revised draft is still bad, you exit. To get multiple passes you'd point <code>revise → critique</code> instead, making it a loop, and let the critique decide when to stop.</p>
+
+      <p>The lecturer warned: <em>"If you use the same LLM for draft and critic and revise, repeated passes won't improve anything — it's the same machine thinking the same way."</em></p>
+
+      <div class="correction">
+        <strong>Sharpened claim.</strong> That's partially right but stated too strongly. Three reasons repeated passes with one model <em>can</em> improve output: (1) the prompts are different — "write a draft" and "critique this draft" induce different behaviour from the same weights; (2) sampling is non-deterministic — at <code>temperature &gt; 0</code> the same model on the same prompt produces different tokens on different calls; (3) the Self-Refine paper (Madaan et al. 2023) reports gains on most tasks using a <em>single</em> model for generate / feedback / refine, across GPT-3.5 and GPT-4. Gains plateau after a couple of iterations and on some tasks actively hurt. The lecturer's <em>practice</em> advice — if you're going to iterate, use a different model for the critic — is good. The implicit claim that one-model iteration is useless is too strong.
+      </div>
+
+      <h3>2.7  The lecturer's "you can loop it" extension</h3>
+      <p>A student asked: <em>what if I want the critic to keep asking for improvements until it's satisfied?</em> The answer is to repoint <code>revise → critique</code> instead of <code>revise → END</code>. That turns the linear "one pass" graph into a <strong>ReAct-shaped loop</strong> — critique is now the gating node, like the LLM in last week's ReAct.</p>
+
+      <div class="correction">
+        <strong>Correction (lecturer's quick aside).</strong> The lecturer said you can set the iteration count "in the prompt only" by writing "repeat 3 times." That doesn't reliably stop an LLM loop — prompt instructions about counting are routinely ignored. The correct way to bound iteration is <strong>in code</strong>: add an <code>iteration: int</code> field to state, increment it in <code>revise</code>, and have the router return <code>END</code> once it exceeds your cap.
+      </div>
+    </section>
+
+    <!-- ============ §03 ============ -->
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">§ 03 — PREBUILT REACT</div>
+      <h2>Last week's hand-built loop, in one line</h2>
+
+      <p>Session 19 walked through building a ReAct loop by hand: an <code>agent</code> node calling an LLM bound to tools, a <code>ToolNode</code> running the tool calls, a conditional edge sending the flow back to the agent if there are more tool calls, or to <code>END</code> otherwise. That code is correct and worth understanding once.</p>
+
+      <p>You won't write it again. LangGraph ships a prebuilt helper:</p>
+
+      <pre><code>from langgraph.prebuilt import create_react_agent
+from langchain_core.tools import tool
+
+@tool
+def word_count(text: str) -> int:
+    """Count words in a string."""
+    return len(text.split())
+
+prebuilt = create_react_agent(llm, [word_count])
+
+out = prebuilt.invoke({
+    "messages": [HumanMessage(
+        content="How many words in: LangGraph makes agents easier?"
+    )]
+})
+print(out["messages"][-1].content)</code></pre>
+
+      <p>That's the whole agent. The function builds the LLM-↔-ToolNode subgraph for you, wires the conditional edge, and returns a compiled graph you can <code>invoke</code> on.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>Hand-wiring the ReAct loop is <code>@Configuration</code> with explicit <code>@Bean</code> methods. <code>create_react_agent</code> is <strong>Spring Boot auto-configuration</strong> — you trade some flexibility for the common case wired correctly out of the box. Reach for the prebuilt by default; drop down to hand-wired when you need a non-standard variant (e.g., reflection on top of tool calls, a custom retry policy, or branches we'll see in Session 21).</p>
+      </div>
+
+      <div class="callout">
+        <div class="callout-label">REACT = REASON + ACT</div>
+        <p>One name-collision worth nailing once: <strong>ReAct</strong> here means <em>Reason + Act</em> (Yao et al. 2022, arXiv:2210.03629), not the JavaScript UI library. The transcript's "React, reason, and act" phrasing is muddled; the term is a contraction of <em>Re</em>ason and <em>Act</em>.</p>
+      </div>
+
+      <p>The lecturer's framing: <em>"Many of the times you may need React more than Reflection because React is very helpful for tool calls."</em> That's accurate — most agentic workloads are "let the model call tools to gather information," not "let the model rewrite its own prose."</p>
+    </section>
+
+    <!-- ============ §04 ============ -->
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">§ 04 — CONDITIONAL ROUTING</div>
+      <h2>Customer-service worked example</h2>
+
+      <p>This is the same primitive as the reflection branch, applied to a different shape: classify an inbound request, route it to one of several handler nodes, each handler does its own thing. It's the canonical use case for <code>add_conditional_edges</code>.</p>
+
+      <figure class="reference">
+        <img src="LANGGraph_Workflow_Visualization.png" alt="LangGraph visualisation: START → categorize_request → (handle_standard | handle_urgent) → END" />
+        <figcaption>FIG 2 · LIVE-RENDERED VISUALISATION OF THE COMPILED GRAPH · <code>runnable.get_graph().draw_mermaid_png()</code></figcaption>
+      </figure>
+
+      <h3>4.1  The state</h3>
+      <pre><code>from typing import TypedDict, Literal
+from langgraph.graph import END, START, StateGraph
+
+class SupportRequest(TypedDict):
+    message: str      # the customer's message
+    priority: int     # 1 = high, 3+ = low
+    status: str       # routing status — written by nodes as they run</code></pre>
+
+      <p>The status field is a stand-in for "downstream nodes can see where the request has been." In real life you'd carry an assigned team, an SLA timestamp, ticket IDs — anything you'd otherwise stuff into a request-scoped Spring bean.</p>
+
+      <h3>4.2  The first node: classify, then update status</h3>
+      <pre><code>def categorize_request(request: SupportRequest):
+    """Initial node that receives and logs the request"""
+    print(f"📥 Received request: '{request['message']}'")
+    print(f"   Priority Level: {request['priority']}")
+    return {"status": "categorized"}</code></pre>
+
+      <p>In this teaching example the node doesn't actually classify anything — it just stamps <code>status = "categorized"</code> and prints. The real classifier is the <em>router function</em> below, which reads <code>priority</code> straight from state. We'll come back to "but what if priority isn't given?" in §4.6.</p>
+
+      <h3>4.3  The router function (this is the conditional edge)</h3>
+      <pre><code>def route_by_priority(
+    request: SupportRequest,
+) -> Literal["handle_urgent", "handle_standard"]:
+    if request["priority"] &lt;= 2:
+        return "handle_urgent"
+    return "handle_standard"</code></pre>
+
+      <p>Two things to notice. The return type is <code>Literal[...]</code> — a hint to readers and to LangGraph that this function always returns one of a fixed set of strings. And the function takes <code>state</code> as input, the same as any node. <strong>A router function is a node-shaped object that returns a routing decision instead of a state update.</strong></p>
+
+      <h3>4.4  The handler nodes</h3>
+      <pre><code>def handle_urgent(request: SupportRequest):
+    print(f"🔴 URGENT processing: '{request['message']}'")
+    return {"status": "urgent_handled"}
+
+def handle_standard(request: SupportRequest):
+    print(f"🟢 STANDARD processing: '{request['message']}'")
+    return {"status": "standard_handled"}</code></pre>
+
+      <p>In this demo they only update status. In reality you'd send the email, page the on-call, file the ticket, write to a database — whatever the workload requires.</p>
+
+      <h3>4.5  Wiring it up</h3>
+      <pre><code>graph = StateGraph(SupportRequest)
+
+graph.add_node("categorize_request", categorize_request)
+graph.add_node("handle_urgent",      handle_urgent)
+graph.add_node("handle_standard",    handle_standard)
+
+graph.add_edge(START, "categorize_request")
+graph.add_conditional_edges(
+    "categorize_request",
+    route_by_priority,
+    {"handle_urgent": "handle_urgent",
+     "handle_standard": "handle_standard"},
+)
+graph.add_edge("handle_urgent",   END)
+graph.add_edge("handle_standard", END)
+
+runnable = graph.compile()
+
+result = runnable.invoke({
+    "message": "My account was hacked! Urgent help needed.",
+    "priority": 1,
+    "status": "new",
+})</code></pre>
+
+      <p>Fig 2 above is exactly this graph rendered from the compiled <code>runnable</code> via <code>runnable.get_graph().draw_mermaid_png()</code>. The dashed edges out of <code>categorize_request</code> are LangGraph's convention for <em>conditional</em> edges; the solid edges into <code>END</code> are plain.</p>
+
+      <h3>4.6  "But what if priority isn't given?"</h3>
+      <p>In the code above, the caller has to know to pass <code>priority: 1</code>. That's fine for a unit test, but in production the customer just types a message — they don't tag it with a priority level.</p>
+
+      <p>The lecturer's fix (and it's the right one): make <code>categorize_request</code> an actual LLM call. Read <code>message</code>, ask the model "rate this 1 (urgent) to 5 (routine) and reply with just the number," parse the answer, write it back to <code>state["priority"]</code>. Downstream the router function doesn't change — it still reads <code>priority</code> from state.</p>
+
+      <pre><code>def categorize_request(request: SupportRequest):
+    r = llm.invoke([HumanMessage(content=(
+        f"On a scale of 1 (urgent) to 5 (routine), rate this "
+        f"customer message. Reply with just the integer.\n\n"
+        f"Message: {request['message']}"
+    ))])
+    try:
+        priority = int(r.content.strip())
+    except ValueError:
+        priority = 3  # fallback to standard
+    return {"priority": priority, "status": "categorized"}</code></pre>
+
+      <div class="callout">
+        <div class="callout-label">STUDENT POINT — WORTH PRESERVING</div>
+        <p>One student raised the right concern: <em>"the user can lie about their own priority."</em> Exactly — which is why an LLM classifier reading the message is more trustworthy than a self-reported integer. Both can be wrong; the LLM is wrong in less manipulable ways.</p>
+      </div>
+
+      <h3>4.7  "But isn't this just an if/else?"</h3>
+      <p>Krishna Chaitanya pushed back: the example uses one LLM, the routing is a simple comparison — what does LangGraph add over a Python <code>if</code>? The transcript's answer was scattered. The clear version has four parts:</p>
+
+      <ol>
+        <li><strong>The branch decision can itself be an LLM call.</strong> Once <code>categorize_request</code> becomes the LLM classifier in §4.6, the "if priority &le; 2" gate is reading a value that an LLM just produced. That's not a static if/else — the routing is <em>decided by a model</em> every time.</li>
+        <li><strong>State is shared across nodes.</strong> Each node sees and updates the same <code>SupportRequest</code>. In a flat function you'd thread that as parameters. In a longer pipeline (10+ nodes, some looping, some branching) you'd reinvent state-passing badly. LangGraph gives you that for free.</li>
+        <li><strong>Loops aren't expressible in flat if/else.</strong> ReAct's "LLM → tool → LLM → tool …" cycle isn't a switch statement; it's a graph with a back-edge. The same conditional-edges API supports both shapes.</li>
+        <li><strong>Checkpointing comes for free.</strong> Add a <code>MemorySaver</code> (next session) and any partial run can pause, persist, and resume. That's three lines of code in LangGraph; rolling it yourself on top of an if/else means writing serialisation, thread keys, restart logic.</li>
+      </ol>
+
+      <p>If the example is small enough that an if/else handles it, an if/else <em>is</em> the right answer. LangGraph earns its keep when the graph is non-trivial or one of points 1, 3, or 4 applies.</p>
+
+      <h3>4.8  Visualising the compiled graph</h3>
+      <p>You don't have to draw the diagram by hand. After <code>compile()</code>, LangGraph can emit a Mermaid diagram and render it as PNG:</p>
+
+      <pre><code>from IPython.display import Image, display
+display(Image(runnable.get_graph().draw_mermaid_png()))</code></pre>
+
+      <p>Fig 2 above was produced this way. For a static PDF version you'd save the Mermaid source (<code>.get_graph().draw_mermaid()</code>) and render it through any Mermaid renderer.</p>
+    </section>
+
+    <!-- ============ §05 ============ -->
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">§ 05 — BIG-PICTURE CLARIFICATION</div>
+      <h2>LangGraph is orchestration, not "an agent"</h2>
+
+      <p>Late in the session the lecturer made a careful distinction that's easy to miss: <strong>LangGraph is not an agent. It's a framework for orchestrating agents.</strong> The actual agent — the LLM with a prompt and a tool list — is a LangChain object that lives <em>inside</em> a node. LangGraph decides which node runs when, what state they share, when to loop, when to stop.</p>
+
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>What it is</th><th>Concrete thing</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>L1</strong></td><td>The model</td><td>An LLM endpoint (OpenAI, Anthropic, Gemini, a local model).</td></tr>
+          <tr><td><strong>L2</strong></td><td>The agent</td><td>A LangChain object: prompt + LLM + tools + memory. <em>One</em> agent.</td></tr>
+          <tr><td><strong>L3</strong></td><td>The orchestration</td><td>A LangGraph graph: nodes call agents (or tools, or functions); edges decide flow.</td></tr>
+        </tbody>
+      </table>
+
+      <p>A LangGraph node can wrap an L2 agent, a plain Python function, a tool call, or another sub-graph. The graph doesn't care.</p>
+
+      <div class="callout">
+        <div class="callout-label">WHAT "MULTI-AGENT" ACTUALLY MEANS</div>
+        <p>The lecturer used "multi-agent" loosely throughout. The tight definition: a system where <strong>two or more LLM-driven components with distinct roles</strong> collaborate through shared state, often with different prompts, tools, or models. The reflection pattern above <em>is</em> multi-agent — drafter and critic are two roles, possibly two models. The customer-service example as written <em>isn't</em> multi-agent — it has one LLM (or none) plus deterministic handlers. Multi-agent isn't about how many LLM <em>calls</em> you make; it's about distinct roles with their own concerns.</p>
+      </div>
+
+      <h3>5.1  "LangGraph is the best" — flag</h3>
+      <p>The lecturer said LangGraph is "the best" multi-agent framework and you "don't need to learn anything else." Treat that as a strong opinion, not a fact. As of mid-2026 the live alternatives include:</p>
+
+      <table>
+        <thead>
+          <tr><th>Framework</th><th>What it's good at</th><th>When to consider it</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>LangGraph</strong></td><td>Explicit graph, full control, Python-native, deepest interop with LangChain.</td><td>Default for fine-grained graph control.</td></tr>
+          <tr><td><strong>CrewAI</strong></td><td>Role-based abstractions (Agents with Goals and Tasks) on top of a sequential or hierarchical process.</td><td>Quick prototypes; multi-agent setups where "roles" read more naturally than nodes.</td></tr>
+          <tr><td><strong>AutoGen</strong> (Microsoft)</td><td>Conversation-as-orchestration; agents talk to each other in a chat-style loop.</td><td>Multi-agent dialogues, code-execution agents, research-style workflows.</td></tr>
+          <tr><td><strong>OpenAI Agents SDK</strong></td><td>Vendor-blessed primitives for handoffs and guardrails, deep integration with OpenAI tools.</td><td>OpenAI-first stacks.</td></tr>
+          <tr><td><strong>Google ADK / Vertex Agent Builder</strong></td><td>First-class Gemini integration.</td><td>Google Cloud shops.</td></tr>
+        </tbody>
+      </table>
+
+      <p>Pick on team familiarity and concrete requirements, not on "this one is the best."</p>
+    </section>
+
+    <!-- ============ §06 ============ -->
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">§ 06 — NEXT SESSION PREVIEW</div>
+      <h2>Human-in-the-loop coding assistant</h2>
+
+      <p>The lecturer ended with a demo of next session's build: a graph that <strong>generates code, pauses for human review, and resumes with whatever the human decides</strong>. We won't walk the code here — that's Session 21's job — but here's the shape so the preview lands.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="HITL coding assistant flow">
+          <defs>
+            <marker id="arr-s20-h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f1a14"/>
+            </marker>
+          </defs>
+          <rect width="720" height="220" fill="#f5efe6"/>
+          <!-- START -->
+          <rect x="20" y="90" width="80" height="40" rx="20" fill="#1f1a14"/>
+          <text x="60" y="115" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6" letter-spacing="2">START</text>
+          <!-- generate_code -->
+          <rect x="130" y="80" width="140" height="60" fill="#fff" stroke="#1f1a14" stroke-width="1.5"/>
+          <text x="200" y="105" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="15" fill="#1f1a14">generate_code</text>
+          <text x="200" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">LLM</text>
+          <!-- human_review -->
+          <rect x="295" y="80" width="140" height="60" fill="#fff" stroke="#b8472e" stroke-width="2"/>
+          <text x="365" y="105" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="15" fill="#b8472e">human_review</text>
+          <text x="365" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#b8472e">interrupt()</text>
+          <!-- create_tests -->
+          <rect x="460" y="80" width="140" height="60" fill="#fff" stroke="#2a5d62" stroke-width="2"/>
+          <text x="530" y="105" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="15" fill="#2a5d62">create_tests</text>
+          <text x="530" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">LLM</text>
+          <!-- END -->
+          <rect x="620" y="90" width="80" height="40" rx="20" fill="#c89b3c"/>
+          <text x="660" y="115" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14" letter-spacing="2">END</text>
+          <!-- edges -->
+          <line x1="100" y1="110" x2="130" y2="110" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arr-s20-h)"/>
+          <line x1="270" y1="110" x2="295" y2="110" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arr-s20-h)"/>
+          <line x1="435" y1="110" x2="460" y2="110" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arr-s20-h)"/>
+          <line x1="600" y1="110" x2="620" y2="110" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arr-s20-h)"/>
+          <!-- resume -->
+          <path d="M 365 145 Q 365 195 200 195" fill="none" stroke="#b8472e" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arr-s20-h)"/>
+          <text x="285" y="210" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#b8472e">Command(resume={'action':'edit', ...})</text>
+        </svg>
+        <figcaption>FIG 3 · HITL PATTERN — <code>human_review</code> PAUSES VIA <code>interrupt()</code>, CALLER RESUMES WITH <code>Command(resume=...)</code></figcaption>
+      </figure>
+
+      <h3>6.1  Two new primitives (Session 21)</h3>
+      <table>
+        <thead><tr><th>Primitive</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>interrupt(payload)</code></td><td>Inside a node, pauses the graph. The caller's <code>invoke(...)</code> returns with an <code>__interrupt__</code> key containing <code>payload</code>. Whoever is driving the run (a UI, a Slack bot, a notebook cell) shows the payload to a human and collects a response.</td></tr>
+          <tr><td><code>Command(resume=value)</code></td><td>Re-invoke the compiled graph with <code>Command(resume=value)</code> instead of new input. LangGraph picks up where it paused; the <code>interrupt()</code> call returns <code>value</code>.</td></tr>
+        </tbody>
+      </table>
+      <p>Both live in <code>langgraph.types</code>.</p>
+
+      <h3>6.2  Why this needs a checkpointer</h3>
+      <p><code>interrupt()</code> only works if the graph can <strong>persist its state</strong> while paused. That's what a checkpointer does. The simplest one:</p>
+
+      <pre><code>from langgraph.checkpoint.memory import MemorySaver
+app = workflow.compile(checkpointer=MemorySaver())</code></pre>
+
+      <p><code>MemorySaver</code> keeps state in memory, which is fine for notebooks. For production you swap in <code>PostgresSaver</code> (also bundled) and the state survives process restarts. Every checkpointed run is keyed by a <strong>thread ID</strong>, passed in the config:</p>
+
+      <pre><code>config = {"configurable": {"thread_id": "coding-session-001"}}
+app.invoke(inputs, config=config)
+# ... later, possibly after a process restart ...
+app.invoke(Command(resume={"action": "approve"}), config=config)</code></pre>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p><code>thread_id</code> + checkpointer ≈ <strong>Spring Session</strong>. Same session ID → same state restored, regardless of which process picks up the next request. <code>MemorySaver</code> is the in-memory session store; <code>PostgresSaver</code> is the JDBC-backed one.</p>
+      </div>
+
+      <h3>6.3  About the <code>CodingAssistantWorkflow.png</code> in this folder</h3>
+      <figure class="reference">
+        <img src="CodingAssistantWorkflow.png" alt="Lecturer's annotated reflection diagram used to introduce next session's coding assistant" />
+        <figcaption>FIG 4 · LECTURER'S ANNOTATED REFLECTION GRAPH (HAND-DRAWN ORANGE ARROW) · USED TO INTRODUCE THE COMING HITL EXTENSION</figcaption>
+      </figure>
+
+      <div class="correction">
+        <strong>What this PNG actually shows.</strong> Despite the filename, this is <em>not</em> a screenshot of the coding-assistant graph. It's the <strong>reflection-pattern diagram</strong> (Fig 1) annotated live by the lecturer with an orange arrow drawn from <code>revise</code> back to <code>draft</code>. The point of the annotation: to make concrete the "revise can loop back instead of going to END" extension from §2.7 — exactly the looping behaviour that next session's coding assistant adds a human into.
+      </div>
+    </section>
+
+    <!-- ============ §07 ============ -->
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">§ 07 — RECAP</div>
+      <h2>What to take into Session 21</h2>
+
+      <p>You should walk out of this class able to do four things without thinking:</p>
+
+      <ol>
+        <li><strong>State first.</strong> When sketching any new LangGraph workflow, design the <code>TypedDict</code> before you write a node. The fields are your contract.</li>
+        <li><strong><code>add_edge</code> for straight runs, <code>add_conditional_edges</code> at branches.</strong> Branch decisions live in a small router function that returns a literal string keyed to a node name.</li>
+        <li><strong>Reach for the prebuilt.</strong> <code>create_react_agent(llm, tools)</code> replaces the hand-built ReAct loop. Drop down to hand-wired only when you need a non-standard variant.</li>
+        <li><strong>Distinguish "what's the graph?" from "what's in the node?"</strong> Reflection vs routing is a graph-shape choice. Which model the drafter uses, what the critic prompt says, what tools are bound — those are node-internal choices. They compose.</li>
+      </ol>
+
+      <p>Session 21 adds interrupts and checkpointed memory on top of these. The graph stays the same; what changes is that you can now pause it mid-flight and let a human steer.</p>
+    </section>
+
+    <!-- ============ GLOSSARY ============ -->
+    <section class="glossary" id="glossary">
+      <h2>Glossary</h2>
+      <dl>
+        <dt>Checkpointer</dt>
+        <dd>A pluggable state-persistence backend. <code>MemorySaver</code> (in-memory) for development; <code>PostgresSaver</code> for production. Required for <code>interrupt()</code> to work.</dd>
+
+        <dt>Conditional edge</dt>
+        <dd>An edge whose destination is decided at runtime by a small router function reading state. Wired with <code>add_conditional_edges(source, router_fn, {label: dest_node, ...})</code>.</dd>
+
+        <dt><code>create_react_agent</code></dt>
+        <dd>Prebuilt helper in <code>langgraph.prebuilt</code> that builds a compiled ReAct subgraph (agent ↔ tools loop) from an LLM and a list of tools.</dd>
+
+        <dt>Critic / LLM-as-judge</dt>
+        <dd>An LLM prompted to evaluate or critique another LLM's output rather than generate new content. Core to the reflection pattern and to evaluation pipelines.</dd>
+
+        <dt><code>interrupt(payload)</code></dt>
+        <dd>A LangGraph function called from inside a node that suspends graph execution and surfaces <code>payload</code> to the caller. Resumed via <code>invoke(Command(resume=value), config=thread_config)</code>.</dd>
+
+        <dt>Multi-agent</dt>
+        <dd>A system in which two or more LLM-driven components with <em>distinct roles</em> collaborate through shared state. Different LLM calls in a row are not necessarily multi-agent; distinct roles are.</dd>
+
+        <dt>ReAct</dt>
+        <dd>Reason + Act (Yao et al. 2022). A loop pattern in which an LLM alternates between reasoning steps and tool calls until it produces a final answer.</dd>
+
+        <dt>Reflection pattern</dt>
+        <dd>Draft → critique → (optionally revise) → end. A graph shape for self-improving generation. Underlying research: Madaan et al. 2023, Self-Refine; Zheng et al. 2023, LLM-as-Judge.</dd>
+
+        <dt>Router function</dt>
+        <dd>A node-shaped callable that returns a literal string instead of a state update. Used by <code>add_conditional_edges</code> to pick the next node.</dd>
+
+        <dt>State</dt>
+        <dd>A <code>TypedDict</code> shared across every node in a graph. Nodes read from it and return partial dicts that LangGraph merges back in.</dd>
+
+        <dt>Thread ID</dt>
+        <dd>Unique identifier for one conversation/session in a checkpointed graph. Passed via <code>config={"configurable": {"thread_id": "..."}}</code>.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <span>SESSION 20 · LANGGRAPH PART 2 · 2026-05-04</span>
+      <span>SASMITA COURSE · STUDY NOTES</span>
+    </footer>
+
+  </main>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 10 — The Decoder, End-to-End</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 80px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(48px, 7vw, 84px); line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 600px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 580px; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.45; color: var(--ink); padding: 40px 0 40px 32px; border-left: 4px solid var(--terracotta); margin: 60px 0 80px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -30px; font-size: 100px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 96px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 42px; line-height: 1.05; margin-bottom: 28px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 24px; margin: 40px 0 16px; color: var(--ink); }
+.chapter p { margin-bottom: 20px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 16px 0 24px 24px; color: var(--ink-soft); }
+.chapter ul li, .chapter ol li { margin-bottom: 10px; font-size: 17px; line-height: 1.7; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.6; overflow-x: auto; border-left: 4px solid var(--ochre); }
+pre code { background: transparent; border: none; color: var(--paper); padding: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 22px 26px; margin: 28px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15.5px; color: var(--ink); line-height: 1.65; }
+.correction strong { color: var(--terracotta); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 28px 32px; margin: 36px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 17px; margin-bottom: 12px; }
+.callout p:last-child { margin-bottom: 0; }
+.equation { background: var(--ink); color: var(--paper); padding: 26px 28px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 17px; margin: 32px 0; letter-spacing: 0.5px; line-height: 1.9; }
+.equation .l1 { color: var(--teal-light); }
+.equation .l2 { color: var(--ochre); }
+.equation .small { font-size: 12px; color: var(--ink-mute); display: block; margin-top: 14px; letter-spacing: 1px; }
+table.tbl { width: 100%; border-collapse: collapse; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+table.tbl th, table.tbl td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--line); }
+table.tbl th { background: var(--paper-2); font-weight: 700; color: var(--ink); letter-spacing: 1px; font-size: 11px; text-transform: uppercase; }
+table.tbl td { color: var(--ink-soft); }
+table.tbl tr:hover td { background: rgba(248, 230, 207, 0.3); }
+.props { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 28px 0; }
+.prop { background: rgba(251, 247, 239, 0.7); border-left: 4px solid var(--teal-light); padding: 18px 22px; }
+.prop h4 { font-family: 'Fraunces', serif; font-style: italic; font-size: 20px; color: var(--ink); margin-bottom: 6px; }
+.prop p { font-size: 15px; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+.pipeline { display: flex; flex-wrap: wrap; gap: 0; align-items: stretch; margin: 32px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.pipeline-step { flex: 1; min-width: 110px; background: var(--ink); color: var(--paper); padding: 16px 12px; text-align: center; position: relative; }
+.pipeline-step.embed { background: var(--teal); }
+.pipeline-step.position { background: var(--ochre); color: var(--ink); }
+.pipeline-step.attention { background: var(--terracotta); }
+.pipeline-step:not(:last-child)::after { content: '→'; position: absolute; right: -8px; top: 50%; transform: translateY(-50%); color: var(--ink); font-size: 14px; z-index: 2; background: var(--paper); width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.pipeline-step .label { font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; font-size: 11px; }
+.pipeline-step .sub { font-size: 10px; opacity: 0.85; }
+figure.infographic { margin: 40px -40px 40px; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic img, figure.infographic svg { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+figure.reference { margin: 32px 0; background: #ffffff; border: 1px solid var(--line); padding: 16px; }
+figure.reference img { width: 100%; height: auto; display: block; }
+figure.reference figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); letter-spacing: 1px; margin-top: 10px; line-height: 1.5; text-align: center; }
+figure.diagram { margin: 36px -20px; background: var(--paper); border: 1px solid var(--line); padding: 20px 24px 16px; box-shadow: 0 8px 24px rgba(31, 26, 20, 0.06); }
+figure.diagram svg { width: 100%; height: auto; display: block; }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-mute); letter-spacing: 2px; margin-top: 14px; text-align: center; }
+@media (max-width: 900px) { figure.diagram { margin: 28px -16px; padding: 14px 14px 12px; } }
+.glossary { margin-top: 80px; padding-top: 48px; border-top: 2px solid var(--ink); }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 18px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 100px; padding-top: 32px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 48px; }
+  .thesis { font-size: 22px; padding-left: 20px; }
+  .chapter h2 { font-size: 32px; }
+  .props { grid-template-columns: 1fr; }
+  .pipeline { flex-direction: column; }
+  .pipeline-step:not(:last-child)::after { content: '↓'; right: 50%; top: auto; bottom: -8px; transform: translateX(50%); }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 10</div>
+    <div class="toc-title">The Decoder,<br>End-to-End</div>
+    <ol>
+      <li><a href="#s1">Where we are</a></li>
+      <li><a href="#s2">Decoder block</a></li>
+      <li><a href="#s3">Masked self-attention</a></li>
+      <li><a href="#s4">Cross-attention</a></li>
+      <li><a href="#s5">Generation loop + worked example</a></li>
+      <li><a href="#s6">Linear + softmax head</a></li>
+      <li><a href="#s7">Temperature</a></li>
+      <li><a href="#s8">Full architecture + diagrams</a></li>
+      <li><a href="#s9">Encoder/decoder/both</a></li>
+      <li><a href="#s10">Interview summary</a></li>
+      <li><a href="#s11">Hugging Face tour</a></li>
+      <li><a href="#s12">What's next</a></li>
+      <li><a href="#svg">Visual reference</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      56 MIN<br>
+      3 SPEAKERS<br>
+      2026-05-18
+      <div class="rev-badge">REV v3</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 10 · TRANSFORMER DECODER</div>
+      <h1>The Decoder,<br><span class="accent">End-to-End.</span></h1>
+      <p class="hero-sub">Masked self-attention + cross-attention. One token at a time. Stop when the model emits <code>&lt;end&gt;</code>.</p>
+      <div class="hero-meta">
+        <span>56 MIN</span>
+        <span>VASWANI ET AL. §3.1–3.2.3</span>
+        <span>EN → FR · I love AI → j'aime l'IA</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      The decoder is the encoder with two changes: self-attention is <em>masked</em> so a token can only see itself and earlier tokens, and there's an extra <em>cross-attention</em> sublayer that pulls Query from the decoder but Key and Value from the encoder. At inference the decoder runs <em>one token at a time</em> until it emits <code>&lt;end&gt;</code>.
+    </div>
+
+    <div class="correction" style="margin-bottom: 60px;">
+      <strong>TWO FIXES TO FLAG UP FRONT</strong><br>
+      (1) <em>"Add &amp; Norm is concatenation"</em> — no. Add &amp; Norm is <strong>residual addition + LayerNorm</strong>. Vector shape stays at <code>d_model = 512</code> end-to-end. (2) <em>"Linear is an activation function"</em> — no. Linear is a <strong>learned matrix multiplication</strong> (Wx + b). Softmax is the activation. Both fixes matter because they're load-bearing for understanding what the layers actually do.
+    </div>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">CHAPTER 01</div>
+      <h2>Where we are</h2>
+      <p>Sessions 7–9 covered the encoder: tokenize → embed → add positional encoding → N=6 layers of (multi-head self-attention + FFN) → one rich vector per input token. Session 10 is the other half of the original 2017 Transformer — the <strong>decoder stack</strong> that consumes the encoder's output and produces a target-language sequence one token at a time.</p>
+      <p>The example the lecturer used (and we'll follow) is English → French translation: encoder reads <code>I love AI</code>, decoder produces <code>j'aime l'IA</code>.</p>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">CHAPTER 02</div>
+      <h2>What the decoder block contains</h2>
+      <p>Each decoder layer has <strong>three</strong> sublayers (one more than the encoder), in order:</p>
+      <div class="pipeline">
+        <div class="pipeline-step attention"><div class="label">MASKED SELF-ATTN</div><div class="sub">causal</div></div>
+        <div class="pipeline-step"><div class="label">ADD &amp; NORM</div><div class="sub">residual + LN</div></div>
+        <div class="pipeline-step embed"><div class="label">CROSS-ATTN</div><div class="sub">Q dec · K,V enc</div></div>
+        <div class="pipeline-step"><div class="label">ADD &amp; NORM</div><div class="sub">residual + LN</div></div>
+        <div class="pipeline-step position"><div class="label">FFN</div><div class="sub">two linear + ReLU</div></div>
+        <div class="pipeline-step"><div class="label">ADD &amp; NORM</div><div class="sub">residual + LN</div></div>
+      </div>
+      <p>Each of those three sublayers is wrapped in <strong>Add &amp; Norm</strong> (residual addition + LayerNorm). The whole layer stacks <code>N = 6</code> times.</p>
+      <div class="correction">
+        <strong>CORRECTION — ADD &amp; NORM IS NOT CONCATENATION</strong><br>
+        The lecturer said Add &amp; Norm is "concatenation" — <em>"the output of everything we are adding and then we are passing. ANN will give multi-dimension, so we are basically concatenating everything."</em> Wrong on two counts: (a) the <strong>residual</strong> step is element-wise <em>addition</em> of the sublayer's input to its output (same shape, same dimension count), not concatenation; (b) <strong>LayerNorm</strong> then re-centers and re-scales each token's vector so its mean is 0 and variance is 1. Nothing changes shape. The vector stays at <code>d_model = 512</code> throughout. <em>(Vaswani et al. 2017, §3.1; Ba, Kiros, Hinton 2016 for LayerNorm.)</em>
+      </div>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">CHAPTER 03</div>
+      <h2>Masked self-attention — the only thing that changes vs the encoder</h2>
+      <p>Encoder self-attention is <strong>bidirectional</strong>: every token attends to every other token. That's fine for understanding a complete input.</p>
+      <p>Decoder self-attention is <strong>causal</strong> (also called <em>masked</em>): token at position <code>i</code> can only attend to positions <code>0, 1, …, i</code> — never to future positions. The reason is operational: the decoder's job is to predict the next token. If it could attend to the answer during training, it would learn nothing.</p>
+      <h3>How the mask actually works</h3>
+      <p>After computing the raw scores <code>Q · Kᵀ / √d_k</code> you get an <code>n × n</code> matrix. <strong>Before softmax</strong>, every entry above the diagonal is set to <code>−∞</code>. The softmax of <code>−∞</code> is 0, so the row for position <code>i</code> puts weight only on positions <code>0…i</code>:</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 780 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Causal mask: three 4×4 matrices showing raw scores, masked scores with upper triangle set to negative infinity, and softmax-normalized lower-triangular attention weights.">
+          <defs>
+            <marker id="m-ar-terr" viewBox="0 0 10 10" markerWidth="9" markerHeight="9" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/></marker>
+          </defs>
+          <rect width="780" height="340" fill="#f5efe6"/>
+
+          <!-- column titles -->
+          <g font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" letter-spacing="2" fill="#b8472e">
+            <text x="120" y="36" text-anchor="middle">RAW SCORES</text>
+            <text x="380" y="36" text-anchor="middle">+ CAUSAL MASK</text>
+            <text x="640" y="36" text-anchor="middle">→ SOFTMAX</text>
+          </g>
+          <g font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">
+            <text x="120" y="50" text-anchor="middle">Q · K&#7488; / √d&#8336;</text>
+            <text x="380" y="50" text-anchor="middle">set upper triangle to &#8722;&#8734;</text>
+            <text x="640" y="50" text-anchor="middle">each row sums to 1</text>
+          </g>
+
+          <!-- ============ Grid 1: raw scores ============ -->
+          <g font-family="JetBrains Mono, monospace" font-size="13" fill="#1f1a14">
+            <!-- column labels -->
+            <text x="60" y="80" text-anchor="middle" font-size="10" fill="#8b7d65">k&#8320;</text>
+            <text x="100" y="80" text-anchor="middle" font-size="10" fill="#8b7d65">k&#8321;</text>
+            <text x="140" y="80" text-anchor="middle" font-size="10" fill="#8b7d65">k&#8322;</text>
+            <text x="180" y="80" text-anchor="middle" font-size="10" fill="#8b7d65">k&#8323;</text>
+
+            <!-- row labels -->
+            <text x="30" y="113" text-anchor="middle" font-size="10" fill="#8b7d65">q&#8320;</text>
+            <text x="30" y="153" text-anchor="middle" font-size="10" fill="#8b7d65">q&#8321;</text>
+            <text x="30" y="193" text-anchor="middle" font-size="10" fill="#8b7d65">q&#8322;</text>
+            <text x="30" y="233" text-anchor="middle" font-size="10" fill="#8b7d65">q&#8323;</text>
+
+            <!-- grid cells -->
+            <g stroke="#1f1a14" stroke-width="1" fill="#ede5d6">
+              <rect x="40" y="90" width="40" height="40"/><rect x="80" y="90" width="40" height="40"/><rect x="120" y="90" width="40" height="40"/><rect x="160" y="90" width="40" height="40"/>
+              <rect x="40" y="130" width="40" height="40"/><rect x="80" y="130" width="40" height="40"/><rect x="120" y="130" width="40" height="40"/><rect x="160" y="130" width="40" height="40"/>
+              <rect x="40" y="170" width="40" height="40"/><rect x="80" y="170" width="40" height="40"/><rect x="120" y="170" width="40" height="40"/><rect x="160" y="170" width="40" height="40"/>
+              <rect x="40" y="210" width="40" height="40"/><rect x="80" y="210" width="40" height="40"/><rect x="120" y="210" width="40" height="40"/><rect x="160" y="210" width="40" height="40"/>
+            </g>
+            <!-- values -->
+            <text x="60" y="116" text-anchor="middle">2.0</text><text x="100" y="116" text-anchor="middle">1.0</text><text x="140" y="116" text-anchor="middle">0.5</text><text x="180" y="116" text-anchor="middle">0.3</text>
+            <text x="60" y="156" text-anchor="middle">1.5</text><text x="100" y="156" text-anchor="middle">2.5</text><text x="140" y="156" text-anchor="middle">1.0</text><text x="180" y="156" text-anchor="middle">0.8</text>
+            <text x="60" y="196" text-anchor="middle">0.5</text><text x="100" y="196" text-anchor="middle">1.5</text><text x="140" y="196" text-anchor="middle">3.0</text><text x="180" y="196" text-anchor="middle">1.0</text>
+            <text x="60" y="236" text-anchor="middle">0.5</text><text x="100" y="236" text-anchor="middle">1.0</text><text x="140" y="236" text-anchor="middle">2.0</text><text x="180" y="236" text-anchor="middle">2.5</text>
+          </g>
+
+          <!-- arrow 1 -->
+          <line x1="215" y1="170" x2="255" y2="170" stroke="#b8472e" stroke-width="2" marker-end="url(#m-ar-terr)"/>
+
+          <!-- ============ Grid 2: masked ============ -->
+          <g font-family="JetBrains Mono, monospace" font-size="13">
+            <!-- lower triangle cells (kept) -->
+            <g stroke="#1f1a14" stroke-width="1" fill="#ede5d6">
+              <rect x="300" y="90" width="40" height="40"/>
+              <rect x="300" y="130" width="40" height="40"/><rect x="340" y="130" width="40" height="40"/>
+              <rect x="300" y="170" width="40" height="40"/><rect x="340" y="170" width="40" height="40"/><rect x="380" y="170" width="40" height="40"/>
+              <rect x="300" y="210" width="40" height="40"/><rect x="340" y="210" width="40" height="40"/><rect x="380" y="210" width="40" height="40"/><rect x="420" y="210" width="40" height="40"/>
+            </g>
+            <!-- upper triangle cells (masked) -->
+            <g stroke="#b8472e" stroke-width="1" stroke-dasharray="3 2" fill="rgba(184,71,46,0.15)">
+              <rect x="340" y="90" width="40" height="40"/><rect x="380" y="90" width="40" height="40"/><rect x="420" y="90" width="40" height="40"/>
+              <rect x="380" y="130" width="40" height="40"/><rect x="420" y="130" width="40" height="40"/>
+              <rect x="420" y="170" width="40" height="40"/>
+            </g>
+            <!-- kept values -->
+            <g fill="#1f1a14">
+              <text x="320" y="116" text-anchor="middle">2.0</text>
+              <text x="320" y="156" text-anchor="middle">1.5</text><text x="360" y="156" text-anchor="middle">2.5</text>
+              <text x="320" y="196" text-anchor="middle">0.5</text><text x="360" y="196" text-anchor="middle">1.5</text><text x="400" y="196" text-anchor="middle">3.0</text>
+              <text x="320" y="236" text-anchor="middle">0.5</text><text x="360" y="236" text-anchor="middle">1.0</text><text x="400" y="236" text-anchor="middle">2.0</text><text x="440" y="236" text-anchor="middle">2.5</text>
+            </g>
+            <!-- masked values: −∞ -->
+            <g fill="#b8472e" font-size="14" font-weight="700">
+              <text x="360" y="116" text-anchor="middle">&#8722;&#8734;</text><text x="400" y="116" text-anchor="middle">&#8722;&#8734;</text><text x="440" y="116" text-anchor="middle">&#8722;&#8734;</text>
+              <text x="400" y="156" text-anchor="middle">&#8722;&#8734;</text><text x="440" y="156" text-anchor="middle">&#8722;&#8734;</text>
+              <text x="440" y="196" text-anchor="middle">&#8722;&#8734;</text>
+            </g>
+          </g>
+
+          <!-- arrow 2 -->
+          <line x1="475" y1="170" x2="515" y2="170" stroke="#b8472e" stroke-width="2" marker-end="url(#m-ar-terr)"/>
+
+          <!-- ============ Grid 3: softmax ============ -->
+          <g font-family="JetBrains Mono, monospace" font-size="12">
+            <!-- lower triangle (proportional terracotta tint by value) -->
+            <rect x="560" y="90" width="40" height="40" fill="#b8472e" stroke="#1f1a14" stroke-width="1"/>
+            <rect x="560" y="130" width="40" height="40" fill="rgba(184,71,46,0.35)" stroke="#1f1a14" stroke-width="1"/>
+            <rect x="600" y="130" width="40" height="40" fill="rgba(184,71,46,0.85)" stroke="#1f1a14" stroke-width="1"/>
+            <rect x="560" y="170" width="40" height="40" fill="rgba(184,71,46,0.10)" stroke="#1f1a14" stroke-width="1"/>
+            <rect x="600" y="170" width="40" height="40" fill="rgba(184,71,46,0.22)" stroke="#1f1a14" stroke-width="1"/>
+            <rect x="640" y="170" width="40" height="40" fill="rgba(184,71,46,0.9)" stroke="#1f1a14" stroke-width="1"/>
+            <rect x="560" y="210" width="40" height="40" fill="rgba(184,71,46,0.10)" stroke="#1f1a14" stroke-width="1"/>
+            <rect x="600" y="210" width="40" height="40" fill="rgba(184,71,46,0.18)" stroke="#1f1a14" stroke-width="1"/>
+            <rect x="640" y="210" width="40" height="40" fill="rgba(184,71,46,0.40)" stroke="#1f1a14" stroke-width="1"/>
+            <rect x="680" y="210" width="40" height="40" fill="rgba(184,71,46,0.62)" stroke="#1f1a14" stroke-width="1"/>
+            <!-- upper triangle (zeros, paper background) -->
+            <g fill="#f5efe6" stroke="#d4c9b5" stroke-width="0.8">
+              <rect x="600" y="90" width="40" height="40"/><rect x="640" y="90" width="40" height="40"/><rect x="680" y="90" width="40" height="40"/>
+              <rect x="640" y="130" width="40" height="40"/><rect x="680" y="130" width="40" height="40"/>
+              <rect x="680" y="170" width="40" height="40"/>
+            </g>
+            <!-- values - lower triangle -->
+            <g fill="#f5efe6" font-weight="700">
+              <text x="580" y="115" text-anchor="middle">1.00</text>
+            </g>
+            <g fill="#1f1a14">
+              <text x="580" y="155" text-anchor="middle">0.27</text>
+            </g>
+            <g fill="#f5efe6" font-weight="700">
+              <text x="620" y="155" text-anchor="middle">0.73</text>
+            </g>
+            <g fill="#1f1a14">
+              <text x="580" y="195" text-anchor="middle">0.06</text><text x="620" y="195" text-anchor="middle">0.17</text>
+            </g>
+            <g fill="#f5efe6" font-weight="700">
+              <text x="660" y="195" text-anchor="middle">0.77</text>
+            </g>
+            <g fill="#1f1a14">
+              <text x="580" y="235" text-anchor="middle">0.07</text><text x="620" y="235" text-anchor="middle">0.11</text><text x="660" y="235" text-anchor="middle">0.31</text>
+            </g>
+            <g fill="#f5efe6" font-weight="700">
+              <text x="700" y="235" text-anchor="middle">0.51</text>
+            </g>
+            <!-- zeros in upper triangle -->
+            <g fill="#8b7d65">
+              <text x="620" y="115" text-anchor="middle">0</text><text x="660" y="115" text-anchor="middle">0</text><text x="700" y="115" text-anchor="middle">0</text>
+              <text x="660" y="155" text-anchor="middle">0</text><text x="700" y="155" text-anchor="middle">0</text>
+              <text x="700" y="195" text-anchor="middle">0</text>
+            </g>
+          </g>
+
+          <!-- row-sum annotation under grid 3 -->
+          <g font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">
+            <text x="640" y="272" text-anchor="middle">row sums: 1.00 · 1.00 · 1.00 · 1.00 ✓</text>
+          </g>
+
+          <!-- caption / formula bar -->
+          <g font-family="JetBrains Mono, monospace" font-size="10" fill="#1f1a14">
+            <rect x="40" y="296" width="700" height="28" fill="#1f1a14"/>
+            <text x="390" y="314" text-anchor="middle" fill="#f5efe6">attention(Q,K,V) = softmax( (Q&#183;K&#7488; / √d&#8336;) &#160;+&#160; M ) &#183; V &#160;&#160;&#160;where&#160; M&#7522;&#11388; = 0 if j ≤ i, &#8722;&#8734; otherwise</text>
+          </g>
+        </svg>
+        <figcaption>FIG B · CAUSAL MASK — UPPER TRIANGLE ZEROED BY SOFTMAX(−∞); TINT INTENSITY ∝ ATTENTION WEIGHT</figcaption>
+      </figure>
+
+      <p>Each row still sums to 1 — but only the lower-triangular entries are nonzero. Future tokens are invisible. The same matrix multiply runs as in the encoder; the mask just zeroes out future-position weights. (The numbers above are a computed example: row 1 puts 27% weight on position 0 and 73% on position 1; row 2 concentrates 77% on its own position; row 3 spreads across all four.)</p>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">CHAPTER 04</div>
+      <h2>Cross-attention — the decoder pulling from the encoder</h2>
+      <p>The lecturer's framing is correct and worth keeping: <em>"with respect to the word I'm about to produce on the French side, which English word should I focus on?"</em></p>
+      <p>Mechanically:</p>
+      <ul>
+        <li><strong>Query (Q)</strong> comes from the <strong>decoder</strong> (output of the masked-self-attention sublayer in the current decoder layer).</li>
+        <li><strong>Key (K) and Value (V)</strong> come from the <strong>encoder's final output</strong>.</li>
+      </ul>
+      <div class="equation">
+        <span class="l1">CrossAttention(Q_dec, K_enc, V_enc)</span> =<br>
+        <span class="l2">softmax( Q_dec · K_encᵀ / √d_k ) · V_enc</span>
+        <span class="small">Q FROM DECODER · K, V FROM ENCODER</span>
+      </div>
+      <p>The asymmetry — Q from one side, K/V from the other — is what makes it "cross". A decoder query asks the encoder "which of your tokens is most relevant to me right now?" and gets back a weighted mixture of the encoder's values.</p>
+      <div class="callout">
+        <div class="callout-label">WHY THIS MATTERS FOR PERFORMANCE</div>
+        <p>The encoder's K/V are computed <strong>once</strong>, after the encoder finishes processing the source sentence. They're reused at every decoder step. Cross-attention is how the source sentence stays "alive" inside the decoder loop without being re-encoded each step.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">CHAPTER 05</div>
+      <h2>The autoregressive generation loop</h2>
+      <p>The lecturer walked through this with <code>I love AI → j'aime l'IA</code>. Here's the loop in full:</p>
+      <h3>Step 0 — Encoder runs once</h3>
+      <p>Tokenize <em>I love AI</em>, embed, add positional encoding, run all 6 encoder layers. Output: three 512-dim vectors (one per source token). These are the encoder K/V used by every cross-attention step below.</p>
+      <h3>Step 1 — Decoder input is <code>&lt;start&gt;</code> only</h3>
+      <ol>
+        <li>Embed <code>&lt;start&gt;</code>, add positional encoding (position 0).</li>
+        <li>Masked self-attention — trivial (one token, attends to itself).</li>
+        <li>Cross-attention: query is the <code>&lt;start&gt;</code> vector; K, V from encoder. Softmax probably picks out <em>I</em> as most relevant.</li>
+        <li>Feed-forward.</li>
+        <li><strong>Linear + softmax over the French vocabulary</strong> → probability distribution over all ~30,000 French tokens. Pick the highest-probability token (or sample). Output: <code>j'aime</code>.</li>
+      </ol>
+      <h3>Step 2 — Decoder input is <code>&lt;start&gt; j'aime</code></h3>
+      <ol>
+        <li>Embed both, add positional encodings (positions 0 and 1).</li>
+        <li>Masked self-attention — <code>&lt;start&gt;</code> sees only itself; <code>j'aime</code> sees itself and <code>&lt;start&gt;</code>.</li>
+        <li>Cross-attention from each decoder position to the (same, cached) encoder K/V. The <code>j'aime</code> query likely focuses on <em>love</em> / <em>AI</em> more than <em>I</em>.</li>
+        <li>Feed-forward, linear, softmax → next French token. Output: <code>l'IA</code>.</li>
+      </ol>
+      <h3>Step 3 — Decoder input is <code>&lt;start&gt; j'aime l'IA</code></h3>
+      <p>Repeat. This time the model's best prediction is the special <code>&lt;end&gt;</code> token.</p>
+      <h3>Step 4 — <code>&lt;end&gt;</code> emitted → stop</h3>
+      <p>Generation halts. Output sequence: <code>j'aime l'IA</code>.</p>
+      <div class="correction">
+        <strong>CORRECTION — "END" IS A SPECIAL TOKEN, NOT A FRENCH WORD</strong><br>
+        The lecturer said "in French we have 30,000 vocabulary, let's say there is one word called end." There isn't. <code>&lt;end&gt;</code> (often written <code>&lt;/s&gt;</code> or <code>&lt;eos&gt;</code>) is a <strong>special token</strong> added to the vocabulary alongside real words; the tokenizer reserves an ID for it, and the model is trained to emit it when the sequence is complete. Same for <code>&lt;start&gt;</code> (<code>&lt;bos&gt;</code>/<code>&lt;s&gt;</code>). Named slots in the vocabulary, not real words.
+      </div>
+      <div class="correction">
+        <strong>CORRECTION — GENERATION IS NOT "ALL PARALLEL"</strong><br>
+        The lecturer said "everything in Transformer happens parallelly". That's true of <strong>training</strong> (the full target sequence is known; teacher forcing evaluates the whole decoder in parallel) and of <strong>encoder inference</strong> (the encoder processes all source tokens at once). It's <strong>false of decoder inference</strong>: tokens must be generated one at a time because each step's input depends on the previous step's output. Modern systems cache the K and V of previously-generated tokens (the <em>KV cache</em>) so each step only computes attention for the new token — but the loop itself is still sequential.
+      </div>
+
+      <h3>Worked example — what cross-attention focuses on at each step</h3>
+      <p>To make the loop concrete, here's the same <code>I love AI → j'aime l'IA</code> example with <strong>illustrative</strong> attention weights and <strong>illustrative</strong> softmax probabilities. The actual numbers a trained model produces depend on its learned weights; these aren't measured outputs, they're stand-ins so you can see the <em>shape</em> of what's happening at each step.</p>
+
+      <p><strong>Step 1.</strong> Decoder input: <code>[&lt;start&gt;]</code>. Cross-attention from the <code>&lt;start&gt;</code> position over the three encoder tokens:</p>
+      <table class="tbl">
+        <thead><tr><th>Source token</th><th>Cross-attention weight (illustrative)</th></tr></thead>
+        <tbody>
+          <tr><td><em>I</em></td><td>0.7</td></tr>
+          <tr><td><em>love</em></td><td>0.2</td></tr>
+          <tr><td><em>AI</em></td><td>0.1</td></tr>
+        </tbody>
+      </table>
+
+      <p>After feed-forward, linear, softmax over the ~30,000-token French vocabulary:</p>
+      <table class="tbl">
+        <thead><tr><th>Candidate French token</th><th>Probability (illustrative)</th></tr></thead>
+        <tbody>
+          <tr><td><em>j'aime</em></td><td>0.85</td></tr>
+          <tr><td><em>Le</em></td><td>0.03</td></tr>
+          <tr><td><em>Bonjour</em></td><td>0.02</td></tr>
+          <tr><td>(≈30,000 others)</td><td>≈ 0.10 total</td></tr>
+        </tbody>
+      </table>
+      <p>Output: <code>j'aime</code>. French <em>j'aime</em> is the elided form of <em>je aime</em>, meaning "I love" — one French token corresponds to two English ideas, which is why a sensible attention pattern from this single decoder position could plausibly emphasise <em>I</em> and <em>love</em>. The actual focus pattern is a property of the trained weights, not something you can derive from the source sentence alone.</p>
+
+      <p><strong>Step 2.</strong> Decoder input: <code>[&lt;start&gt;, j'aime]</code>. Masked self-attention now has two positions; the mask blocks future positions:</p>
+      <table class="tbl">
+        <thead><tr><th></th><th><code>&lt;start&gt;</code></th><th><code>j'aime</code></th></tr></thead>
+        <tbody>
+          <tr><td><strong><code>&lt;start&gt;</code></strong></td><td>✓</td><td>✗ (masked)</td></tr>
+          <tr><td><strong><code>j'aime</code></strong></td><td>✓</td><td>✓</td></tr>
+        </tbody>
+      </table>
+      <p>Cross-attention from the <code>j'aime</code> decoder position over the encoder K/V:</p>
+      <table class="tbl">
+        <thead><tr><th>Source token</th><th>Cross-attention weight (illustrative)</th></tr></thead>
+        <tbody>
+          <tr><td><em>I</em></td><td>0.1</td></tr>
+          <tr><td><em>love</em></td><td>0.2</td></tr>
+          <tr><td><em>AI</em></td><td>0.7</td></tr>
+        </tbody>
+      </table>
+      <p>Output: <code>l'IA</code>.</p>
+
+      <p><strong>Step 3.</strong> Decoder input: <code>[&lt;start&gt;, j'aime, l'IA]</code>. The model's best next prediction is <code>&lt;end&gt;</code> (illustrative probability ~0.91). Loop stops.</p>
+      <table class="tbl">
+        <thead><tr><th>Step</th><th>Decoder input</th><th>Cross-attention focus</th><th>Output</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>[&lt;start&gt;]</code></td><td><em>I</em></td><td><code>j'aime</code></td></tr>
+          <tr><td>2</td><td><code>[&lt;start&gt;, j'aime]</code></td><td><em>AI</em></td><td><code>l'IA</code></td></tr>
+          <tr><td>3</td><td><code>[&lt;start&gt;, j'aime, l'IA]</code></td><td>(source consumed)</td><td><code>&lt;end&gt;</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <div class="callout-label">DON'T READ THE WEIGHTS TOO LITERALLY</div>
+        <p>Real attention patterns are messier than these tables. Distributions are rarely as peaked as 0.7/0.2/0.1; multiple heads in the same layer attend to different things in parallel; many heads turn out to learn syntactic or positional patterns that have nothing to do with the "which English word does this French word translate" intuition. The tables above are a useful first-order mental model, not a faithful picture of what any specific trained model does. <em>Clark et al. 2019, What Does BERT Look At? arXiv:1906.04341 — the canonical sober look at attention-head behaviour.</em></p>
+      </div>
+
+      <h3>Training vs inference — the parallelism difference, fully explicit</h3>
+      <p>This is worth pulling out of the correction box above because it's a frequent confusion point.</p>
+      <div class="props">
+        <div class="prop">
+          <h4>Training (teacher forcing)</h4>
+          <p>The decoder is fed the entire correct target sequence shifted one position right: <code>[&lt;start&gt;, j'aime, l'IA]</code> as input, with the model trained to predict <code>[j'aime, l'IA, &lt;end&gt;]</code> as output. The full target is known up front, so the causal mask is the only thing needed to stop each position from "cheating" by reading its own answer. Every position is computed in <strong>one parallel forward pass</strong>, loss summed across positions. This is what makes Transformer training fast.</p>
+        </div>
+        <div class="prop">
+          <h4>Inference (autoregressive)</h4>
+          <p>No ground-truth target exists — the decoder is generating it. Each step has to wait for the previous step's output before it has an input for the next position. Tokens come out <strong>one at a time</strong>. The KV cache makes each step cheaper (don't recompute K/V for tokens that haven't changed), but the loop is fundamentally sequential. This is why LLM latency scales with <em>output</em> length, not input length.</p>
+        </div>
+      </div>
+      <p>Same model, same weights, same mask — different evaluation pattern.</p>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">CHAPTER 06</div>
+      <h2>The linear + softmax head</h2>
+      <p>Two things sit between the final decoder layer and the predicted token:</p>
+      <ol>
+        <li><strong>Linear projection</strong> — a learned matrix of shape <code>(d_model, vocab_size)</code> that takes the last decoder layer's 512-dim output vector and projects it into a <code>vocab_size</code> (~30,000) logit vector — one number per word in the target vocabulary.</li>
+        <li><strong>Softmax</strong> — normalizes those logits into a probability distribution over the vocabulary.</li>
+      </ol>
+      <div class="correction">
+        <strong>CORRECTION — LINEAR IS NOT AN ACTIVATION FUNCTION</strong><br>
+        The lecturer said <em>"softmax is the activation function. Linear, uh, is just a flattening … so linear is again activation function, linear, and then softmax."</em> No. <strong>Linear is a learned matrix multiplication</strong> (<code>output = W·x + b</code>) — a parameterized layer with weights and biases. <strong>Softmax</strong> is the activation/output nonlinearity. They're different kinds of things. "Flattening" is a third thing again (reshape multi-dim → 1-D), not relevant here — the decoder's per-token output is already a vector.
+      </div>
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>Think of the linear layer as a <code>Map&lt;Integer, double[]&gt;</code> applied to the input vector — a learned function that produces one logit per vocabulary token. The softmax that follows is a pure utility that normalizes those numbers to a probability distribution. The linear layer has parameters; softmax has none.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">CHAPTER 07</div>
+      <h2>Temperature — a glimpse forward</h2>
+      <p>At inference, instead of sampling directly from <code>softmax(logits)</code>, the model usually divides the logits by a <strong>temperature</strong> <code>T</code> first:</p>
+      <div class="equation">
+        <span class="l2">P(token) = softmax( logits / T )</span>
+      </div>
+      <ul>
+        <li><code>T → 0</code> — distribution collapses onto the argmax. Always pick the highest-probability token. Deterministic, repetitive.</li>
+        <li><code>T = 1</code> — standard softmax. Sample according to the trained distribution.</li>
+        <li><code>T &gt; 1</code> — distribution flattens. Less probable tokens become competitive. More creative, less coherent.</li>
+      </ul>
+      <p>Temperature is a <em>sampling-time</em> knob; it doesn't change the trained weights. The lecturer's verbal description was right; the formal mechanism is just that one division.</p>
+    </section>
+
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">CHAPTER 08</div>
+      <h2>The full architecture in one picture</h2>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 1040 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Transformer architecture: source → encoder stack → decoder stack → output, with K/V flow between encoder and decoder cross-attention, linear+softmax head, and autoregressive loop.">
+          <defs>
+            <marker id="ar-ink" viewBox="0 0 10 10" markerWidth="9" markerHeight="9" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/></marker>
+            <marker id="ar-terr" viewBox="0 0 10 10" markerWidth="9" markerHeight="9" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/></marker>
+            <marker id="ar-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2a5d62"/></marker>
+          </defs>
+
+          <!-- background -->
+          <rect width="1040" height="720" fill="#f5efe6"/>
+
+          <!-- column headers -->
+          <g font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" letter-spacing="3" fill="#b8472e">
+            <text x="110" y="36" text-anchor="middle">SOURCE</text>
+            <text x="335" y="36" text-anchor="middle">ENCODER · N=6</text>
+            <text x="680" y="36" text-anchor="middle">DECODER · N=6</text>
+            <text x="920" y="36" text-anchor="middle">OUTPUT</text>
+          </g>
+          <g stroke="#1f1a14" stroke-width="1.5">
+            <line x1="40" y1="48" x2="180" y2="48"/>
+            <line x1="225" y1="48" x2="445" y2="48"/>
+            <line x1="545" y1="48" x2="815" y2="48"/>
+            <line x1="855" y1="48" x2="985" y2="48"/>
+          </g>
+
+          <!-- =================== SOURCE column =================== -->
+          <rect x="40" y="80" width="140" height="48" fill="#f5efe6" stroke="#1f1a14" stroke-width="1.5"/>
+          <text x="110" y="103" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="18" fill="#1f1a14">&#8220;I love AI&#8221;</text>
+          <text x="110" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">english source</text>
+
+          <line x1="110" y1="132" x2="110" y2="158" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ar-ink)"/>
+
+          <rect x="55" y="164" width="110" height="26" fill="#ede5d6" stroke="#1f1a14" stroke-width="1"/>
+          <text x="110" y="181" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">TOKENIZE</text>
+
+          <line x1="110" y1="194" x2="110" y2="216" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ar-ink)"/>
+
+          <rect x="55" y="222" width="110" height="26" fill="#2a5d62"/>
+          <text x="110" y="239" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6">EMBED</text>
+
+          <line x1="110" y1="252" x2="110" y2="272" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ar-ink)"/>
+
+          <rect x="55" y="278" width="110" height="26" fill="#c89b3c"/>
+          <text x="110" y="295" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">+ POS. ENC.</text>
+
+          <text x="110" y="324" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">3 × 512-dim vectors</text>
+
+          <!-- arrow into encoder card -->
+          <line x1="170" y1="335" x2="220" y2="335" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ar-ink)"/>
+
+          <!-- =================== ENCODER column =================== -->
+          <rect x="225" y="80" width="220" height="300" fill="#f5efe6" stroke="#2a5d62" stroke-width="2" rx="5"/>
+          <text x="335" y="104" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-weight="600" font-size="15" fill="#2a5d62">one encoder layer</text>
+
+          <rect x="245" y="120" width="180" height="50" fill="#5ba0a8" stroke="#2a5d62" stroke-width="1"/>
+          <text x="335" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#1f1a14">MULTI-HEAD SELF-ATTN</text>
+          <text x="335" y="158" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">bidirectional</text>
+
+          <rect x="245" y="178" width="180" height="22" fill="#ede5d6" stroke="#1f1a14" stroke-width="0.8"/>
+          <text x="335" y="193" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">ADD &amp; NORM · residual + LN</text>
+
+          <rect x="245" y="210" width="180" height="50" fill="#c89b3c" stroke="#1f1a14" stroke-width="1"/>
+          <text x="335" y="232" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#1f1a14">FFN</text>
+          <text x="335" y="248" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">two linear + ReLU, position-wise</text>
+
+          <rect x="245" y="268" width="180" height="22" fill="#ede5d6" stroke="#1f1a14" stroke-width="0.8"/>
+          <text x="335" y="283" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">ADD &amp; NORM · residual + LN</text>
+
+          <rect x="295" y="310" width="80" height="32" fill="#2a5d62"/>
+          <text x="335" y="331" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#f5efe6">× 6 LAYERS</text>
+
+          <text x="335" y="362" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" font-style="italic" fill="#8b7d65">computed once per input</text>
+
+          <!-- =================== K,V flow =================== -->
+          <path d="M 448 215 L 542 215" stroke="#2a5d62" stroke-width="3" fill="none" marker-end="url(#ar-teal)"/>
+          <rect x="460" y="194" width="74" height="18" fill="#f5efe6"/>
+          <text x="497" y="207" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#2a5d62">K, V</text>
+          <text x="497" y="232" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#8b7d65">cached · reused</text>
+          <text x="497" y="244" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#8b7d65">every dec. step</text>
+
+          <!-- =================== DECODER column =================== -->
+          <rect x="545" y="80" width="270" height="400" fill="#f5efe6" stroke="#b8472e" stroke-width="2" rx="5"/>
+          <text x="680" y="104" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-weight="600" font-size="15" fill="#b8472e">one decoder layer</text>
+
+          <rect x="565" y="120" width="230" height="50" fill="#d96d4a" stroke="#b8472e" stroke-width="1"/>
+          <text x="680" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#1f1a14">MASKED SELF-ATTN</text>
+          <text x="680" y="158" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">causal · future positions → −∞</text>
+
+          <rect x="565" y="178" width="230" height="22" fill="#ede5d6" stroke="#1f1a14" stroke-width="0.8"/>
+          <text x="680" y="193" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">ADD &amp; NORM</text>
+
+          <rect x="565" y="208" width="230" height="62" fill="#5ba0a8" stroke="#2a5d62" stroke-width="1.5"/>
+          <text x="680" y="228" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#1f1a14">CROSS-ATTN</text>
+          <text x="680" y="246" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">Q from decoder</text>
+          <text x="680" y="260" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">K, V from encoder ←</text>
+
+          <rect x="565" y="278" width="230" height="22" fill="#ede5d6" stroke="#1f1a14" stroke-width="0.8"/>
+          <text x="680" y="293" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">ADD &amp; NORM</text>
+
+          <rect x="565" y="308" width="230" height="50" fill="#c89b3c" stroke="#1f1a14" stroke-width="1"/>
+          <text x="680" y="330" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#1f1a14">FFN</text>
+          <text x="680" y="346" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">two linear + ReLU</text>
+
+          <rect x="565" y="366" width="230" height="22" fill="#ede5d6" stroke="#1f1a14" stroke-width="0.8"/>
+          <text x="680" y="381" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1f1a14">ADD &amp; NORM</text>
+
+          <rect x="640" y="412" width="80" height="32" fill="#b8472e"/>
+          <text x="680" y="433" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#f5efe6">× 6 LAYERS</text>
+
+          <text x="680" y="464" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" font-style="italic" fill="#8b7d65">loops at inference</text>
+
+          <!-- linear + softmax head below decoder -->
+          <line x1="680" y1="490" x2="680" y2="514" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ar-ink)"/>
+
+          <rect x="600" y="520" width="160" height="30" fill="#1f1a14"/>
+          <text x="680" y="540" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6">LINEAR · 512 → ~30k</text>
+
+          <line x1="680" y1="554" x2="680" y2="572" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ar-ink)"/>
+
+          <rect x="600" y="578" width="160" height="30" fill="#1f1a14"/>
+          <text x="680" y="598" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6">SOFTMAX</text>
+
+          <text x="680" y="624" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">probability over French vocab</text>
+
+          <!-- arrow up to OUTPUT column -->
+          <path d="M 762 593 C 820 593 845 480 855 165" stroke="#1f1a14" stroke-width="1.5" fill="none" marker-end="url(#ar-ink)"/>
+
+          <!-- =================== OUTPUT column =================== -->
+          <g font-family="JetBrains Mono, monospace" font-size="12">
+            <rect x="855" y="80" width="130" height="34" fill="#ede5d6" stroke="#1f1a14" stroke-width="1"/>
+            <text x="920" y="102" text-anchor="middle" fill="#1f1a14">&lt;start&gt;</text>
+            <text x="978" y="102" text-anchor="end" font-size="9" fill="#8b7d65">step 0</text>
+
+            <rect x="855" y="124" width="130" height="34" fill="#f8e6cf" stroke="#b8472e" stroke-width="1"/>
+            <text x="920" y="146" text-anchor="middle" fill="#1f1a14" font-family="Fraunces, serif" font-style="italic" font-size="15">j&#8217;aime</text>
+            <text x="978" y="146" text-anchor="end" font-size="9" fill="#8b7d65">step 1</text>
+
+            <rect x="855" y="168" width="130" height="34" fill="#f8e6cf" stroke="#b8472e" stroke-width="1"/>
+            <text x="920" y="190" text-anchor="middle" fill="#1f1a14" font-family="Fraunces, serif" font-style="italic" font-size="15">l&#8217;IA</text>
+            <text x="978" y="190" text-anchor="end" font-size="9" fill="#8b7d65">step 2</text>
+
+            <rect x="855" y="212" width="130" height="34" fill="#ede5d6" stroke="#1f1a14" stroke-width="1"/>
+            <text x="920" y="234" text-anchor="middle" fill="#1f1a14">&lt;end&gt;</text>
+            <text x="978" y="234" text-anchor="end" font-size="9" fill="#8b7d65">step 3 · STOP</text>
+          </g>
+
+          <!-- autoregressive loop arrow: from output stack back into decoder bottom (shifted right input) -->
+          <path d="M 855 230 C 760 230 820 670 600 670 L 565 670" stroke="#b8472e" stroke-width="1.5" stroke-dasharray="5 4" fill="none" marker-end="url(#ar-terr)"/>
+          <rect x="640" y="660" width="200" height="20" fill="#f5efe6"/>
+          <text x="740" y="675" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" font-style="italic" fill="#b8472e">autoregressive · append &amp; re-feed</text>
+
+          <!-- legend strip -->
+          <g font-family="JetBrains Mono, monospace" font-size="9" fill="#8b7d65">
+            <rect x="40" y="700" width="960" height="0.5" fill="#d4c9b5"/>
+            <rect x="40" y="708" width="10" height="10" fill="#5ba0a8"/>
+            <text x="56" y="717">attention sublayer</text>
+            <rect x="200" y="708" width="10" height="10" fill="#d96d4a"/>
+            <text x="216" y="717">masked attention</text>
+            <rect x="360" y="708" width="10" height="10" fill="#c89b3c"/>
+            <text x="376" y="717">FFN · positional enc.</text>
+            <rect x="540" y="708" width="10" height="10" fill="#ede5d6" stroke="#1f1a14" stroke-width="0.6"/>
+            <text x="556" y="717">Add &amp; Norm</text>
+            <rect x="660" y="708" width="10" height="10" fill="#1f1a14"/>
+            <text x="676" y="717">output head</text>
+            <line x1="780" y1="713" x2="800" y2="713" stroke="#b8472e" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <text x="806" y="717">autoregressive loop</text>
+          </g>
+        </svg>
+        <figcaption>FIG A · TRANSFORMER ARCHITECTURE — ENCODER ONCE, DECODER LOOPS, K/V CACHED</figcaption>
+      </figure>
+
+      <p>Encoder once per input. Decoder loops once per output token, reusing the encoder's K and V on every step via cross-attention. The dashed terracotta arrow on the right is the autoregressive loop — each emitted output token is appended to the decoder's input on the next step.</p>
+
+      <h3>Cross-checks against the canonical diagrams</h3>
+      <p>Two reference pictures are bundled with this session — worth looking at side-by-side with the ASCII diagram above.</p>
+
+      <figure class="reference">
+        <img src="Screenshot 2026-05-19 at 8.57.28 AM.png" alt="Vaswani et al. 2017, Figure 1 — the original Transformer architecture, encoder (left) and decoder (right) stacks">
+        <figcaption>VASWANI ET AL. 2017 · FIGURE 1 — ORIGINAL TRANSFORMER ARCHITECTURE</figcaption>
+      </figure>
+      <p>This is <strong>Figure 1 from the original paper</strong>. Mapping it to the prose above: the left tower is the encoder (one self-attention sublayer + FFN per layer, <code>N×</code>); the right tower is the decoder (masked self-attention + "multi-head attention" / cross-attention + FFN per layer, <code>N×</code>). The horizontal arrows from encoder to the middle decoder sublayer carry the encoder's K and V. "Outputs (shifted right)" at the bottom of the decoder is the teacher-forcing setup described above.</p>
+
+      <figure class="reference">
+        <img src="Screenshot 2026-05-19 at 8.58.35 AM.png" alt="Jay Alammar — two stacked encoders and decoders translating Thinking Machines">
+        <figcaption>JAY ALAMMAR · THE ILLUSTRATED TRANSFORMER — TWO-LAYER STACK</figcaption>
+      </figure>
+      <p>This is <strong>Jay Alammar's illustration</strong> of a two-layer stack (the paper uses <code>N=6</code>). It makes the per-layer sublayer count explicit: each encoder block has two sublayers (self-attention, FFN), each decoder block has three (self-attention, encoder-decoder attention, FFN). The arrows between the encoder column and the encoder-decoder attention sublayer of each decoder block are the same K/V flow shown in the Vaswani figure.</p>
+    </section>
+
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">CHAPTER 09</div>
+      <h2>Encoder-only, decoder-only, encoder-decoder</h2>
+      <p>The 2017 paper has both halves because translation needs both: understand source, generate target. You don't always need both:</p>
+      <table class="tbl">
+        <thead><tr><th>Architecture</th><th>Example models</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td>Encoder-only</td><td>BERT, RoBERTa</td><td>Understanding: classification, NER, embeddings.</td></tr>
+          <tr><td>Decoder-only</td><td>GPT, LLaMA, Mistral</td><td>Generation: text, chat, code.</td></tr>
+          <tr><td>Encoder-decoder</td><td>Original Transformer, T5, BART</td><td>Sequence-to-sequence: translation, summarization.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <div class="callout-label">PINNING DOWN "GPT IS DECODER-ONLY"</div>
+        <p>GPT-style models use <strong>only the decoder stack</strong>, and crucially the <strong>cross-attention sublayer is removed</strong> (there's no encoder to attend to). What's left per layer is: masked self-attention + FFN + Add &amp; Norm. That's why the lecturer hedged with <em>"the GPT architecture is slightly different than what you see here."</em> The difference is specifically: <strong>no cross-attention, no encoder, masked self-attention only</strong>. The autoregressive generation loop is the same.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">CHAPTER 10</div>
+      <h2>Interview-level summary</h2>
+      <p>Three questions the lecturer says you should expect:</p>
+      <ol>
+        <li><strong>What is attention?</strong> A weighted aggregation where the weights are learned at runtime from the data: each token attends to every other token with weights that capture relevance.</li>
+        <li><strong>What's the difference between encoder and decoder?</strong> Encoder uses bidirectional self-attention; decoder uses masked (causal) self-attention. Decoder has an extra cross-attention sublayer (Q from decoder, K/V from encoder).</li>
+        <li><strong>Encoder-only, decoder-only, or both?</strong> Pick by task. Understanding → encoder (BERT). Generation → decoder (GPT). Translation/summarization → both (T5, original Transformer).</li>
+      </ol>
+    </section>
+
+    <section class="chapter" id="s11">
+      <div class="chapter-marker">CHAPTER 11</div>
+      <h2>Hugging Face — the brief tour at the end</h2>
+      <p>The lecturer closed with five minutes on <strong>Hugging Face</strong>, the de facto open-source hub for ML models, datasets, and deployment. The mental model: <em>GitHub for models</em>. The current counts the lecturer cited (~2.78M models, ~954k datasets) shift weekly; the exact numbers aren't worth memorizing.</p>
+      <h3>Key things to know</h3>
+      <ul>
+        <li><strong>Models</strong> are organized by task on the <em>Tasks</em> sidebar. Filter by task, then sort by <strong>Most Downloads</strong> as a community trust heuristic. Trusted brands (OpenAI, Microsoft, Google, Meta, Anthropic) get name recognition; for the rest, lean on downloads + recency + the model card's documentation.</li>
+        <li><strong><code>transformers</code></strong> is the Python package that gives you a one-line API for almost any model on the Hub:
+        <pre><code>from transformers import pipeline
+pipe = pipeline("text-generation", model="gpt2")
+pipe("The quick brown fox")</code></pre>
+        The model name is the only thing that changes; the rest of the code stays the same.</li>
+        <li><strong>Spaces</strong> is the deployment side — a hosted environment for running an app (Gradio, Streamlit, or Docker) with optional GPU. Cheaper than the major clouds for prototypes.</li>
+        <li><strong>Datasets</strong> is the same pattern for training data: filter by modality, search, download via the <code>datasets</code> package.</li>
+        <li><strong>Access tokens</strong> under your profile settings; required for private models, rate-limit headroom, and authenticated downloads. <em>Never paste your token into source files or screenshots</em> — treat it like a password.</li>
+      </ul>
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>The <code>transformers</code> Python package is roughly what Spring Boot Starters are for Java — a single dependency that wires up sane defaults so you can call <code>pipeline("task-name", model="name")</code> and have everything (tokenizer, model weights, inference loop) configured. The customization points beneath (custom tokenizer, custom generation config) exist but you usually don't touch them.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s12">
+      <div class="chapter-marker">CHAPTER 12</div>
+      <h2>Where we go next</h2>
+      <p>Session 10 closes the architectural arc. From here the course pivots to <strong>applications</strong>:</p>
+      <ol>
+        <li><strong>Chatbot v1 with LangChain + RAG</strong> — retrieve relevant chunks from your own documents and stuff them into the LLM's context.</li>
+        <li><strong>Chatbot v2 with Graph RAG (Neo4j)</strong> — replace the vector store with a graph database for relational retrieval.</li>
+        <li><strong>Chatbot v3 with LangGraph</strong> — explicit agent loops (plan, tool-call, reflect).</li>
+        <li><strong>Workflow automation on Databricks.</strong></li>
+        <li><strong>Observability</strong> — token, latency, and cost tracking for LLM apps.</li>
+      </ol>
+      <p>The architecture from Sessions 7–10 is the foundation. Everything from here builds on it without needing to reopen it.</p>
+    </section>
+
+    <figure class="infographic" id="svg">
+      <img src="Session10-TransformerDecoder-infographic.svg" alt="Decoder — masked self-attention, cross-attention, autoregressive loop">
+    </figure>
+
+    <section class="glossary" id="glossary">
+      <h2 style="font-family: 'Fraunces', serif; font-style: italic; font-size: 36px; margin-bottom: 24px;">Glossary</h2>
+      <dl>
+        <dt>Autoregressive generation</dt>
+        <dd>Producing a sequence one token at a time, where each step's input includes all previously generated tokens. The decoder loops; there's no way to skip ahead.</dd>
+        <dt>Causal mask (causal attention, masked self-attention)</dt>
+        <dd>Attention configured so that position <code>i</code> can only attend to positions <code>0…i</code>. Implemented by setting the upper triangle of the score matrix to <code>−∞</code> before softmax.</dd>
+        <dt>Cross-attention (encoder-decoder attention)</dt>
+        <dd>Attention sublayer where Q comes from the decoder and K, V come from the encoder. The decoder's "hook" into the source sentence.</dd>
+        <dt>Add &amp; Norm</dt>
+        <dd>A residual connection (element-wise add input to sublayer output) followed by LayerNorm. Wraps every encoder and decoder sublayer. Does NOT change vector shape.</dd>
+        <dt>LayerNorm</dt>
+        <dd>Normalizes a vector to mean 0, variance 1, then applies a learned scale and bias per dimension. Stabilizes training across layers.</dd>
+        <dt>KV cache</dt>
+        <dd>Inference-time optimization: cache the K and V tensors for tokens already generated, so each new step only computes K and V for the new token.</dd>
+        <dt>Linear layer</dt>
+        <dd>A learned matrix multiplication: <code>output = W·x + b</code>. Has parameters. NOT an activation function.</dd>
+        <dt>Softmax</dt>
+        <dd>An activation/output function that converts a vector of real-valued scores into a probability distribution: <code>softmax(x_i) = exp(x_i) / Σ_j exp(x_j)</code>.</dd>
+        <dt>Logit</dt>
+        <dd>The raw, pre-softmax score the model outputs for a token. One logit per vocabulary entry.</dd>
+        <dt>Temperature</dt>
+        <dd>Sampling-time hyperparameter that divides logits before softmax. Low T → sharper, more deterministic. High T → flatter, more creative.</dd>
+        <dt>Special tokens (&lt;start&gt;, &lt;end&gt;, &lt;pad&gt;)</dt>
+        <dd>Named slots in the vocabulary used for control (begin sequence, end sequence, padding). Not real words but reserved IDs the tokenizer and model know about.</dd>
+        <dt>Teacher forcing</dt>
+        <dd>Training trick where the decoder is fed the ground-truth previous tokens instead of its own previous predictions. Lets training run in parallel over the whole target sequence.</dd>
+        <dt>Hugging Face Hub</dt>
+        <dd>The dominant open-source platform for sharing ML models, datasets, and demos. The <code>transformers</code> package is the standard Python client.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <span>SESSION 10 · 2026-05-18</span>
+      <span>VASWANI ET AL. 2017 · ALAMMAR · HUGGING FACE</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

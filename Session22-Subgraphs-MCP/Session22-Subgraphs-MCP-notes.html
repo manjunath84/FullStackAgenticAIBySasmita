@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 22 — Subgraphs in LangGraph, and a First Look at MCP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 22px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 12px; font-family: 'Spectral', serif; font-size: 13px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+.toc .group-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin: 18px 0 6px; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 80px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(40px, 5.5vw, 68px); line-height: 0.98; letter-spacing: -0.02em; margin-bottom: 28px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 640px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 520px; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.45; color: var(--ink); padding: 32px 0 32px 32px; border-left: 4px solid var(--terracotta); margin: 56px 0 64px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -30px; font-size: 100px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+.part-marker { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; padding: 18px 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line); margin: 80px 0 56px; }
+section.chapter { margin-bottom: 88px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.08; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.72; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 12px 0 22px 22px; }
+.chapter li { color: var(--ink-soft); font-size: 16px; line-height: 1.65; margin-bottom: 8px; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { font-family: 'JetBrains Mono', monospace; font-size: 13px; background: var(--ink); color: var(--paper); padding: 20px 24px; border-radius: 3px; margin: 24px 0; overflow-x: auto; line-height: 1.55; }
+pre code { background: transparent; color: inherit; padding: 0; border: none; font-size: inherit; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 15px; }
+table th, table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+table th { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--terracotta); border-bottom: 2px solid var(--ink); }
+table td { color: var(--ink-soft); line-height: 1.55; }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 28px; margin: 32px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 17px; margin-bottom: 12px; }
+.callout p:last-child { margin-bottom: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 20px 24px; margin: 24px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+.bridge.warn { background: rgba(184, 71, 46, 0.05); border-left-color: var(--terracotta); border-color: rgba(184, 71, 46, 0.3); }
+.bridge.warn .bridge-label { color: var(--terracotta); }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 22px 0; font-size: 15px; color: var(--ink); }
+.correction strong { color: var(--terracotta); }
+.checkself { font-family: 'Fraunces', serif; font-style: italic; font-size: 17px; color: var(--ink); background: rgba(42, 93, 98, 0.06); border-left: 4px solid var(--teal); padding: 14px 20px; margin: 22px 0; }
+.checkself::before { content: 'Check yourself — '; font-family: 'JetBrains Mono', monospace; font-style: normal; font-size: 10px; letter-spacing: 2px; color: var(--teal); font-weight: 700; }
+.failure-tell { font-family: 'Spectral', serif; font-size: 15.5px; color: var(--ink); background: rgba(200, 155, 60, 0.08); border-left: 3px solid var(--ochre); padding: 12px 18px; margin: 18px 0; }
+.failure-tell strong { color: var(--ochre); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; font-weight: 700; }
+figure.diagram { margin: 32px 0; padding: 16px; background: var(--paper-2); border: 1px solid var(--line); }
+figure.diagram svg { width: 100%; height: auto; display: block; }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); margin-top: 12px; line-height: 1.5; }
+figure.infographic { margin: 40px -40px 40px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } figure.diagram { margin: 24px -8px; } }
+details { margin: 22px 0; background: var(--paper-2); border: 1px solid var(--line); padding: 14px 18px; }
+details summary { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 2px; color: var(--terracotta); cursor: pointer; font-weight: 700; }
+details ol { margin-top: 16px; }
+.glossary { margin-top: 80px; padding-top: 48px; border-top: 2px solid var(--ink); }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 18px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 100px; padding-top: 32px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 40px; }
+  .thesis { font-size: 20px; padding-left: 20px; }
+  .chapter h2 { font-size: 28px; }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 22</div>
+    <div class="toc-title">Subgraphs +<br>First look at MCP</div>
+    <div class="group-label">PART A — SUBGRAPHS</div>
+    <ol>
+      <li><a href="#s1">Predict the output</a></li>
+      <li><a href="#s2">Pattern A — subgraph as a node</a></li>
+      <li><a href="#s3">Pattern B — subgraph inside a node</a></li>
+      <li><a href="#s4">Not a thread — concurrency vs encapsulation</a></li>
+      <li><a href="#s5">Command.PARENT and escapes</a></li>
+      <li><a href="#s6">Worked use case — travel supervisor</a></li>
+    </ol>
+    <div class="group-label">PART B — MCP</div>
+    <ol start="7">
+      <li><a href="#s7">The problem MCP solves</a></li>
+      <li><a href="#s8">What MCP is, precisely</a></li>
+      <li><a href="#s9">Tools / resources / prompts — who controls each</a></li>
+      <li><a href="#s10">Host, client, server</a></li>
+      <li><a href="#s11">Minimal MCP shape</a></li>
+      <li><a href="#s12">When MCP isn't worth it</a></li>
+    </ol>
+    <div class="group-label">REFERENCE</div>
+    <ol start="13">
+      <li><a href="#svg">Visual reference</a></li>
+      <li><a href="#quiz">Quiz yourself</a></li>
+      <li><a href="#loose">Loose ends</a></li>
+      <li><a href="#next">Forward reference</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      ~60.9 MIN<br>
+      2 SPEAKERS<br>
+      2026-05-20
+      <div class="rev-badge">REV v1</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 22 · STUDY NOTES · REV V1</div>
+      <h1>Subgraphs in LangGraph,<span class="accent">and a First Look at MCP</span></h1>
+      <p class="hero-sub">Two compositional moves: plug a compiled graph into a parent graph, and pull tools out of every agent into a shared protocol. Same idea, different scope.</p>
+      <div class="hero-meta">
+        <span>LANGGRAPH SUBGRAPHS</span>
+        <span>MCP &nbsp;·&nbsp; JSON-RPC 2.0</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      A <em>subgraph</em> is a compiled <code>StateGraph</code> used as a node — the state schema is the only contract. <em>MCP</em> is the same move one level up: pull tools out of every agent and put them behind a published protocol so you maintain them in one place.
+    </div>
+
+    <div class="correction">
+      <strong>Scope note.</strong> Session 22 covers <strong>two distinct topics</strong>: LangGraph subgraphs (≈ first 35 minutes), then an intro to MCP (≈ last 20 minutes). Each gets its own threshold concept below. The unifying frame above is real but lightweight — don't read it as a single mechanism.
+    </div>
+
+    <section class="chapter" id="position">
+      <div class="chapter-marker">WHERE WE ARE</div>
+      <h2>Pipeline position</h2>
+      <p>S21 left you with a graph that pauses at <code>interrupt()</code>, persists state via a checkpointer keyed by <code>thread_id</code>, and uses <code>Command(goto=…, update=…)</code> to route between nodes. S22 takes those ingredients and asks one question: <em>what if a "node" is itself a whole graph?</em></p>
+      <figure class="diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 220" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" font-family="'JetBrains Mono', monospace">
+  <rect width="1000" height="220" fill="#ede5d6"/>
+  <g font-size="13" fill="#4a4239">
+    <rect x="20"  y="80" width="170" height="60" rx="3" fill="#f5efe6" stroke="#d4c9b5"/>
+    <text x="105" y="105" text-anchor="middle" fill="#1f1a14" font-weight="700">S20</text>
+    <text x="105" y="125" text-anchor="middle" font-size="11">Conditional edges</text>
+
+    <rect x="210" y="80" width="170" height="60" rx="3" fill="#f5efe6" stroke="#d4c9b5"/>
+    <text x="295" y="105" text-anchor="middle" fill="#1f1a14" font-weight="700">S21</text>
+    <text x="295" y="125" text-anchor="middle" font-size="11">HITL · interrupt</text>
+
+    <rect x="400" y="60" width="200" height="100" rx="3" fill="#f8e6cf" stroke="#b8472e" stroke-width="2"/>
+    <text x="500" y="92" text-anchor="middle" fill="#b8472e" font-weight="700" font-size="14">► S22 — TODAY</text>
+    <text x="500" y="115" text-anchor="middle" font-size="11" fill="#1f1a14">Subgraphs</text>
+    <text x="500" y="135" text-anchor="middle" font-size="11" fill="#1f1a14">+ first look at MCP</text>
+
+    <rect x="620" y="80" width="170" height="60" rx="3" fill="#f5efe6" stroke="#d4c9b5"/>
+    <text x="705" y="105" text-anchor="middle" fill="#1f1a14" font-weight="700">S23</text>
+    <text x="705" y="125" text-anchor="middle" font-size="11">Pivot → Databricks</text>
+
+    <rect x="810" y="80" width="170" height="60" rx="3" fill="#f5efe6" stroke="#d4c9b5" stroke-dasharray="3 3"/>
+    <text x="895" y="105" text-anchor="middle" fill="#4a4239" font-weight="700">later</text>
+    <text x="895" y="120" text-anchor="middle" font-size="10">MCP server/client</text>
+    <text x="895" y="135" text-anchor="middle" font-size="10">+ async/concurrency</text>
+
+    <line x1="190" y1="110" x2="208" y2="110" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#a)"/>
+    <line x1="380" y1="110" x2="398" y2="110" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#a)"/>
+    <line x1="600" y1="110" x2="618" y2="110" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#a)"/>
+    <line x1="790" y1="110" x2="808" y2="110" stroke="#1f1a14" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#a)"/>
+  </g>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/></marker>
+  </defs>
+</svg>
+        <figcaption>Linear cohort sequence. The lecturer's verbal "tomorrow we'll finish MCP + async" pays off in a later session; the literal next class is the Databricks pivot.</figcaption>
+      </figure>
+    </section>
+
+    <div class="part-marker">PART A — SUBGRAPHS</div>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">§ 01 — WORKED-EXAMPLE OPENER</div>
+      <h2>Predict the output, then read the code</h2>
+      <p>The lecturer's notebook (§3) runs this exact code:</p>
+<pre><code>class SharedState(TypedDict):
+    foo: str
+
+def subgraph_step(state: SharedState) -> dict:
+    return {"foo": "subgraph says hi → " + state["foo"]}
+
+sub_b = StateGraph(SharedState)
+sub_b.add_node("inner", subgraph_step)
+sub_b.add_edge(START, "inner")
+sub_b.add_edge("inner", END)
+subgraph_app = sub_b.compile()                # ← compile first
+
+def parent_first(state: SharedState) -> dict:
+    return {"foo": "parent: " + state["foo"]}
+
+pb = StateGraph(SharedState)
+pb.add_node("parent_1", parent_first)
+pb.add_node("embedded_subgraph", subgraph_app)   # ← compiled graph used as a node
+pb.add_edge(START, "parent_1")
+pb.add_edge("parent_1", "embedded_subgraph")
+pb.add_edge("embedded_subgraph", END)
+
+parent_shared = pb.compile()
+print(parent_shared.invoke({"foo": "world"}))</code></pre>
+
+      <p>Speaker B in the transcript guessed <code>"parent world, subgraph say hi, parent world"</code>. The real output is:</p>
+<pre><code>{'foo': 'subgraph says hi → parent: world'}</code></pre>
+
+      <div class="correction">
+        <strong>Misconception harvest.</strong> You might think the order of the string mirrors the order of execution — parent first, then subgraph. It doesn't. <em>Execution order and string-concatenation order are different axes.</em> <code>parent_first</code> ran first and wrote <code>"parent: world"</code>. Then <code>subgraph_step</code> <em>prepended</em> <code>"subgraph says hi → "</code> to that. The final string reads child-first because of how <code>+</code> is wired in <code>subgraph_step</code>, not because the subgraph ran first.
+      </div>
+
+      <div class="failure-tell">
+        <strong>FAILURE TELL — </strong>when a subgraph's output "looks reversed," check the concatenation order inside the inner node before you suspect graph topology.
+      </div>
+
+      <div class="checkself">If you change <code>subgraph_step</code> to <code>return {"foo": state["foo"] + " ← subgraph says hi"}</code>, what will <code>parent_shared.invoke({"foo": "world"})</code> print?</div>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">§ 02 — PATTERN A</div>
+      <h2>Subgraph as a node (shared state)</h2>
+      <p>When parent and child use the <strong>same state keys</strong>, you do nothing clever. Compile the subgraph, then pass it to <code>add_node</code> the same way you'd pass a function:</p>
+<pre><code>builder.add_node("embedded_subgraph", subgraph_app)</code></pre>
+      <p>LangGraph reads the inputs the subgraph needs straight from the parent's state and writes its outputs back. No wrapper, no mapping.</p>
+
+      <figure class="diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" font-family="'JetBrains Mono', monospace">
+  <rect width="900" height="320" fill="#ede5d6"/>
+  <g font-size="12" fill="#4a4239">
+    <text x="40" y="34" font-size="13" fill="#b8472e" font-weight="700" letter-spacing="2">PARENT GRAPH — SharedState{foo: str}</text>
+    <rect x="40" y="60" width="820" height="210" rx="4" fill="none" stroke="#1f1a14" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <circle cx="100" cy="160" r="22" fill="#1f1a14"/>
+    <text x="100" y="165" text-anchor="middle" fill="#f5efe6" font-size="11">START</text>
+    <rect x="180" y="135" width="150" height="50" rx="3" fill="#f5efe6" stroke="#1f1a14"/>
+    <text x="255" y="158" text-anchor="middle" fill="#1f1a14" font-weight="700">parent_1</text>
+    <text x="255" y="174" text-anchor="middle" font-size="10">function node</text>
+    <rect x="390" y="100" width="340" height="120" rx="4" fill="#f8e6cf" stroke="#b8472e" stroke-width="2"/>
+    <text x="560" y="125" text-anchor="middle" fill="#b8472e" font-weight="700" font-size="12">embedded_subgraph (compiled StateGraph)</text>
+    <rect x="420" y="145" width="280" height="55" rx="3" fill="#f5efe6" stroke="#b8472e"/>
+    <circle cx="445" cy="172" r="14" fill="#1f1a14"/>
+    <text x="445" y="176" text-anchor="middle" fill="#f5efe6" font-size="9">START</text>
+    <rect x="475" y="158" width="80" height="30" rx="3" fill="#f5efe6" stroke="#1f1a14"/>
+    <text x="515" y="178" text-anchor="middle" fill="#1f1a14" font-size="10" font-weight="700">inner</text>
+    <circle cx="610" cy="172" r="14" fill="#1f1a14"/>
+    <text x="610" y="176" text-anchor="middle" fill="#f5efe6" font-size="9">END</text>
+    <line x1="459" y1="172" x2="475" y2="172" stroke="#1f1a14" stroke-width="1.2" marker-end="url(#a2)"/>
+    <line x1="555" y1="172" x2="596" y2="172" stroke="#1f1a14" stroke-width="1.2" marker-end="url(#a2)"/>
+    <circle cx="790" cy="160" r="22" fill="#1f1a14"/>
+    <text x="790" y="165" text-anchor="middle" fill="#f5efe6" font-size="11">END</text>
+    <line x1="122" y1="160" x2="178" y2="160" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#a2)"/>
+    <line x1="330" y1="160" x2="388" y2="160" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#a2)"/>
+    <line x1="730" y1="160" x2="767" y2="160" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#a2)"/>
+    <text x="450" y="248" font-size="11" fill="#2a5d62" font-style="italic">parent and subgraph share state.foo — no wrapper, no mapping</text>
+  </g>
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/></marker>
+  </defs>
+</svg>
+        <figcaption>Pattern A: the compiled subgraph occupies a node like any other. State channels flow through automatically because the schemas match.</figcaption>
+      </figure>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>This is the move where you register a <code>@Bean</code> that exposes a <code>process()</code> method into a parent <code>ApplicationContext</code>. The compiled <code>StateGraph</code> <em>is</em> the bean; <code>add_node("embedded_subgraph", subgraph_app)</code> is <code>@Bean</code>-style registration. The parent doesn't know whether the node is a function, an LLM call, or a multi-node graph — it sees only the state-schema contract.</p>
+      </div>
+
+      <p>The <strong>key requirement</strong> is that the subgraph's <code>TypedDict</code> and the parent's <code>TypedDict</code> share the keys the subgraph reads and writes. If they don't, Pattern A won't work and you fall to Pattern B.</p>
+
+      <div class="checkself">Why does the subgraph not need a wrapper function in this pattern?</div>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">§ 03 — PATTERN B</div>
+      <h2>Subgraph invoked inside a node (different states)</h2>
+      <p>When the schemas <strong>don't</strong> match, you put a node in the parent whose entire job is to invoke the subgraph with mapped inputs and translate the response back:</p>
+<pre><code>class SubState(TypedDict):
+    bar: str
+
+def sub_inner(state: SubState) -> dict:
+    return {"bar": state["bar"] + " [processed in subgraph]"}
+
+sub_only = StateGraph(SubState)
+sub_only.add_node("only", sub_inner)
+sub_only.add_edge(START, "only")
+sub_only.add_edge("only", END)
+sub_compiled = sub_only.compile()
+
+class ParentOnlyState(TypedDict):
+    foo: str
+
+def bridge(state: ParentOnlyState) -> dict:
+    out = sub_compiled.invoke({"bar": state["foo"]})   # ← parent.foo → sub.bar
+    return {"foo": out["bar"]}                          # ← sub.bar → parent.foo
+
+wb = StateGraph(ParentOnlyState)
+wb.add_node("call_sub", bridge)
+wb.add_edge(START, "call_sub")
+wb.add_edge("call_sub", END)
+wrapped_app = wb.compile()
+print(wrapped_app.invoke({"foo": "start-value"}))
+# {'foo': 'start-value [processed in subgraph]'}</code></pre>
+
+      <figure class="diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 340" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" font-family="'JetBrains Mono', monospace">
+  <rect width="900" height="340" fill="#ede5d6"/>
+  <g font-size="12" fill="#4a4239">
+    <text x="40" y="34" font-size="13" fill="#b8472e" font-weight="700" letter-spacing="2">PARENT — ParentOnlyState{foo: str}</text>
+    <rect x="40" y="60" width="820" height="240" rx="4" fill="none" stroke="#1f1a14" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <circle cx="100" cy="170" r="22" fill="#1f1a14"/>
+    <text x="100" y="174" text-anchor="middle" fill="#f5efe6" font-size="11">START</text>
+    <rect x="180" y="130" width="220" height="120" rx="3" fill="#f5efe6" stroke="#1f1a14"/>
+    <text x="290" y="155" text-anchor="middle" fill="#1f1a14" font-weight="700">call_sub</text>
+    <text x="290" y="172" text-anchor="middle" font-size="10" fill="#4a4239">(bridge function)</text>
+    <text x="290" y="195" text-anchor="middle" font-size="10" fill="#2a5d62" font-style="italic">parent.foo → sub.bar</text>
+    <text x="290" y="212" text-anchor="middle" font-size="10" fill="#2a5d62" font-style="italic">sub_compiled.invoke(…)</text>
+    <text x="290" y="229" text-anchor="middle" font-size="10" fill="#2a5d62" font-style="italic">sub.bar → parent.foo</text>
+    <rect x="460" y="100" width="320" height="180" rx="4" fill="#f8e6cf" stroke="#b8472e" stroke-width="2"/>
+    <text x="620" y="125" text-anchor="middle" fill="#b8472e" font-weight="700" font-size="12">sub_compiled — SubState{bar: str}</text>
+    <text x="620" y="142" text-anchor="middle" fill="#b8472e" font-size="10" font-style="italic">isolated schema</text>
+    <rect x="490" y="160" width="260" height="55" rx="3" fill="#f5efe6" stroke="#b8472e"/>
+    <circle cx="515" cy="187" r="14" fill="#1f1a14"/>
+    <text x="515" y="191" text-anchor="middle" fill="#f5efe6" font-size="9">START</text>
+    <rect x="545" y="173" width="80" height="30" rx="3" fill="#f5efe6" stroke="#1f1a14"/>
+    <text x="585" y="193" text-anchor="middle" fill="#1f1a14" font-size="10" font-weight="700">only</text>
+    <circle cx="680" cy="187" r="14" fill="#1f1a14"/>
+    <text x="680" y="191" text-anchor="middle" fill="#f5efe6" font-size="9">END</text>
+    <line x1="529" y1="187" x2="545" y2="187" stroke="#1f1a14" stroke-width="1.2" marker-end="url(#a3)"/>
+    <line x1="625" y1="187" x2="666" y2="187" stroke="#1f1a14" stroke-width="1.2" marker-end="url(#a3)"/>
+    <text x="620" y="262" text-anchor="middle" font-size="10" fill="#b8472e" font-style="italic">subgraph never sees parent state</text>
+    <path d="M400,160 C430,160 440,140 460,140" stroke="#2a5d62" stroke-width="1.2" fill="none" marker-end="url(#a3t)"/>
+    <path d="M460,240 C440,240 430,220 400,220" stroke="#b8472e" stroke-width="1.2" fill="none" marker-end="url(#a3t2)"/>
+    <text x="420" y="105" font-size="10" fill="#2a5d62">map in</text>
+    <text x="420" y="266" font-size="10" fill="#b8472e">map out</text>
+    <line x1="122" y1="170" x2="178" y2="170" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#a3)"/>
+  </g>
+  <defs>
+    <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/></marker>
+    <marker id="a3t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2a5d62"/></marker>
+    <marker id="a3t2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/></marker>
+  </defs>
+</svg>
+        <figcaption>Pattern B: the bridge function lives inside the parent graph; the subgraph is isolated. All schema translation is explicit and stays at the boundary.</figcaption>
+      </figure>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>This is the layered-service pattern — <code>OrderService</code> calls <code>PaymentService</code>, but <code>OrderService</code> doesn't pass its own DTO across; it constructs a <code>PaymentRequest</code>, calls <code>paymentService.process(request)</code>, and maps the <code>PaymentResponse</code> back into its own domain. Subgraph-inside-node is the same anti-corruption layer, written explicitly because Python doesn't have a stricter DTO convention.</p>
+      </div>
+
+      <h3>The third case — partial overlap</h3>
+      <p>The notebook shows only the two extremes (fully shared <code>SharedState</code>, fully disjoint <code>ParentOnlyState</code> / <code>SubState</code>). In practice you'll also see <strong>partial overlap</strong> — parent and child share <em>some</em> state keys and have their own private ones. LangGraph handles this by reading/writing only the shared channels automatically; you map the rest yourself in a wrapper. The lecturer alluded to this when he said <em>"there should be some common element to how you can kind of join these two."</em></p>
+
+      <h3>Pattern A vs Pattern B — when to pick which</h3>
+      <table>
+        <thead><tr><th></th><th>Pattern A — subgraph as node</th><th>Pattern B — subgraph inside node</th></tr></thead>
+        <tbody>
+          <tr><td>State schemas</td><td>Identical for the keys the subgraph touches</td><td>Different (or you want isolation)</td></tr>
+          <tr><td>Wrapper function</td><td>None</td><td>One bridge function per call site</td></tr>
+          <tr><td>What the parent "sees"</td><td>A normal node</td><td>A normal node (the bridge); subgraph is hidden</td></tr>
+          <tr><td>Reach for it when</td><td>Reusable workflow modules in the same domain</td><td>Calling a foreign component you don't want to bleed schema with</td></tr>
+          <tr><td>Failure tell</td><td><code>KeyError</code> on a key the parent never wrote → schema mismatch</td><td>Subgraph runs but never affects parent state → wrapper forgot to return the mapped output</td></tr>
+        </tbody>
+      </table>
+
+      <div class="checkself">A flight-search agent expects state with <code>query: str</code> and returns <code>results: list[dict]</code>. Your supervisor's state has <code>user_request: str</code> and <code>tool_outputs: dict</code>. Which pattern do you use?</div>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">§ 04 — HONEST DISANALOGY</div>
+      <h2>A subgraph is <em>not</em> a thread</h2>
+      <p>The lecturer says early on, <em>"the subgraph can be an independent module. So when the main graph is executing, subgraph also can execute parallelly."</em> Later he walks this back: <em>"you cannot actually do parallel execution, but concurrent execution you can do based on async."</em></p>
+      <p>The walkback is the right answer. Pinning it down: <strong>the subgraph wrapper itself does not parallelize anything.</strong> A subgraph used as a single node still executes in turn when the graph reaches that edge. You get parallelism in LangGraph two ways:</p>
+      <ol>
+        <li><strong>Graph topology</strong> — fan out from one node to several nodes (which may themselves be subgraphs) using multiple outgoing edges; the runtime executes them in parallel for that step. The Send API and conditional fan-out are the usual moves.</li>
+        <li><strong>Async invocation</strong> — define your nodes with <code>async def</code> and call <code>await graph.ainvoke(...)</code>; the runtime can interleave I/O-bound nodes (LLM calls, HTTP requests) concurrently.</li>
+      </ol>
+
+      <div class="bridge warn">
+        <div class="bridge-label">HONEST DISANALOGY — NOT A THREAD</div>
+        <p>Wrapping a slow operation in a subgraph is the LangGraph equivalent of moving slow code into its own class — it organizes, it doesn't speed anything up. Concurrency in Java/Spring needs <code>CompletableFuture</code>, <code>@Async</code>, or a reactor; in LangGraph it needs fan-out edges or async nodes. Encapsulation alone is not concurrency.</p>
+      </div>
+
+      <div class="failure-tell">
+        <strong>FAILURE TELL — </strong>when the cohort says <em>"I put the slow tool in a subgraph and it's still slow,"</em> that's this confusion.
+      </div>
+
+      <div class="checkself">Name two ways to actually get two LLM calls to overlap in LangGraph.</div>
+    </section>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">§ 05 — ESCAPE HATCH</div>
+      <h2>Where subgraphs and <code>Command.PARENT</code> meet</h2>
+      <p>S21 introduced <code>Command(goto=…, update=…)</code> as a way to route from inside a node without writing a conditional edge. With subgraphs, <code>Command</code> gains one more knob: <code>graph=Command.PARENT</code>.</p>
+      <p>When a subgraph node returns <code>Command(update={…}, goto="some_parent_node", graph=Command.PARENT)</code>, the runtime updates the <strong>parent's</strong> state and jumps to <strong>a node in the parent graph</strong> — skipping the rest of the subgraph entirely. That's how you escape a subgraph mid-run from the inside (e.g., "if validation fails inside the sub, send control back to the supervisor"). It's the subgraph version of "raise to the caller."</p>
+      <p>Mechanism, not magic: it requires that the shared state key has a <em>reducer</em> (e.g., <code>Annotated[str, operator.add]</code>) so the parent knows how to merge the subgraph's update. Without the reducer LangGraph won't know whether to overwrite or accumulate.</p>
+      <div class="checkself">Why does <code>Command.PARENT</code> require reducers on shared keys?</div>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">§ 06 — WORKED USE CASE</div>
+      <h2>A travel-itinerary supervisor</h2>
+      <p>This is the lecturer's example, made concrete. You're building a travel agent: the user gives a destination, a date range, and a party size. The supervisor needs to (i) search flights, (ii) book hotels, (iii) generate an itinerary. Each is a small graph:</p>
+      <ul>
+        <li><strong>Flight subgraph</strong> — its own internal ReAct loop (search → filter → score), shared <code>flight_options: list[dict]</code> with the parent.</li>
+        <li><strong>Hotel subgraph</strong> — same shape, shared <code>hotel_options: list[dict]</code>; depends on <code>flight_options[0].arrival_time</code> so it runs <em>after</em> the flight subgraph, not in parallel.</li>
+        <li><strong>Itinerary subgraph</strong> — Reflection pattern (draft → critique → revise), reads the booked flights and hotels, writes <code>itinerary: str</code>.</li>
+      </ul>
+      <p>In the parent supervisor graph each of these is a node — <code>add_node("book_flights", flights_compiled)</code> — wired with sequential edges where dependency exists, and conditional edges where the supervisor decides. The supervisor's whole job is orchestration; each subgraph owns its domain. This is the pattern multi-agent systems formalize: a thin top-level graph composed of fat domain graphs.</p>
+      <div class="checkself">In the travel example, which two subgraphs <em>could</em> run in parallel without changing the design? Which one <em>can't</em>, and why?</div>
+    </section>
+
+    <div class="part-marker">PART B — A FIRST LOOK AT MCP</div>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">§ 07 — THE PROBLEM</div>
+      <h2>Why a protocol, not a library</h2>
+      <p>You write a <code>web_search</code> tool with <code>@tool</code> and <code>bind_tools(...)</code> in your agent. So does the team across the hall. So does every other agent project in the company. Now: a search API endpoint changes. How many codebases need a patch? One per project. Times the security review. Times the on-call who'll get paged at 2 a.m. when one of them lags.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>This is exactly the JAR-versus-microservice debate. A common-utilities JAR sounds great until you have 200 services pinning 17 different versions of it. The fix is to extract the thing behind a published API and let the calling code be a thin client. <strong>MCP is that move, scoped to tools an LLM can call.</strong></p>
+      </div>
+
+      <p>The lecturer's USB-port analogy is the canonical one Anthropic uses too: before MCP, every "agent ↔ tool" pair was a custom cable; MCP is the standard port. The point isn't capability — <em>the model isn't smarter with MCP</em> — it's <strong>maintainability and security at scale</strong>.</p>
+
+      <div class="callout">
+        <div class="callout-label">CALIBRATION — WHEN MCP DOESN'T EARN ITS KEEP</div>
+        <p>MCP pays off at <strong>organization scale</strong>. For a single project with 20–30 tools, MCP is over-engineering. The lecturer is explicit: <em>"if you have small project… don't go for MCP."</em></p>
+        <p>Reach for it when tools are shared across teams, when security review needs a single chokepoint, or when the tool list is large enough that an LLM's "discover the right tool from the bound list" step starts hallucinating across similarly-named tools.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">§ 08 — WHAT MCP IS</div>
+      <h2>What MCP is, precisely</h2>
+      <p><strong>MCP</strong> (Model Context Protocol) is an open protocol — published by Anthropic in November 2024 — that standardizes how an LLM application (the <strong>host</strong>) connects to external context and tools.</p>
+      <p>The spec defines two layers:</p>
+      <ul>
+        <li><strong>Data layer</strong> — a <strong>JSON-RPC 2.0</strong> protocol that defines the primitives (tools, resources, prompts, notifications), lifecycle messages, and authorization. This is the contract every server and client must implement.</li>
+        <li><strong>Transport layer</strong> — how the bytes move. Two standard transports: <strong>stdio</strong> (client launches the server as a subprocess; JSON-RPC messages over stdin/stdout, newline-delimited) and <strong>Streamable HTTP</strong> (the current HTTP-based transport; the older HTTP+SSE transport is now deprecated but still supported by some clients for compatibility).</li>
+      </ul>
+
+      <div class="correction">
+        <strong>Correction.</strong> The lecturer described MCP as <em>"a transport-layer protocol, like the 7 layers in networking."</em> That phrasing mixes OSI layers — at the OSI transport layer you have TCP and UDP, not protocols that define methods like <code>tools/list</code>. <strong>MCP is closer to an application-layer protocol</strong> (built on JSON-RPC) that <em>uses</em> underlying transports. The MCP spec itself names "data layer" (JSON-RPC) and "transport layer" (stdio, Streamable HTTP) as its <em>internal</em> layers. <em>[Source: modelcontextprotocol.org/docs/learn/architecture; modelcontextprotocol.org/specification/latest/basic/transports, retrieved 2026-05-20.]</em>
+      </div>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>Treat MCP like JSON-RPC over stdio or HTTP rather than like a fresh wire format. If you've used Spring Remoting or a JSON-RPC client before, the mental model carries over: methods, params, errors, ids, notifications.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">§ 09 — THE THREE PRIMITIVES</div>
+      <h2>Tools, resources, prompts — who controls each</h2>
+      <p>The transcript collapses this into "tools are auto-discoverable, resources need hard coding." The spec is more precise — the distinction is <em>who</em> drives the call:</p>
+
+      <table>
+        <thead><tr><th>Primitive</th><th>Controlled by</th><th>Typical use</th><th>Spec method</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Tools</strong></td><td><strong>Model</strong> (LLM decides when to call)</td><td>API calls, file writes, DB mutations — actions with effects</td><td><code>tools/list</code>, <code>tools/call</code></td></tr>
+          <tr><td><strong>Resources</strong></td><td><strong>Application</strong> (host injects as context)</td><td>File contents, git history, ticket payloads — read-only context</td><td><code>resources/list</code>, <code>resources/read</code></td></tr>
+          <tr><td><strong>Prompts</strong></td><td><strong>User</strong> (explicit invocation)</td><td>Slash commands, menu options (<code>/review-code</code>)</td><td><code>prompts/list</code>, <code>prompts/get</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="correction">
+        <strong>Correction.</strong> <em>"Tools are auto-discoverable; resources are like a repository, you need to hard code"</em> is a clumsy phrasing of the table above. Tools aren't auto-discovered by magic — the host calls <code>tools/list</code> and exposes the result to the model; the model then <em>decides</em> whether to use them. Resources aren't "hard-coded" — the application chooses what to attach. The contrast that matters is <strong>who decides to invoke</strong>, not whether the call appears in code. <em>[Source: modelcontextprotocol.org/specification/latest/server, retrieved 2026-05-20.]</em>
+      </div>
+
+      <p>A fourth concept, <strong>notifications</strong>, lets servers push state updates ("the file you read just changed") to the host.</p>
+
+      <div class="callout">
+        <div class="callout-label">SAFETY NOTE — "MODEL-CONTROLLED" ≠ UNSUPERVISED</div>
+        <p>The MCP spec is explicit that tool implementations should keep a human in the loop with the ability to deny a tool call before it executes. Hosts like Claude Code and Cursor show a confirmation dialog by default; you can disable it, but the spec assumes you start with it on. <em>[Source: modelcontextprotocol.org/specification/latest/server/tools, retrieved 2026-05-20.]</em></p>
+      </div>
+
+      <div class="checkself">Your team needs the assistant to (a) read a Confluence page when the user runs <code>/load-runbook</code>, (b) attach the last three on-call incidents automatically to every conversation in the on-call channel, and (c) be able to delete stale incident tickets when the user asks. Map each to the right primitive.</div>
+    </section>
+
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">§ 10 — ARCHITECTURE</div>
+      <h2>Host, client, server</h2>
+      <ul>
+        <li><strong>Host</strong> — the LLM application the user interacts with (Claude Code, Cursor, VS Code with an MCP-enabled extension, your own Gradio app). The host runs the LLM and manages conversations.</li>
+        <li><strong>Client</strong> — the per-server adapter inside the host that speaks MCP. One client per connected server. (If your host talks to GitHub MCP and a private internal MCP, that's two clients.)</li>
+        <li><strong>Server</strong> — the process exposing tools, resources, and prompts. Can be local (stdio, launched as a subprocess) or remote (HTTP). One server can group dozens of related tools.</li>
+      </ul>
+
+      <figure class="diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" font-family="'JetBrains Mono', monospace">
+  <rect width="900" height="360" fill="#ede5d6"/>
+  <text x="450" y="40" text-anchor="middle" font-size="14" fill="#b8472e" font-weight="700" letter-spacing="3">MCP — HOST / CLIENT / SERVER</text>
+  <g font-size="12" fill="#4a4239">
+    <rect x="50" y="70" width="240" height="240" rx="4" fill="#f5efe6" stroke="#1f1a14" stroke-width="2"/>
+    <text x="170" y="95" text-anchor="middle" font-weight="700" fill="#1f1a14">HOST</text>
+    <text x="170" y="112" text-anchor="middle" font-size="10" fill="#8b7d65">Claude Code · Cursor · your app</text>
+    <rect x="70" y="130" width="200" height="50" rx="3" fill="#f8e6cf" stroke="#c89b3c"/>
+    <text x="170" y="150" text-anchor="middle" fill="#1f1a14" font-weight="700">LLM</text>
+    <text x="170" y="167" text-anchor="middle" font-size="10" fill="#4a4239">conversation + tool calls</text>
+    <rect x="70" y="200" width="90" height="60" rx="3" fill="#f5efe6" stroke="#2a5d62" stroke-width="1.5"/>
+    <text x="115" y="222" text-anchor="middle" fill="#2a5d62" font-weight="700" font-size="11">CLIENT 1</text>
+    <text x="115" y="240" text-anchor="middle" font-size="9" fill="#4a4239">GitHub MCP</text>
+    <rect x="180" y="200" width="90" height="60" rx="3" fill="#f5efe6" stroke="#2a5d62" stroke-width="1.5"/>
+    <text x="225" y="222" text-anchor="middle" fill="#2a5d62" font-weight="700" font-size="11">CLIENT 2</text>
+    <text x="225" y="240" text-anchor="middle" font-size="9" fill="#4a4239">Internal MCP</text>
+    <rect x="500" y="70" width="350" height="100" rx="4" fill="#f5efe6" stroke="#1f1a14" stroke-width="2"/>
+    <text x="675" y="95" text-anchor="middle" font-weight="700" fill="#1f1a14">SERVER A — GitHub</text>
+    <text x="675" y="115" text-anchor="middle" font-size="10" fill="#8b7d65">remote · Streamable HTTP</text>
+    <text x="675" y="138" text-anchor="middle" font-size="10" fill="#4a4239">tools/list · tools/call</text>
+    <text x="675" y="155" text-anchor="middle" font-size="10" fill="#4a4239">resources/list · prompts/list</text>
+    <rect x="500" y="210" width="350" height="100" rx="4" fill="#f5efe6" stroke="#1f1a14" stroke-width="2"/>
+    <text x="675" y="235" text-anchor="middle" font-weight="700" fill="#1f1a14">SERVER B — internal docs</text>
+    <text x="675" y="255" text-anchor="middle" font-size="10" fill="#8b7d65">local · stdio subprocess</text>
+    <text x="675" y="278" text-anchor="middle" font-size="10" fill="#4a4239">JSON-RPC over stdin/stdout</text>
+    <text x="675" y="295" text-anchor="middle" font-size="10" fill="#4a4239">newline-delimited</text>
+    <line x1="160" y1="230" x2="500" y2="120" stroke="#2a5d62" stroke-width="1.5" marker-end="url(#a4)"/>
+    <line x1="500" y1="100" x2="160" y2="210" stroke="#b8472e" stroke-width="1.2" marker-end="url(#a4t)" stroke-dasharray="4 3"/>
+    <line x1="270" y1="230" x2="500" y2="260" stroke="#2a5d62" stroke-width="1.5" marker-end="url(#a4)"/>
+    <line x1="500" y1="280" x2="270" y2="248" stroke="#b8472e" stroke-width="1.2" marker-end="url(#a4t)" stroke-dasharray="4 3"/>
+    <text x="390" y="170" font-size="10" fill="#2a5d62">request →</text>
+    <text x="390" y="187" font-size="10" fill="#b8472e" font-style="italic">← response</text>
+    <text x="450" y="340" text-anchor="middle" font-size="11" fill="#1f1a14" font-style="italic">one host · one or more clients · one or more servers</text>
+  </g>
+  <defs>
+    <marker id="a4"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2a5d62"/></marker>
+    <marker id="a4t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/></marker>
+  </defs>
+</svg>
+        <figcaption>One host runs the LLM and one client per connected server. Each server groups related tools. The protocol is JSON-RPC 2.0; transport is stdio (local subprocess) or Streamable HTTP (remote).</figcaption>
+      </figure>
+
+      <p>When the user types something:</p>
+      <ol>
+        <li>Host gathers user input plus any application-controlled <strong>resources</strong> attached to the conversation.</li>
+        <li>Host sends that context to the LLM, along with the list of <strong>tools</strong> the LLM may call.</li>
+        <li>If the LLM emits a tool call, the host routes it to the correct <strong>client</strong>, which RPCs the <strong>server</strong>, gets a result, and returns it to the LLM.</li>
+        <li>The LLM uses the result to continue generating, possibly calling more tools.</li>
+      </ol>
+
+      <div class="failure-tell">
+        <strong>FAILURE TELL — </strong>when the assistant <em>says</em> it called a tool but you see no server-side log, check the client→server mapping. The host may have decided the tool wasn't available (server died, transport disconnected, capability not advertised) and the model is <strong>hallucinating the call</strong> because the tool name is in its training prior.
+      </div>
+
+      <div class="checkself">In the host/client/server picture, where does authentication and authorization live — on the model, in the client, or on the server?</div>
+    </section>
+
+    <section class="chapter" id="s11">
+      <div class="chapter-marker">§ 11 — MINIMAL SHAPE</div>
+      <h2>The lecturer's example, made spec-faithful</h2>
+<pre><code># server.py — using the official Python MCP SDK
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("demo-server")
+
+@mcp.tool()
+def add(a: int, b: int) -&gt; int:
+    """Add two numbers."""
+    return a + b
+
+@mcp.tool()
+def greet(name: str) -&gt; str:
+    """Greet someone by name."""
+    return f"Hello, {name}!"
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")</code></pre>
+
+<pre><code># client.py — listing and calling tools
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def main():
+    params = StdioServerParameters(command="python", args=["server.py"])
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            tools = await session.list_tools()
+            print(tools)
+            result = await session.call_tool("add", {"a": 5, "b": 3})
+            print(result.content)</code></pre>
+
+      <div class="correction">
+        <strong>Correction.</strong> The lecturer's <code>client.list_of_tools</code> is <code>session.list_tools()</code> in the Python SDK (and the JSON-RPC method name is <code>tools/list</code>). Small detail, but the reader will hit it the first time they wire this up.
+      </div>
+
+      <p>The shape mirrors the lecturer's slide: the <strong>client has no tools defined locally</strong> — they all live on the server. Everything routes through <code>session.call_tool(name, args)</code>.</p>
+
+      <div class="checkself">In which file does adding <code>tax_quote(amount, region)</code> belong — <code>server.py</code> or <code>client.py</code>? Why?</div>
+    </section>
+
+    <section class="chapter" id="s12">
+      <div class="chapter-marker">§ 12 — DIAGNOSTIC TABLE</div>
+      <h2>When MCP isn't worth it (and a few other failure modes)</h2>
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Agent picks the wrong tool from a list of 500, hallucinates ones that don't exist</td><td>Tool list too long for the LLM to discriminate; similar descriptions</td><td>Group tools into multiple MCP servers by domain; route via a supervisor that picks a server before the model picks a tool</td></tr>
+          <tr><td>A tool API changed; 12 agent codebases need patching</td><td>Tool logic duplicated across projects</td><td>Extract to a single MCP server; agents become thin clients; patch in one place</td></tr>
+          <tr><td>Security team can't audit which tools call out to which third parties</td><td>Tool definitions scattered across project repos</td><td>MCP server is the inventory; security reviews the server's manifest, not N agents</td></tr>
+          <tr><td>Subgraph runs but never updates the parent state</td><td>Pattern B wrapper returns the subgraph result without mapping it back</td><td>Add the output mapping line (<code>return {"foo": out["bar"]}</code>) inside the bridge function</td></tr>
+          <tr><td><code>add_node("sub", graph_builder)</code> raises on compile</td><td>Forgot to call <code>.compile()</code> on the subgraph before passing it as a node</td><td><code>subgraph_app = subgraph_builder.compile()</code>; then <code>add_node("sub", subgraph_app)</code></td></tr>
+          <tr><td>MCP "feels" slow on every call</td><td>Stdio transport spinning up a fresh subprocess per call, or per-call auth handshake</td><td>Keep the server process resident; reuse the <code>ClientSession</code> across calls; for remote servers prefer keep-alive over reconnect-per-call</td></tr>
+          <tr><td>30-tool project switched to MCP and got slower with more bugs</td><td>Over-engineering — MCP cost without MCP benefit</td><td>Roll back. <code>@tool</code> + <code>bind_tools</code> was the right call at this scale.</td></tr>
+        </tbody>
+      </table>
+      <div class="checkself">You have 25 tools in one project and you're alone on the codebase. Should you adopt MCP?</div>
+    </section>
+
+    <section class="chapter" id="svg">
+      <div class="chapter-marker">VISUAL REFERENCE</div>
+      <h2>The whole session in one picture</h2>
+      <p>Everything above, condensed into one visual. (The standalone file is <code>Session22-Subgraphs-MCP-infographic.svg</code>.)</p>
+      <figure class="infographic">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1600" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" font-family="'Spectral', Georgia, serif">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5efe6"/>
+      <stop offset="1" stop-color="#ede5d6"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f1a14"/>
+      <stop offset="1" stop-color="#3a312a"/>
+    </linearGradient>
+    <marker id="ig-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/></marker>
+  </defs>
+  <rect width="1100" height="1600" fill="url(#paper)"/>
+
+  <g>
+    <rect x="0" y="0" width="1100" height="340" fill="url(#ink)"/>
+    <text x="70" y="80" font-size="12" letter-spacing="8" fill="#c89b3c" font-weight="600" font-family="'JetBrains Mono', monospace">SESSION 22 · STUDY NOTES · REV V1</text>
+    <text x="70" y="160" font-size="52" font-weight="700" fill="#f5efe6" font-style="italic">Subgraphs in LangGraph,</text>
+    <text x="70" y="215" font-size="52" font-weight="700" fill="#d96d4a" font-style="italic">and a First Look at MCP</text>
+    <text x="70" y="265" font-size="19" fill="#c5b9a0" font-style="italic">Two compositional moves: plug a compiled graph into a parent,</text>
+    <text x="70" y="290" font-size="19" fill="#c5b9a0" font-style="italic">and pull tools out of every agent into a shared protocol</text>
+    <line x1="70" y1="320" x2="200" y2="320" stroke="#d96d4a" stroke-width="2"/>
+  </g>
+
+  <g transform="translate(0, 380)">
+    <text x="70" y="0" font-size="11" letter-spacing="5" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">PART A — SUBGRAPHS</text>
+    <text x="70" y="40" font-size="26" font-weight="700" fill="#1f1a14" font-style="italic">A subgraph is a compiled StateGraph</text>
+    <text x="70" y="72" font-size="26" font-weight="700" fill="#1f1a14" font-style="italic">used as a node. State is the contract.</text>
+
+    <rect x="70" y="110" width="460" height="280" rx="6" fill="#f8e6cf" stroke="#b8472e" stroke-width="2"/>
+    <text x="300" y="140" text-anchor="middle" font-size="14" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">PATTERN A — SHARED STATE</text>
+    <text x="300" y="166" text-anchor="middle" font-size="13" fill="#1f1a14" font-family="'JetBrains Mono', monospace">add_node("sub", compiled_subgraph)</text>
+    <rect x="100" y="200" width="80" height="40" fill="#f5efe6" stroke="#1f1a14"/>
+    <text x="140" y="225" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace">parent_1</text>
+    <rect x="220" y="200" width="160" height="40" fill="#d96d4a" stroke="#b8472e"/>
+    <text x="300" y="225" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace" fill="#1f1a14" font-weight="700">embedded_subgraph</text>
+    <rect x="420" y="200" width="80" height="40" fill="#f5efe6" stroke="#1f1a14"/>
+    <text x="460" y="225" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace">END</text>
+    <line x1="180" y1="220" x2="220" y2="220" stroke="#1f1a14" marker-end="url(#ig-arrow)"/>
+    <line x1="380" y1="220" x2="420" y2="220" stroke="#1f1a14" marker-end="url(#ig-arrow)"/>
+    <text x="300" y="280" text-anchor="middle" font-size="12" fill="#4a4239" font-style="italic">parent.foo ↔ sub.foo (same TypedDict)</text>
+    <text x="300" y="305" text-anchor="middle" font-size="12" fill="#4a4239" font-style="italic">no wrapper · no mapping</text>
+    <text x="300" y="360" text-anchor="middle" font-size="13" fill="#2a5d62" font-family="'JetBrains Mono', monospace">{'foo': 'subgraph says hi → parent: world'}</text>
+
+    <rect x="570" y="110" width="460" height="280" rx="6" fill="#f8e6cf" stroke="#b8472e" stroke-width="2"/>
+    <text x="800" y="140" text-anchor="middle" font-size="14" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">PATTERN B — DIFFERENT STATES</text>
+    <text x="800" y="166" text-anchor="middle" font-size="13" fill="#1f1a14" font-family="'JetBrains Mono', monospace">def bridge(state): sub.invoke({...})</text>
+    <rect x="600" y="200" width="170" height="80" fill="#f5efe6" stroke="#1f1a14"/>
+    <text x="685" y="225" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="700">call_sub</text>
+    <text x="685" y="245" text-anchor="middle" font-size="9" fill="#2a5d62" font-style="italic">parent.foo → sub.bar</text>
+    <text x="685" y="262" text-anchor="middle" font-size="9" fill="#2a5d62" font-style="italic">invoke(sub_compiled)</text>
+    <rect x="820" y="200" width="170" height="80" fill="#d96d4a" stroke="#b8472e"/>
+    <text x="905" y="225" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="700" fill="#1f1a14">sub_compiled</text>
+    <text x="905" y="245" text-anchor="middle" font-size="9" fill="#1f1a14" font-style="italic">SubState{bar: str}</text>
+    <text x="905" y="262" text-anchor="middle" font-size="9" fill="#1f1a14" font-style="italic">isolated schema</text>
+    <line x1="770" y1="240" x2="820" y2="240" stroke="#2a5d62" stroke-width="1.5" marker-end="url(#ig-arrow)"/>
+    <text x="800" y="305" text-anchor="middle" font-size="12" fill="#4a4239" font-style="italic">explicit input/output mapping at the boundary</text>
+    <text x="800" y="360" text-anchor="middle" font-size="13" fill="#2a5d62" font-family="'JetBrains Mono', monospace">{'foo': 'start-value [processed in subgraph]'}</text>
+  </g>
+
+  <g transform="translate(0, 880)">
+    <text x="70" y="0" font-size="11" letter-spacing="5" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">PART B — MCP</text>
+    <text x="70" y="40" font-size="26" font-weight="700" fill="#1f1a14" font-style="italic">Pull tools out of every agent;</text>
+    <text x="70" y="72" font-size="26" font-weight="700" fill="#1f1a14" font-style="italic">put them behind one protocol.</text>
+
+    <rect x="70" y="110" width="960" height="320" rx="6" fill="#ede5d6" stroke="#1f1a14"/>
+    <text x="180" y="145" text-anchor="middle" font-size="11" letter-spacing="3" fill="#b8472e" font-family="'JetBrains Mono', monospace" font-weight="700">BEFORE MCP — N×M cabling</text>
+    <g transform="translate(110, 170)">
+      <circle cx="40" cy="20" r="18" fill="#f5efe6" stroke="#1f1a14"/>
+      <text x="40" y="25" text-anchor="middle" font-size="11">A1</text>
+      <circle cx="40" cy="80" r="18" fill="#f5efe6" stroke="#1f1a14"/>
+      <text x="40" y="85" text-anchor="middle" font-size="11">A2</text>
+      <circle cx="40" cy="140" r="18" fill="#f5efe6" stroke="#1f1a14"/>
+      <text x="40" y="145" text-anchor="middle" font-size="11">A3</text>
+      <circle cx="200" cy="20" r="18" fill="#d96d4a" stroke="#b8472e"/>
+      <text x="200" y="25" text-anchor="middle" font-size="11">T1</text>
+      <circle cx="200" cy="80" r="18" fill="#d96d4a" stroke="#b8472e"/>
+      <text x="200" y="85" text-anchor="middle" font-size="11">T2</text>
+      <circle cx="200" cy="140" r="18" fill="#d96d4a" stroke="#b8472e"/>
+      <text x="200" y="145" text-anchor="middle" font-size="11">T3</text>
+      <g stroke="#8b7d65" stroke-width="0.8" fill="none">
+        <line x1="58" y1="20" x2="182" y2="20"/>
+        <line x1="58" y1="20" x2="182" y2="80"/>
+        <line x1="58" y1="20" x2="182" y2="140"/>
+        <line x1="58" y1="80" x2="182" y2="20"/>
+        <line x1="58" y1="80" x2="182" y2="80"/>
+        <line x1="58" y1="80" x2="182" y2="140"/>
+        <line x1="58" y1="140" x2="182" y2="20"/>
+        <line x1="58" y1="140" x2="182" y2="80"/>
+        <line x1="58" y1="140" x2="182" y2="140"/>
+      </g>
+    </g>
+    <text x="200" y="380" text-anchor="middle" font-size="11" fill="#8b7d65" font-style="italic">duplicated tool code in every agent</text>
+
+    <line x1="450" y1="290" x2="540" y2="290" stroke="#1f1a14" stroke-width="2" marker-end="url(#ig-arrow)"/>
+    <text x="495" y="280" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" fill="#b8472e">MCP</text>
+
+    <text x="800" y="145" text-anchor="middle" font-size="11" letter-spacing="3" fill="#b8472e" font-family="'JetBrains Mono', monospace" font-weight="700">AFTER MCP — one server, many clients</text>
+    <g transform="translate(580, 170)">
+      <circle cx="40" cy="20" r="18" fill="#f5efe6" stroke="#1f1a14"/>
+      <text x="40" y="25" text-anchor="middle" font-size="11">A1</text>
+      <circle cx="40" cy="80" r="18" fill="#f5efe6" stroke="#1f1a14"/>
+      <text x="40" y="85" text-anchor="middle" font-size="11">A2</text>
+      <circle cx="40" cy="140" r="18" fill="#f5efe6" stroke="#1f1a14"/>
+      <text x="40" y="145" text-anchor="middle" font-size="11">A3</text>
+      <rect x="160" y="60" width="180" height="80" rx="4" fill="#d96d4a" stroke="#b8472e"/>
+      <text x="250" y="90" text-anchor="middle" font-size="12" font-weight="700" fill="#1f1a14" font-family="'JetBrains Mono', monospace">MCP SERVER</text>
+      <text x="250" y="110" text-anchor="middle" font-size="10" fill="#1f1a14" font-family="'JetBrains Mono', monospace">T1 · T2 · T3</text>
+      <text x="250" y="128" text-anchor="middle" font-size="9" fill="#1f1a14" font-style="italic">JSON-RPC 2.0</text>
+      <line x1="58" y1="20"  x2="158" y2="85" stroke="#2a5d62" stroke-width="1.5"/>
+      <line x1="58" y1="80"  x2="158" y2="100" stroke="#2a5d62" stroke-width="1.5"/>
+      <line x1="58" y1="140" x2="158" y2="115" stroke="#2a5d62" stroke-width="1.5"/>
+    </g>
+    <text x="800" y="380" text-anchor="middle" font-size="11" fill="#8b7d65" font-style="italic">one place to patch · one place to secure</text>
+  </g>
+
+  <g transform="translate(0, 1340)">
+    <text x="70" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">PRIMITIVES — WHO CONTROLS EACH</text>
+    <g transform="translate(70, 40)" font-family="'JetBrains Mono', monospace">
+      <rect x="0"   y="0" width="310" height="170" rx="4" fill="#f5efe6" stroke="#2a5d62" stroke-width="1.5"/>
+      <text x="20"  y="32" font-size="13" fill="#2a5d62" font-weight="700">TOOLS</text>
+      <text x="20"  y="58" font-size="11" fill="#1f1a14">model-controlled</text>
+      <text x="20"  y="88" font-size="10" fill="#4a4239">LLM decides when to call</text>
+      <text x="20" y="108" font-size="10" fill="#4a4239">API calls, mutations</text>
+      <text x="20" y="138" font-size="10" fill="#8b7d65">tools/list · tools/call</text>
+
+      <rect x="335"  y="0" width="310" height="170" rx="4" fill="#f5efe6" stroke="#c89b3c" stroke-width="1.5"/>
+      <text x="355"  y="32" font-size="13" fill="#c89b3c" font-weight="700">RESOURCES</text>
+      <text x="355"  y="58" font-size="11" fill="#1f1a14">application-controlled</text>
+      <text x="355"  y="88" font-size="10" fill="#4a4239">host injects as context</text>
+      <text x="355" y="108" font-size="10" fill="#4a4239">file contents, git history</text>
+      <text x="355" y="138" font-size="10" fill="#8b7d65">resources/list · resources/read</text>
+
+      <rect x="670"  y="0" width="310" height="170" rx="4" fill="#f5efe6" stroke="#b8472e" stroke-width="1.5"/>
+      <text x="690"  y="32" font-size="13" fill="#b8472e" font-weight="700">PROMPTS</text>
+      <text x="690"  y="58" font-size="11" fill="#1f1a14">user-controlled</text>
+      <text x="690"  y="88" font-size="10" fill="#4a4239">user invokes explicitly</text>
+      <text x="690" y="108" font-size="10" fill="#4a4239">slash commands, menus</text>
+      <text x="690" y="138" font-size="10" fill="#8b7d65">prompts/list · prompts/get</text>
+    </g>
+    <text x="550" y="240" text-anchor="middle" font-size="11" fill="#8b7d65" font-style="italic" font-family="'JetBrains Mono', monospace">Source: modelcontextprotocol.org/specification/latest/server · retrieved 2026-05-20</text>
+  </g>
+</svg>
+      </figure>
+    </section>
+
+    <section class="chapter" id="quiz">
+      <div class="chapter-marker">QUIZ YOURSELF</div>
+      <h2>Three recall, four application, three debugging</h2>
+      <p><strong>Recall</strong></p>
+      <ol>
+        <li>What is the only contract between a subgraph and its parent in LangGraph?</li>
+        <li>What does MCP stand for, and what protocol does its data layer use?</li>
+        <li>Which MCP primitive is <em>user-controlled</em> — tools, resources, or prompts?</li>
+      </ol>
+      <p><strong>Application</strong></p>
+      <ol start="4">
+        <li>Your supervisor graph's state has <code>messages: list[BaseMessage]</code>. The flight-search subgraph also uses <code>messages: list[BaseMessage]</code> (it's a small ReAct loop). Which integration pattern, and why?</li>
+        <li>Your translation subgraph takes <code>source_text: str</code> and returns <code>translated_text: str</code>. Your parent agent's state has <code>user_request: str</code> and <code>agent_reply: str</code>. Which pattern, and what does the bridge function look like in two lines?</li>
+        <li>You have 4 agents in one project, 35 tools total, all custom Python functions. Should you adopt MCP today?</li>
+        <li>Your company has 80 agent projects across 12 teams, all wanting an internal Confluence search. How would you architect this with MCP — one server, twelve, or eighty?</li>
+      </ol>
+      <p><strong>Debugging</strong></p>
+      <ol start="8">
+        <li>You added a subgraph via <code>add_node</code> and the parent compiles but invocations raise <code>KeyError: 'foo'</code> when the subgraph runs. Most likely cause?</li>
+        <li>Your MCP-backed agent "says" it called <code>delete_ticket(12)</code> but no log appears on the server. The conversation continued as if it succeeded. What's happening, and where do you look first?</li>
+        <li>The lecturer's example printed <code>{'foo': 'subgraph says hi → parent: world'}</code>. A cohort member says <em>"that can't be right, parent_first ran first, so it should be 'parent: world subgraph says hi'."</em> In one sentence, why is the cohort member wrong?</li>
+      </ol>
+
+      <details>
+        <summary>Show answers</summary>
+        <ol>
+          <li>The state schema (the <code>TypedDict</code>).</li>
+          <li><em>Model Context Protocol</em>; its data layer is <strong>JSON-RPC 2.0</strong>.</li>
+          <li>Prompts (e.g., slash commands).</li>
+          <li>Pattern A (subgraph-as-node). The shared <code>messages</code> key means LangGraph reads and writes it automatically — no wrapper needed.</li>
+          <li>Pattern B. The bridge: <code>out = translate_sub.invoke({"source_text": state["user_request"]}); return {"agent_reply": out["translated_text"]}</code>.</li>
+          <li>No. 35 tools in one project is below the MCP-payoff line. Keep <code>@tool</code> + <code>bind_tools</code> until cross-project sharing becomes the bottleneck.</li>
+          <li>One MCP server (or a small number grouped by domain), and 80 clients. The point of MCP is <em>one</em> place to maintain the tool, not 80.</li>
+          <li>The subgraph's state schema declares a key the parent's state doesn't have, and you're using Pattern A. Either align the schemas or switch to Pattern B with explicit mapping.</li>
+          <li>The model is hallucinating a tool call — most likely the MCP client lost its connection to the server (server crashed, transport died, capability not advertised) and the model emitted a call that looks plausible from its training prior. Check the client logs for disconnect/reconnect events and the host's tool-list at the moment of the call.</li>
+          <li>The order of <em>string concatenation</em> in <code>subgraph_step</code> is independent of the order of <em>node execution</em>. <code>parent_first</code> did run first; <code>subgraph_step</code> then prepended its text to the result.</li>
+        </ol>
+      </details>
+    </section>
+
+    <section class="chapter" id="loose">
+      <div class="chapter-marker">LOOSE ENDS &amp; ASIDES</div>
+      <h2>Things worth keeping but not first-class</h2>
+      <ul>
+        <li><strong>Multiple subgraphs in one node.</strong> The lecturer notes you can invoke several subgraphs from inside a single node, fanning logic together. Fine but harder to debug — prefer one subgraph per node and let the parent graph orchestrate.</li>
+        <li><strong><code>Command</code> vs <code>add_edge</code> style.</strong> The lecturer prefers <code>add_edge</code> for clarity. The cohort will see both in the wild. They're equivalent in expressive power; pick one per codebase and stick with it.</li>
+        <li><strong>API-key leaks in source notebooks.</strong> Two of the LangGraph tutorial files in <code>SasmitaCourse/Langgraph/</code> ship with hard-coded OpenAI keys. Rotate the keys, then move them to <code>os.environ.get("OPENAI_API_KEY")</code> and a <code>.env</code> file outside source control. The README repeats this with file paths and line numbers.</li>
+      </ul>
+    </section>
+
+    <section class="chapter" id="next">
+      <div class="chapter-marker">FORWARD REFERENCE</div>
+      <h2>What comes next</h2>
+      <p>Session 22 closes with the lecturer's verbal promise: <em>"tomorrow we'll finish MCP — how to build your own server and client — and the async story I had to defer because Jupyter timing is ugly."</em> That promise pays off in the LangFuse/MCP arc later in the cohort; the immediate next session (Session 23) pivots to <strong>Databricks</strong>, the data platform the cohort builds the main project on. So the linear next-lesson is Databricks; the linear next <em>topic on this thread</em> is MCP server-and-client implementation when the cohort returns to it.</p>
+    </section>
+
+    <section class="glossary" id="glossary">
+      <h2 style="font-family:'Fraunces',serif; font-style:italic; font-weight:700; font-size:32px; margin-bottom:18px;">Glossary</h2>
+      <dl>
+        <dt><code>StateGraph</code></dt><dd>LangGraph's builder class for stateful graphs. You add nodes and edges, then call <code>.compile()</code> to get an executable graph.</dd>
+        <dt><code>compile()</code></dt><dd>Turns a <code>StateGraph</code> builder into an executable, immutable graph object. Required before using it as a node in a parent graph.</dd>
+        <dt><code>add_node(name, target)</code></dt><dd>Registers a node. <code>target</code> can be a function, async function, or another compiled <code>StateGraph</code> — that's what makes Pattern A work.</dd>
+        <dt><code>add_edge(src, dst)</code></dt><dd>Static edge from <code>src</code> to <code>dst</code>. Unconditional.</dd>
+        <dt>Subgraph</dt><dd>A compiled <code>StateGraph</code> used as a node inside another graph. The unit of composition.</dd>
+        <dt>Parent graph</dt><dd>The graph that contains a subgraph as one of its nodes. Topological, not inheritance.</dd>
+        <dt>Shared state</dt><dd>When parent and subgraph use the same <code>TypedDict</code> on the keys the subgraph touches. Enables Pattern A.</dd>
+        <dt>State mapping</dt><dd>Manually translating parent state keys to subgraph state keys (and back) in a wrapper. Required for Pattern B.</dd>
+        <dt><code>Command</code></dt><dd>A node return value bundling a state update with a routing decision (<code>goto</code>). <code>graph=Command.PARENT</code> routes into the parent graph.</dd>
+        <dt><code>interrupt()</code></dt><dd>Pauses graph execution at a node so a human (or another process) can review and resume with <code>Command(resume=…)</code>. Introduced in S21.</dd>
+        <dt>MCP</dt><dd><em>Model Context Protocol.</em> An open protocol (Anthropic, Nov 2024) for connecting LLM hosts to external tools, resources, and prompts via JSON-RPC over standardized transports.</dd>
+        <dt>MCP server</dt><dd>A process exposing tools, resources, and prompts per the MCP spec. Local (stdio) or remote (Streamable HTTP).</dd>
+        <dt>MCP client</dt><dd>The per-server adapter inside a host that speaks MCP to one server. One client per connected server.</dd>
+        <dt>Host</dt><dd>The LLM-running application the user interacts with (Claude Code, Cursor, your own app). Hosts contain clients.</dd>
+        <dt>Transport</dt><dd>How MCP messages move between client and server. Standard transports: <strong>stdio</strong> and <strong>Streamable HTTP</strong>. Older HTTP+SSE deprecated but still seen.</dd>
+        <dt>JSON-RPC</dt><dd>A simple RPC protocol over JSON (methods, params, ids, errors). MCP's data layer is JSON-RPC 2.0.</dd>
+        <dt>Tools</dt><dd>MCP's <strong>model-controlled</strong> primitive. The LLM decides when to call. <code>tools/list</code>, <code>tools/call</code>.</dd>
+        <dt>Resources</dt><dd>MCP's <strong>application-controlled</strong> primitive. The host attaches them as context.</dd>
+        <dt>Prompts</dt><dd>MCP's <strong>user-controlled</strong> primitive. Slash commands, menu options, explicit user invocations.</dd>
+        <dt><code>@tool</code></dt><dd>LangChain decorator that registers a function as an LLM-callable tool. Pre-MCP, all tools live this way inside each project.</dd>
+        <dt><code>bind_tools</code></dt><dd>Method on a LangChain LLM that attaches a list of <code>@tool</code>-decorated functions for the model to choose from.</dd>
+        <dt>Auto-discovery</dt><dd>Loose term; in MCP, the host calls <code>tools/list</code> to enumerate available tools before exposing them to the model. The <em>model</em> discovers them when shown the list; the <em>host</em> does the listing.</dd>
+        <dt>Async / <code>ainvoke</code></dt><dd>Async variants of LangGraph's invocation API. Required (with <code>async def</code> nodes) to interleave I/O-bound operations.</dd>
+        <dt>Concurrent vs parallel</dt><dd><em>Concurrent</em> = multiple ops in flight at once (one CPU, lots of <code>await</code>). <em>Parallel</em> = literally simultaneous on multiple CPUs/processes.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <span>SasmitaCourse · SESSION 22</span>
+      <span>SUBGRAPHS · MCP · REV V1 · 2026-05-20</span>
+    </footer>
+  </main>
+</div>
+
+</body>
+</html>

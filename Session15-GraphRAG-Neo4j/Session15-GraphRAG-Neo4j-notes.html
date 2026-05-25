@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 15 — GraphRAG, Part 1: Why Graphs, Neo4j Editions, Cypher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px; line-height: 1.7; -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 22px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+main { padding: 80px 80px 120px; max-width: 920px; }
+.hero { margin-bottom: 64px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(44px, 6.4vw, 76px); line-height: 0.98; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 21px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 720px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 28px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 600px; flex-wrap: wrap; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 24px; line-height: 1.45; color: var(--ink); padding: 28px 0 28px 32px; border-left: 4px solid var(--terracotta); margin: 40px 0 60px; position: relative; }
+.thesis::before { content: '\201C'; position: absolute; left: -8px; top: -30px; font-size: 100px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 88px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 36px; line-height: 1.08; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 12px 0 22px 28px; color: var(--ink-soft); }
+.chapter li { margin-bottom: 8px; line-height: 1.65; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { font-family: 'JetBrains Mono', monospace; font-size: 13px; background: var(--ink); color: #e5dcc8; padding: 22px 26px; border-radius: 3px; overflow-x: auto; margin: 22px 0; line-height: 1.6; }
+pre code { background: transparent; border: none; padding: 0; color: inherit; font-size: inherit; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 15px; }
+table th, table td { border-bottom: 1px solid var(--line); padding: 10px 14px; text-align: left; vertical-align: top; }
+table th { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); font-weight: 700; border-bottom: 2px solid var(--ink); }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 22px 26px; margin: 28px 0; }
+.callout .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--ochre); font-weight: 700; margin-bottom: 8px; display: block; }
+.callout p { color: var(--ink); font-size: 16px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+.correction { background: rgba(184, 71, 46, 0.04); border: 1px dashed var(--terracotta); padding: 22px 26px; margin: 28px 0; }
+.correction .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 8px; display: block; }
+.correction p { color: var(--ink); font-size: 16px; margin-bottom: 10px; }
+.correction p:last-child { margin-bottom: 0; }
+.bridge { background: rgba(109, 179, 63, 0.06); border-left: 4px solid var(--spring); padding: 18px 24px; margin: 24px 0; }
+.bridge .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; display: block; }
+.bridge p { color: var(--ink-soft); font-size: 16px; margin-bottom: 0; line-height: 1.6; }
+figure.infographic { margin: 60px -40px; }
+figure.infographic svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 8px 32px rgba(31, 26, 20, 0.12)); border: 1px solid var(--line); background: var(--paper); }
+figure.infographic figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); margin-top: 12px; text-align: center; }
+figure.diagram { margin: 36px 0; text-align: center; }
+figure.diagram svg { max-width: 100%; height: auto; background: var(--paper); border: 1px solid var(--line); padding: 20px; }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); margin-top: 12px; }
+.glossary dl { display: grid; grid-template-columns: 200px 1fr; gap: 14px 24px; margin-top: 20px; }
+.glossary dt { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--terracotta); font-weight: 700; padding-top: 3px; }
+.glossary dd { color: var(--ink-soft); font-size: 15px; line-height: 1.55; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.glossary dd:last-of-type { border-bottom: none; }
+.sources { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+.sources li { margin-bottom: 8px; }
+.divider { border: none; border-top: 1px solid var(--line); margin: 60px 0; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { display: none; }
+  main { padding: 40px 24px 80px; }
+  figure.infographic { margin: 40px -10px; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+<div class="shell">
+
+<aside class="toc">
+  <div class="toc-label">SESSION 15</div>
+  <div class="toc-title">GraphRAG, Part 1</div>
+  <nav class="toc">
+    <ol>
+      <li><a href="#s1">Why basic RAG isn't enough</a></li>
+      <li><a href="#s2">Graph DB landscape &amp; Neo4j</a></li>
+      <li><a href="#s3">Neo4j editions</a></li>
+      <li><a href="#s4">Connecting from Python</a></li>
+      <li><a href="#s5">Cypher in one session</a></li>
+      <li><a href="#s6">The GraphRAG end-state</a></li>
+      <li><a href="#s7">Recap</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+      <li><a href="#sources">Sources</a></li>
+    </ol>
+  </nav>
+  <hr class="toc-divider">
+  <div class="toc-foot">
+    2026-05-03<br>
+    ~66 min · 3 speakers<br>
+    Concept-only (no live demo)<br>
+    <span class="rev-badge">REV 1</span>
+  </div>
+</aside>
+
+<main>
+
+<header class="hero">
+  <div class="eyebrow">SESSION 15 · 2026-05-03</div>
+  <h1>Why graphs.<br><span class="accent">Why Neo4j.</span>Enough Cypher to read.</h1>
+  <p class="hero-sub">Where vanilla RAG breaks, what a graph database brings to the table, how to pick a Neo4j edition, and the minimum Cypher you need to read what a code-writing agent will emit.</p>
+  <div class="hero-meta">
+    <span>DATE · 2026-05-03</span>
+    <span>DURATION · 66 MIN</span>
+    <span>FORMAT · CONCEPT-ONLY</span>
+    <span>PROJECT 2 · OPENS</span>
+  </div>
+</header>
+
+<p class="thesis"><em>Vanilla RAG</em> retrieves chunks by similarity. Some answers don't live in a chunk — they live in the <em>relationships between chunks</em>. That's the problem GraphRAG addresses.</p>
+
+<figure class="infographic">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1800" font-family="Spectral, serif">
+  <defs>
+    <style>
+      .display { font-family: Fraunces, Georgia, serif; font-style: italic; font-weight: 700; }
+      .body-f { font-family: Spectral, Georgia, serif; }
+      .mono-f { font-family: 'JetBrains Mono', Consolas, monospace; }
+    </style>
+    <marker id="arr-terra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/></marker>
+    <marker id="arr-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2a5d62"/></marker>
+    <marker id="arr-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/></marker>
+  </defs>
+  <rect fill="#f5efe6" width="1400" height="1800"/>
+  <g>
+    <text class="mono-f" x="80" y="80" font-size="13" letter-spacing="6" fill="#b8472e" font-weight="700">SESSION 15 — GRAPHRAG, PART 1</text>
+    <text class="display" x="80" y="160" font-size="76" fill="#1f1a14">Why graphs.</text>
+    <text class="display" x="80" y="240" font-size="76" fill="#b8472e">Why Neo4j.</text>
+    <text class="display" x="80" y="320" font-size="76" fill="#1f1a14">Enough Cypher to read.</text>
+    <line x1="80" y1="370" x2="500" y2="370" stroke="#1f1a14" stroke-width="3"/>
+    <text class="mono-f" x="80" y="400" font-size="11" letter-spacing="3" fill="#8b7d65">2026-05-03 · 66 MIN · CONCEPT-ONLY (NO LIVE DEMO)</text>
+  </g>
+  <g transform="translate(80, 460)">
+    <text class="mono-f" x="0" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">01 · WHERE VANILLA RAG BREAKS</text>
+    <text class="display" x="0" y="44" font-size="32" fill="#1f1a14">The multi-hop problem</text>
+    <g transform="translate(0, 80)">
+      <rect fill="#ede5d6" x="0" y="0" width="600" height="140" rx="2"/>
+      <text class="mono-f" x="20" y="32" font-size="11" letter-spacing="2" fill="#8b7d65">VANILLA RAG</text>
+      <text class="body-f" x="20" y="60" font-size="15" fill="#4a4239">embed query → cosine-match top-k → stuff prompt</text>
+      <text class="body-f" x="20" y="92" font-size="15" fill="#4a4239" font-style="italic">Optimizes for: recall (cheap, broad).</text>
+      <text class="body-f" x="20" y="116" font-size="15" fill="#b8472e" font-weight="700">Fails when: the answer is spread across chunks</text>
+      <text class="body-f" x="20" y="134" font-size="15" fill="#b8472e" font-weight="700">that aren't individually similar to the question.</text>
+    </g>
+    <text class="display" x="620" y="170" font-size="48" fill="#b8472e">→</text>
+    <g transform="translate(700, 80)">
+      <rect fill="#f8e6cf" x="0" y="0" width="540" height="140" rx="2" stroke="#c89b3c" stroke-width="1"/>
+      <text class="mono-f" x="20" y="32" font-size="11" letter-spacing="2" fill="#b8472e">GRAPHRAG FIX</text>
+      <text class="body-f" x="20" y="60" font-size="15" fill="#1f1a14">Add a <tspan font-weight="700">graph channel</tspan>: typed entities and</text>
+      <text class="body-f" x="20" y="80" font-size="15" fill="#1f1a14">explicit relationships, queried with Cypher.</text>
+      <text class="body-f" x="20" y="112" font-size="14" fill="#4a4239" font-style="italic">Edge et al., Microsoft Research, 2024 —</text>
+      <text class="mono-f" x="20" y="130" font-size="11" fill="#8b7d65">arXiv:2404.16130</text>
+    </g>
+  </g>
+  <g transform="translate(80, 740)">
+    <text class="mono-f" x="0" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">02 · THE WHOLE DATA MODEL</text>
+    <text class="display" x="0" y="44" font-size="32" fill="#1f1a14">Two entities. That's it.</text>
+    <g transform="translate(0, 90)">
+      <ellipse cx="160" cy="100" rx="150" ry="80" fill="#5ba0a8" stroke="#2a5d62" stroke-width="3"/>
+      <text class="mono-f" x="160" y="70" text-anchor="middle" font-size="11" letter-spacing="2" fill="#f5efe6" font-weight="700">:Person</text>
+      <text class="body-f" x="160" y="100" text-anchor="middle" font-size="14" fill="#f5efe6">name: 'Alice'</text>
+      <text class="body-f" x="160" y="120" text-anchor="middle" font-size="14" fill="#f5efe6">age: 28</text>
+      <text class="body-f" x="160" y="140" text-anchor="middle" font-size="14" fill="#f5efe6">city: 'New York'</text>
+      <text class="mono-f" x="160" y="210" text-anchor="middle" font-size="10" letter-spacing="2" fill="#2a5d62" font-weight="700">NODE</text>
+      <text class="body-f" x="160" y="232" text-anchor="middle" font-size="13" fill="#4a4239">label(s) + property map</text>
+      <line x1="320" y1="100" x2="500" y2="100" stroke="#b8472e" stroke-width="3" marker-end="url(#arr-terra)"/>
+      <rect x="340" y="62" width="140" height="36" fill="#f5efe6" stroke="#b8472e" stroke-width="2" rx="2"/>
+      <text class="mono-f" x="410" y="80" text-anchor="middle" font-size="11" letter-spacing="1" fill="#b8472e" font-weight="700">:WORKS_AT</text>
+      <text class="mono-f" x="410" y="92" text-anchor="middle" font-size="9" fill="#4a4239">since: 2020</text>
+      <ellipse cx="660" cy="100" rx="150" ry="80" fill="#5ba0a8" stroke="#2a5d62" stroke-width="3"/>
+      <text class="mono-f" x="660" y="70" text-anchor="middle" font-size="11" letter-spacing="2" fill="#f5efe6" font-weight="700">:Company:TechCompany</text>
+      <text class="body-f" x="660" y="100" text-anchor="middle" font-size="14" fill="#f5efe6">name: 'TechCorp'</text>
+      <text class="body-f" x="660" y="120" text-anchor="middle" font-size="14" fill="#f5efe6">founded: 2010</text>
+      <text class="body-f" x="660" y="140" text-anchor="middle" font-size="14" fill="#f5efe6">employees: 500</text>
+      <text class="mono-f" x="660" y="210" text-anchor="middle" font-size="10" letter-spacing="2" fill="#2a5d62" font-weight="700">NODE (MULTI-LABEL)</text>
+      <text class="body-f" x="660" y="232" text-anchor="middle" font-size="13" fill="#4a4239">a node can carry several labels</text>
+      <text class="mono-f" x="410" y="40" text-anchor="middle" font-size="10" letter-spacing="2" fill="#b8472e" font-weight="700">RELATIONSHIP</text>
+      <text class="body-f" x="410" y="155" text-anchor="middle" font-size="12" fill="#4a4239" font-style="italic">typed, directed, can have properties</text>
+    </g>
+    <g transform="translate(900, 90)">
+      <rect fill="#ede5d6" x="0" y="0" width="340" height="240" rx="2"/>
+      <text class="mono-f" x="20" y="30" font-size="11" letter-spacing="2" fill="#8b7d65">CYPHER PATTERN SYNTAX</text>
+      <text class="mono-f" x="20" y="68" font-size="14" fill="#1f1a14">(p:Person {name: 'Alice'})</text>
+      <text class="body-f" x="20" y="92" font-size="12" fill="#4a4239" font-style="italic">parentheses = node</text>
+      <text class="mono-f" x="20" y="138" font-size="14" fill="#1f1a14">-[r:WORKS_AT {since:2020}]-&gt;</text>
+      <text class="body-f" x="20" y="162" font-size="12" fill="#4a4239" font-style="italic">brackets = relationship</text>
+      <text class="mono-f" x="20" y="208" font-size="14" fill="#1f1a14">(c:Company)</text>
+      <text class="body-f" x="20" y="226" font-size="12" fill="#4a4239" font-style="italic">draw the subgraph; engine matches it</text>
+    </g>
+  </g>
+  <g transform="translate(80, 1140)">
+    <text class="mono-f" x="0" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">03 · CYPHER CLAUSE MAP</text>
+    <text class="display" x="0" y="44" font-size="32" fill="#1f1a14">SQL keywords ↔ Cypher keywords</text>
+    <g transform="translate(0, 80)">
+      <rect x="0" y="0" width="1240" height="40" fill="#1f1a14"/>
+      <text class="mono-f" x="20" y="26" font-size="11" letter-spacing="3" fill="#f5efe6" font-weight="700">SQL</text>
+      <text class="mono-f" x="320" y="26" font-size="11" letter-spacing="3" fill="#f5efe6" font-weight="700">CYPHER</text>
+      <text class="mono-f" x="660" y="26" font-size="11" letter-spacing="3" fill="#f5efe6" font-weight="700">PURPOSE</text>
+      <g font-size="14">
+        <rect x="0" y="40" width="1240" height="40" fill="#ede5d6"/>
+        <text class="mono-f" x="20" y="65" fill="#1f1a14">SELECT … FROM</text>
+        <text class="mono-f" x="320" y="65" fill="#b8472e">MATCH … RETURN</text>
+        <text class="body-f" x="660" y="65" fill="#4a4239">read rows / subgraphs</text>
+        <text class="mono-f" x="20" y="105" fill="#1f1a14">INSERT INTO</text>
+        <text class="mono-f" x="320" y="105" fill="#b8472e">CREATE</text>
+        <text class="body-f" x="660" y="105" fill="#4a4239">add a node or relationship</text>
+        <rect x="0" y="120" width="1240" height="40" fill="#ede5d6"/>
+        <text class="mono-f" x="20" y="145" fill="#1f1a14">INSERT … ON DUPLICATE KEY UPDATE</text>
+        <text class="mono-f" x="320" y="145" fill="#b8472e">MERGE … ON CREATE/ON MATCH SET</text>
+        <text class="body-f" x="660" y="145" fill="#4a4239">upsert</text>
+        <text class="mono-f" x="20" y="185" fill="#1f1a14">WHERE</text>
+        <text class="mono-f" x="320" y="185" fill="#b8472e">WHERE</text>
+        <text class="body-f" x="660" y="185" fill="#4a4239">filter; AND / OR / NOT / IN all work</text>
+        <rect x="0" y="200" width="1240" height="40" fill="#ede5d6"/>
+        <text class="mono-f" x="20" y="225" fill="#1f1a14">UPDATE … SET</text>
+        <text class="mono-f" x="320" y="225" fill="#b8472e">SET</text>
+        <text class="body-f" x="660" y="225" fill="#4a4239">add/overwrite properties; no migration</text>
+        <text class="mono-f" x="20" y="265" fill="#1f1a14">JOIN ... ON</text>
+        <text class="mono-f" x="320" y="265" fill="#b8472e">(:A)-[:REL]-&gt;(:B)</text>
+        <text class="body-f" x="660" y="265" fill="#4a4239">traverse a typed edge</text>
+        <rect x="0" y="280" width="1240" height="40" fill="#ede5d6"/>
+        <text class="mono-f" x="20" y="305" fill="#1f1a14">GROUP BY</text>
+        <text class="mono-f" x="320" y="305" fill="#b8472e">(implicit)</text>
+        <text class="body-f" x="660" y="305" fill="#4a4239">non-aggregated RETURN cols ARE the group keys</text>
+        <text class="mono-f" x="20" y="345" fill="#1f1a14">COUNT / AVG / MIN / MAX</text>
+        <text class="mono-f" x="320" y="345" fill="#b8472e">COUNT / AVG / MIN / MAX</text>
+        <text class="body-f" x="660" y="345" fill="#4a4239">live inside RETURN</text>
+        <rect x="0" y="360" width="1240" height="40" fill="#ede5d6"/>
+        <text class="mono-f" x="20" y="385" fill="#1f1a14">ORDER BY … DESC</text>
+        <text class="mono-f" x="320" y="385" fill="#b8472e">ORDER BY … DESC</text>
+        <text class="body-f" x="660" y="385" fill="#4a4239">same as SQL</text>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(80, 1620)">
+    <text class="mono-f" x="0" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">04 · WHERE THIS LANDS</text>
+    <text class="display" x="0" y="40" font-size="28" fill="#1f1a14">vector channel + graph channel → LLM</text>
+    <g transform="translate(0, 70)" font-size="13">
+      <rect x="0" y="0" width="200" height="60" fill="#5ba0a8" stroke="#2a5d62" stroke-width="2" rx="2"/>
+      <text class="mono-f" x="100" y="30" text-anchor="middle" fill="#f5efe6" font-weight="700">USER QUERY</text>
+      <text class="body-f" x="100" y="50" text-anchor="middle" fill="#f5efe6" font-style="italic">natural language</text>
+      <line x1="200" y1="30" x2="280" y2="30" stroke="#1f1a14" stroke-width="2" marker-end="url(#arr-ink)"/>
+      <rect x="280" y="-40" width="220" height="60" fill="#f5efe6" stroke="#2a5d62" stroke-width="2" rx="2"/>
+      <text class="mono-f" x="390" y="-12" text-anchor="middle" fill="#2a5d62" font-weight="700">VECTOR RETRIEVAL</text>
+      <text class="body-f" x="390" y="6" text-anchor="middle" fill="#4a4239" font-style="italic">embed + similarity</text>
+      <rect x="280" y="50" width="220" height="60" fill="#f5efe6" stroke="#b8472e" stroke-width="2" rx="2"/>
+      <text class="mono-f" x="390" y="78" text-anchor="middle" fill="#b8472e" font-weight="700">GRAPH RETRIEVAL</text>
+      <text class="body-f" x="390" y="96" text-anchor="middle" fill="#4a4239" font-style="italic">NL → Cypher → rows</text>
+      <line x1="500" y1="-10" x2="600" y2="30" stroke="#2a5d62" stroke-width="2" marker-end="url(#arr-teal)"/>
+      <line x1="500" y1="80" x2="600" y2="30" stroke="#b8472e" stroke-width="2" marker-end="url(#arr-terra)"/>
+      <rect x="600" y="0" width="200" height="60" fill="#1f1a14" rx="2"/>
+      <text class="mono-f" x="700" y="28" text-anchor="middle" fill="#f5efe6" font-weight="700">MERGED CONTEXT</text>
+      <text class="body-f" x="700" y="48" text-anchor="middle" fill="#ede5d6" font-style="italic">two signals, one prompt</text>
+      <line x1="800" y1="30" x2="880" y2="30" stroke="#1f1a14" stroke-width="2" marker-end="url(#arr-ink)"/>
+      <rect x="880" y="0" width="160" height="60" fill="#b8472e" rx="2"/>
+      <text class="mono-f" x="960" y="36" text-anchor="middle" fill="#f5efe6" font-size="18" font-weight="700">LLM</text>
+      <line x1="1040" y1="30" x2="1120" y2="30" stroke="#1f1a14" stroke-width="2" marker-end="url(#arr-ink)"/>
+      <text class="display" x="1140" y="38" font-size="20" fill="#1f1a14">answer</text>
+    </g>
+    <text class="body-f" x="0" y="160" font-size="13" fill="#4a4239" font-style="italic">Graph rows are <tspan font-weight="700">structured + deterministic</tspan> — same query, same rows. Reduces hallucination opportunity; doesn't eliminate it (sampling is still probabilistic).</text>
+  </g>
+  <g transform="translate(80, 1750)">
+    <line x1="0" y1="0" x2="1240" y2="0" stroke="#1f1a14" stroke-width="2"/>
+    <text class="mono-f" x="0" y="24" font-size="10" letter-spacing="3" fill="#8b7d65">SOURCES: NEO4J CYPHER MANUAL · LANGCHAIN-NEO4J · EDGE ET AL. 2024 (ARXIV:2404.16130)</text>
+    <text class="mono-f" x="1240" y="24" font-size="10" letter-spacing="3" fill="#b8472e" text-anchor="end" font-weight="700">SASMITACOURSE — S15</text>
+  </g>
+</svg>
+<figcaption>SESSION 15 — ONE-PAGE SUMMARY</figcaption>
+</figure>
+
+<section class="chapter" id="s1">
+  <div class="chapter-marker">CHAPTER 01</div>
+  <h2>Why basic RAG isn't enough</h2>
+  <p>Plain RAG (Sessions 12–14) retrieves chunks by <strong>vector similarity</strong>, optionally re-ranks them with a cross-encoder, and stuffs the top few into the prompt. That works well when the corpus is reasonably uniform prose, the answer to a typical question sits in one chunk (or a few nearby ones), and "similar" is a useful proxy for "relevant."</p>
+  <p>It starts to break when:</p>
+  <ol>
+    <li>The answer is <strong>scattered</strong> across many sections — a 2,000-page operations manual, a policy book, a knowledge base where context A points at context B which references context C.</li>
+    <li>The answer is <strong>reasoning-based</strong>, not lexically present. The chunks containing the building blocks may not be similar to the question on their own.</li>
+    <li>The corpus has rich, structured cross-references — SOPs that say "Step 2: see the eligibility-check URL," or a regulation that references another regulation.</li>
+  </ol>
+  <p>In these cases vector retrieval brings back chunks that <em>look</em> topical but don't <em>combine</em> to the answer, and reranking can't rescue what was never retrieved.</p>
+  <div class="callout">
+    <span class="label">HONEST FRAMING</span>
+    <p>The lecturer said vanilla RAG is "mostly for simple/scientific documents." Softening that: vanilla RAG works on plenty of enterprise prose. What it struggles with is <strong>multi-hop</strong> retrieval — answers assembled from chunks that aren't individually a good match for the question. GraphRAG targets that gap specifically.</p>
+  </div>
+  <p>The fix is to give the retriever a second view of the corpus, one that captures <em>relationships between entities</em>: a <strong>graph</strong>. That's GraphRAG.</p>
+  <div class="callout">
+    <span class="label">TERM ORIGIN</span>
+    <p>"GraphRAG" as a named approach is most associated with Microsoft Research — Edge et al., <em>From Local to Global: A Graph RAG Approach to Query-Focused Summarization</em>, arXiv:2404.16130 (2024). It is not "the next version of RAG"; it's a parallel/complementary retrieval channel.</p>
+  </div>
+</section>
+
+<section class="chapter" id="s2">
+  <div class="chapter-marker">CHAPTER 02</div>
+  <h2>The graph database landscape — and why Neo4j</h2>
+  <p>A <strong>graph database</strong> stores data as <strong>nodes</strong> (entities) and <strong>relationships</strong> (typed edges between entities). Both nodes and relationships can carry <strong>properties</strong> (key-value pairs). That's the entire model.</p>
+  <table>
+    <thead><tr><th>Database</th><th>Type</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Neo4j</strong></td><td>Native graph DB</td><td>Market leader. Cypher query language. Used for the course.</td></tr>
+      <tr><td><strong>TigerGraph</strong></td><td>Native graph DB</td><td>Performance-oriented, GSQL query language.</td></tr>
+      <tr><td><strong>Azure Cosmos DB (Gremlin API)</strong></td><td>Multi-model</td><td>Has a managed graph offering via Gremlin (not Cypher). The lecturer called it "not native"; more precisely, it stores graph data on a multi-model engine rather than a graph-native storage layer.</td></tr>
+    </tbody>
+  </table>
+  <p>The course uses Neo4j because (a) it has the largest community and tooling ecosystem, (b) it integrates cleanly with LangChain via <code>langchain-neo4j</code>, and (c) the lecturer's team uses it in production for fraud-detection work.</p>
+  <div class="bridge">
+    <span class="label">JAVA/SPRING BRIDGE</span>
+    <p>Neo4j ↔ a Spring Data project: there is a real <code>spring-data-neo4j</code> library. Java entities become nodes via <code>@Node</code>; outgoing edges become fields annotated <code>@Relationship(type = "...", direction = OUTGOING)</code>. If you've used Spring Data JPA, the mental model transfers — repositories, derived queries, the whole <code>CrudRepository&lt;T, ID&gt;</code> pattern is present. The unfamiliar part is the <strong>query language</strong>, not the object mapping.</p>
+  </div>
+  <h3>2.1 Why a graph helps beyond RAG</h3>
+  <p>The lecturer's wider point: graph databases earn their keep in domains where <strong>relationships are the data</strong>. A few production patterns:</p>
+  <ul>
+    <li><strong>Fraud detection.</strong> Insurance / banking / claims: identify suspicious <em>networks</em> — a doctor who refers to a hospital that refers to a lab that bills the same insurer that the doctor's spouse owns. The fraud signal lives in the connection topology, not in any single record.</li>
+    <li><strong>Recommendation.</strong> "Friends of friends" (Facebook), "people who took this route also took…" (Uber/Ola), product recommendations from co-purchase graphs.</li>
+    <li><strong>Agent context layer.</strong> Storing an organization's domain knowledge (entities, their relationships, their attributes) in a graph that an agent can query at runtime. The lecturer flagged this as most important — "we're moving from prompt engineering to context engineering" — RAG just happens to be one application of it.</li>
+  </ul>
+</section>
+
+<section class="chapter" id="s3">
+  <div class="chapter-marker">CHAPTER 03</div>
+  <h2>Neo4j editions — Community vs Aura vs Enterprise</h2>
+  <p>Three editions exist. The matrix below merges the lecturer's slide (from <code>GraphRAG_Project2/Neo4jInstallation.docx</code>) with the current Neo4j documentation.</p>
+  <table>
+    <thead>
+      <tr><th></th><th>Community</th><th>Aura</th><th>Enterprise</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>License</strong></td><td>GPLv3, open source</td><td>Managed service (paid tiers + Free)</td><td>Annual commercial subscription</td></tr>
+      <tr><td><strong>Hosting</strong></td><td>You run it (laptop, VM, Linux server)</td><td>Neo4j-hosted on AWS/GCP/Azure</td><td>You run it, with full enterprise features</td></tr>
+      <tr><td><strong>Cost</strong></td><td>Free</td><td>Pay-per-hour (Pro/Business); free tier exists</td><td>~$26K/year and up (lecturer's figure; verify current pricing)</td></tr>
+      <tr><td><strong>Graph size</strong></td><td>Documented limit: 34B nodes, 34B rels, 68B properties (practical ceiling, sufficient for most workloads)</td><td><strong>Depends on tier</strong> — Aura Free is much smaller (currently 200K nodes / 400K rels); Pro and Business tiers scale higher</td><td>Unlimited</td></tr>
+      <tr><td><strong>Databases per instance</strong></td><td>1 user DB (plus system)</td><td>Per-instance</td><td>Multiple</td></tr>
+      <tr><td><strong>Backups</strong></td><td>Manual / DIY</td><td><strong>Automated</strong> (key Aura selling point)</td><td>Configurable</td></tr>
+      <tr><td><strong>Role-based security</strong></td><td>No</td><td>Inherits Enterprise features under the hood</td><td>Yes</td></tr>
+      <tr><td><strong>Constraints</strong></td><td>Only single-property uniqueness</td><td>Per tier</td><td>Property existence, multi-property uniqueness, etc.</td></tr>
+      <tr><td><strong>Visualization (Aura console / Bloom)</strong></td><td>Limited (Desktop UI works locally only; no hosted URL)</td><td>Hosted UI included</td><td>Bloom available</td></tr>
+    </tbody>
+  </table>
+  <div class="correction">
+    <span class="label">CORRECTION</span>
+    <p>The lecturer said "Aura is exactly same as Community, just managed." That's not quite right. Aura runs on a Neo4j build with enterprise features (automated backups, point-in-time recovery, RBAC, multiple databases on higher tiers). Aura <strong>Free</strong> is the closest match in <em>capability</em> to Community-for-a-day but caps at ~200K nodes, not 34B. Treat Aura tiers as their own product line, not "Community in the cloud." Source: neo4j.com/cloud/platform/aura-graph-database/pricing.</p>
+  </div>
+  <div class="callout">
+    <span class="label">WHAT THE COURSE USES</span>
+    <p>For learning and POCs: <strong>Neo4j Desktop</strong> (the free Community-based local app). Same engine as Community, no automated backup, runs at <code>bolt://localhost:7687</code>. When the project graduates to production, swap to Aura (managed) or Enterprise (self-hosted with full features).</p>
+  </div>
+  <h3>3.1 Two things the lecturer warned about</h3>
+  <ol>
+    <li><strong>Pick a password you can recover.</strong> The Desktop UI's password-reset flow is not obvious; the lecturer lost ~15 minutes trying to recover his and ended up resetting from the command line. This is why his live demo in this session didn't run.</li>
+    <li><strong>"Desktop / Community is local only."</strong> The free editions do not expose a shareable hosted URL out of the box. To let teammates query the same instance you either (a) host Neo4j on an internal Linux server everyone can reach over <code>bolt://</code>, or (b) use Aura, which exposes a hosted URL by design.</li>
+  </ol>
+</section>
+
+<section class="chapter" id="s4">
+  <div class="chapter-marker">CHAPTER 04</div>
+  <h2>Connecting from Python via LangChain</h2>
+  <p>The end-to-end three-line connection. Package install once:</p>
+  <pre><code>pip install langchain-neo4j neo4j python-dotenv langchain-community</code></pre>
+  <p>Then in code:</p>
+  <pre><code>import os
+from dotenv import load_dotenv
+from langchain_neo4j import Neo4jGraph
+
+NEO4J_URI      = "bolt://localhost:7687"
+NEO4J_USERNAME = "neo4j"
+NEO4J_PASSWORD = "&lt;your password&gt;"
+
+kg = Neo4jGraph(
+    url=NEO4J_URI,
+    username=NEO4J_USERNAME,
+    password=NEO4J_PASSWORD,
+    database="demo",
+)
+
+kg.refresh_schema()
+print("Connection established and schema refreshed.")</code></pre>
+  <p>A few notes worth pinning down:</p>
+  <ul>
+    <li><code>Neo4jGraph</code> is in <code>langchain-neo4j</code>, a <strong>separate package</strong> from <code>langchain-community</code>. The older <code>langchain_community.graphs.Neo4jGraph</code> import path is deprecated; use <code>from langchain_neo4j import Neo4jGraph</code>.</li>
+    <li><code>bolt://</code> is Neo4j's binary client protocol on port <code>7687</code>. For a hosted Aura instance the URL becomes <code>neo4j+s://&lt;id&gt;.databases.neo4j.io</code> (TLS).</li>
+    <li>If <code>database=</code> is omitted, the driver connects to the default database (named <code>neo4j</code> in a fresh install). Community edition supports one user database plus the <code>system</code> DB.</li>
+  </ul>
+  <p>Executing a Cypher query is then literally one method call:</p>
+  <pre><code>result = kg.query("MATCH (n) RETURN count(n) AS numberOfNodes")
+print(result)   # [{'numberOfNodes': 7}]</code></pre>
+  <p><code>.query()</code> returns a list of dicts — one dict per row, keyed by the <code>RETURN</code> aliases.</p>
+  <div class="bridge">
+    <span class="label">JAVA/SPRING BRIDGE</span>
+    <p><code>Neo4jGraph</code> plays the role of <code>JdbcTemplate</code> or <code>EntityManager</code>: a connection-bearing object you ask to execute a query string. The result list of dicts is the Cypher analogue of <code>List&lt;Map&lt;String, Object&gt;&gt;</code> from a <code>JdbcTemplate.queryForList(...)</code> call.</p>
+  </div>
+</section>
+
+<section class="chapter" id="s5">
+  <div class="chapter-marker">CHAPTER 05</div>
+  <h2>Cypher in one session — the actual query language</h2>
+  <p>Cypher is Neo4j's declarative query language. Same role as SQL, <strong>different shape</strong> because the data is a graph. Two design ideas drive the syntax:</p>
+  <ol>
+    <li><strong>Patterns look like ASCII drawings of subgraphs.</strong> A node is <code>(variable:Label {prop: value})</code>. A relationship is <code>-[variable:TYPE {prop: value}]-&gt;</code>. You match by writing what the subgraph should look like.</li>
+    <li><strong>There is no fixed schema.</strong> Nodes and relationships carry whatever properties you give them; two nodes with the same label can have different property sets.</li>
+  </ol>
+  <p>The full surface is large (functions, subqueries, list comprehensions, path algorithms, vector indexes since Neo4j 5.11). This session covers the minimum required to <strong>read</strong> what a code-generating agent emits.</p>
+
+  <h3>5.1 The two entities — node and relationship</h3>
+  <ul>
+    <li><strong>Node</strong> — an entity. Has zero or more <strong>labels</strong> (think Java <em>interface implementations</em> — a node can carry several at once). Has zero or more <strong>properties</strong> (a <code>Map&lt;String, Object&gt;</code>).</li>
+    <li><strong>Relationship</strong> — a typed, directed edge between two nodes. Has <strong>exactly one</strong> type (the "label" of the relationship). Has zero or more properties of its own.</li>
+  </ul>
+
+  <figure class="diagram">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 280" font-family="Spectral, serif">
+      <defs>
+        <marker id="d-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/></marker>
+      </defs>
+      <ellipse cx="180" cy="140" rx="130" ry="70" fill="#5ba0a8" stroke="#2a5d62" stroke-width="3"/>
+      <text x="180" y="116" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" fill="#f5efe6" font-weight="700">:Person</text>
+      <text x="180" y="142" text-anchor="middle" font-size="14" fill="#f5efe6">name: 'Shivaji'</text>
+      <line x1="310" y1="140" x2="490" y2="140" stroke="#b8472e" stroke-width="3" marker-end="url(#d-arr)"/>
+      <rect x="335" y="112" width="130" height="36" fill="#f5efe6" stroke="#b8472e" stroke-width="2" rx="2"/>
+      <text x="400" y="135" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#b8472e" font-weight="700">:KING_OF</text>
+      <ellipse cx="620" cy="140" rx="130" ry="70" fill="#5ba0a8" stroke="#2a5d62" stroke-width="3"/>
+      <text x="620" y="116" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" fill="#f5efe6" font-weight="700">:Kingdom</text>
+      <text x="620" y="142" text-anchor="middle" font-size="14" fill="#f5efe6">name: 'Maratha'</text>
+      <text x="400" y="240" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="15" fill="#4a4239">2 nodes + 1 relationship (not 3 nodes)</text>
+    </svg>
+    <figcaption>"SHIVAJI IS KING OF MARATHA" — THE NATURAL CYPHER SHAPE</figcaption>
+  </figure>
+
+  <div class="correction">
+    <span class="label">WORKED EXAMPLE RECONSIDERED</span>
+    <p>The lecturer said the sentence <em>"Shivaji is king of Maratha"</em> maps to "3 nodes." In Cypher that is more naturally <strong>2 nodes and 1 relationship</strong>:</p>
+    <pre><code>(:Person {name: 'Shivaji'})-[:KING_OF]-&gt;(:Kingdom {name: 'Maratha'})</code></pre>
+    <p>Two nodes — <code>Shivaji</code> (label <code>Person</code>) and <code>Maratha</code> (label <code>Kingdom</code>) — connected by a single <code>KING_OF</code> relationship. The verb of the sentence becomes the <strong>relationship type</strong>, not a third node.</p>
+  </div>
+
+  <h3>5.2 Creating nodes — <code>CREATE</code></h3>
+  <pre><code>CREATE (p1:Person {name: 'Alice Johnson', age: 28, city: 'New York'})
+CREATE (p2:Person {name: 'Bob Smith',    age: 35, city: 'San Francisco'})
+CREATE (p3:Person {name: 'Carol White',  age: 42, city: 'Boston'})
+CREATE (p4:Person {name: 'David Brown',  age: 31, city: 'Seattle'})
+RETURN 'Created 4 Person nodes' AS result</code></pre>
+  <p>Parse it as: <code>CREATE (variable:Label {properties})</code>. <code>p1</code>, <code>p2</code>, … are <strong>variables</strong> local to the query. <code>:Person</code> is the <strong>label</strong>. <code>{...}</code> is the <strong>property map</strong>.</p>
+  <p>A node can carry <strong>multiple labels</strong>:</p>
+  <pre><code>CREATE (c1:Company:TechCompany {
+    name: 'TechCorp',
+    founded: 2010,
+    industry: 'Software',
+    employees: 500
+})
+CREATE (c2:Company:TechCompany {
+    name: 'DataSolutions',
+    founded: 2015,
+    industry: 'Data Analytics',
+    employees: 150
+})
+RETURN 'Created 2 Company nodes with multiple labels' AS result</code></pre>
+  <p>Both <code>c1</code> and <code>c2</code> match queries for <code>:Company</code> and <code>:TechCompany</code>. The lecturer's framing: "Microsoft is a tech company <em>and</em> a cloud company" — multiple labels let you say that without picking one.</p>
+
+  <h3>5.3 Creating relationships — combining <code>MATCH</code> and <code>CREATE</code></h3>
+  <pre><code>MATCH (p:Person  {name: 'Alice Johnson'}),
+      (c:Company {name: 'TechCorp'})
+CREATE (p)-[r:WORKS_AT {since: 2020, position: 'Software Engineer'}]-&gt;(c)
+RETURN p.name + ' works at ' + c.name AS result</code></pre>
+  <p>Read the pattern from left to right: <code>(p)</code> is the Alice node we just matched; <code>-[r:WORKS_AT {…}]-&gt;</code> is a relationship with <strong>type</strong> <code>WORKS_AT</code> (one type per edge, mandatory), property map, and direction; <code>(c)</code> is the TechCorp node.</p>
+  <p>Several <code>CREATE</code>s can be chained with <code>WITH</code> to keep matched variables in scope across stages:</p>
+  <pre><code>MATCH (p1:Person  {name: 'Bob Smith'}),
+      (c:Company {name: 'DataSolutions'})
+CREATE (p1)-[:WORKS_AT {since: 2019, position: 'Data Scientist'}]-&gt;(c)
+
+WITH p1
+MATCH (p2:Person {name: 'Alice Johnson'})
+CREATE (p1)-[:KNOWS {since: 2018, relationship: 'Friends'}]-&gt;(p2)
+
+RETURN 'Created multiple relationships' AS result</code></pre>
+  <p><code>WITH</code> is Cypher's way of saying "carry these variables forward into the next clause." Without it, <code>p1</code> would no longer be in scope after the first <code>CREATE</code>.</p>
+  <div class="callout">
+    <span class="label">PITFALL — USE MERGE FOR UPSERTS</span>
+    <p>Plain <code>CREATE</code> always makes a <strong>new</strong> node, even if one with the same properties already exists. To get "create if missing, update if present" semantics, use <code>MERGE</code>:</p>
+    <pre><code>MERGE (p:Person {name: 'Alice Johnson'})
+ON CREATE SET p.created  = timestamp()
+ON MATCH  SET p.lastSeen = timestamp()
+RETURN p.name, p.created, p.lastSeen</code></pre>
+    <p><code>MERGE</code> matches by the pattern you give it; if it doesn't find one, it creates it. <code>ON CREATE SET</code> runs only on the creation branch, <code>ON MATCH SET</code> only on the match branch. This is the closest Cypher equivalent of SQL's <code>INSERT ... ON DUPLICATE KEY UPDATE</code> / upsert.</p>
+  </div>
+
+  <h3>5.4 Reading — <code>MATCH</code> + <code>RETURN</code></h3>
+  <p><code>MATCH</code> is the analogue of SQL <code>SELECT ... FROM</code>. You give it a pattern; Neo4j returns every subgraph that matches.</p>
+  <pre><code>MATCH (p:Person)
+RETURN p.name AS name, p.age AS age, p.city AS city
+ORDER BY p.age</code></pre>
+  <ul>
+    <li><code>MATCH (p:Person)</code> — bind variable <code>p</code> to every node carrying the <code>Person</code> label.</li>
+    <li><code>RETURN p.name AS name, …</code> — project each result row to the named columns.</li>
+    <li><code>ORDER BY p.age</code> — ascending sort; <code>DESC</code> for descending.</li>
+  </ul>
+  <div class="bridge">
+    <span class="label">JAVA/SPRING BRIDGE</span>
+    <p>A Cypher pattern is structurally closer to a JPA Criteria pattern than to a SQL query: you describe the <em>shape</em> you want, the engine figures out the traversal. There is no <code>FROM</code> clause because the "table" is implicit in the labels you use.</p>
+  </div>
+
+  <h3>5.5 Filtering — <code>WHERE</code></h3>
+  <pre><code>MATCH (p:Person)
+WHERE p.age &gt; 30
+RETURN p.name AS name, p.age AS age</code></pre>
+  <p>Multiple conditions combine with <code>AND</code>, <code>OR</code>, <code>NOT</code>; <code>IN</code> works on lists:</p>
+  <pre><code>MATCH (p:Person)
+WHERE p.age &gt;= 30
+  AND p.city IN ['New York', 'Boston']
+RETURN p.name AS name, p.age AS age, p.city AS city</code></pre>
+  <p>You can filter on <strong>relationship</strong> properties too, by binding the relationship to a variable:</p>
+  <pre><code>MATCH (p1:Person)-[k:KNOWS]-&gt;(p2:Person)
+WHERE k.since &lt; 2020
+RETURN p1.name AS person1,
+       p2.name AS person2,
+       k.since  AS friendsSince</code></pre>
+  <p><code>k</code> here is the relationship variable. <code>k.since</code> is one of its properties. The same dot-access works on nodes (<code>p1.name</code>) and relationships (<code>k.since</code>) — Cypher treats them symmetrically.</p>
+
+  <h3>5.6 Aggregation — <code>COUNT</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code></h3>
+  <p>Aggregation functions live inside <code>RETURN</code>. There is no explicit <code>GROUP BY</code> clause — <strong>grouping is implicit</strong>: every non-aggregated column in <code>RETURN</code> becomes a group key, and the aggregated columns are computed per group.</p>
+  <p>Whole-corpus aggregation (no grouping columns):</p>
+  <pre><code>MATCH (p:Person)
+RETURN COUNT(p)    AS totalPeople,
+       AVG(p.age)  AS avgAge,
+       MIN(p.age)  AS youngest,
+       MAX(p.age)  AS oldest</code></pre>
+  <p>Aggregation grouped by city — note that <code>p.city</code> is the (implicit) group key:</p>
+  <pre><code>MATCH (p:Person)
+RETURN p.city      AS city,
+       COUNT(p)    AS peopleCount,
+       AVG(p.age)  AS avgAge
+ORDER BY peopleCount DESC</code></pre>
+  <div class="correction">
+    <span class="label">CORRECTION</span>
+    <p>The lecturer used the phrase "GROUP BY" several times. Cypher does <strong>not</strong> have a <code>GROUP BY</code> keyword; the grouping happens automatically based on which columns in <code>RETURN</code> are aggregated and which aren't. Functionally equivalent to SQL, syntactically different.</p>
+  </div>
+
+  <h3>5.7 Updating — <code>SET</code></h3>
+  <pre><code>MATCH (p:Person {name: 'Alice Johnson'})
+SET p.age   = 29,
+    p.email = 'alice@example.com'
+RETURN p.name AS name, p.age AS age, p.email AS email</code></pre>
+  <p><code>SET</code> adds new properties or overwrites existing ones. There is no "schema migration" step — adding a property to one node does not require touching the others. This is what the lecturer means by <strong>schema-less</strong>: properties live on individual nodes, not on a table-wide definition.</p>
+
+  <h3>5.8 Querying relationships explicitly</h3>
+  <pre><code>MATCH (p:Person)-[r:WORKS_AT]-&gt;(c:Company)
+RETURN p.name    AS employee,
+       r.position AS position,
+       c.name    AS company,
+       r.since   AS startYear</code></pre>
+  <p>In SQL terms this is a <strong>join</strong> — Person and Company are joined via the <code>WORKS_AT</code> relationship. The difference is that the "foreign key" isn't a column in either table; it's an edge stored as a first-class object, and you traverse it by writing it in the pattern.</p>
+  <div class="bridge">
+    <span class="label">JAVA/SPRING BRIDGE</span>
+    <p>SQL <code>JOIN</code> ↔ Cypher pattern traversal. The classical JPA approach to "people and their employers" needs a join table or a <code>@ManyToOne</code>; Cypher just draws the connection in the <code>MATCH</code> clause.</p>
+  </div>
+</section>
+
+<section class="chapter" id="s6">
+  <div class="chapter-marker">CHAPTER 06</div>
+  <h2>Where this is going — the GraphRAG end-state</h2>
+  <p>The architecture the lecturer sketched at the end (full implementation in Session 16+):</p>
+
+  <figure class="diagram">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 380" font-family="Spectral, serif">
+      <defs>
+        <marker id="g-arr-i" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/></marker>
+        <marker id="g-arr-tr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/></marker>
+        <marker id="g-arr-tl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2a5d62"/></marker>
+      </defs>
+      <rect x="60" y="20" width="180" height="60" fill="#5ba0a8" stroke="#2a5d62" stroke-width="2" rx="2"/>
+      <text x="150" y="48" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#f5efe6" font-weight="700">USER QUERY</text>
+      <text x="150" y="68" text-anchor="middle" font-size="12" fill="#f5efe6" font-style="italic">natural language</text>
+      <line x1="240" y1="50" x2="300" y2="50" stroke="#1f1a14" stroke-width="2"/>
+      <line x1="300" y1="50" x2="300" y2="130" stroke="#1f1a14" stroke-width="2"/>
+      <line x1="300" y1="50" x2="300" y2="220" stroke="#1f1a14" stroke-width="2"/>
+      <line x1="300" y1="130" x2="360" y2="130" stroke="#2a5d62" stroke-width="2" marker-end="url(#g-arr-tl)"/>
+      <line x1="300" y1="220" x2="360" y2="220" stroke="#b8472e" stroke-width="2" marker-end="url(#g-arr-tr)"/>
+      <rect x="360" y="100" width="220" height="60" fill="#f5efe6" stroke="#2a5d62" stroke-width="2" rx="2"/>
+      <text x="470" y="128" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#2a5d62" font-weight="700">VECTOR RETRIEVAL</text>
+      <text x="470" y="146" text-anchor="middle" font-size="12" fill="#4a4239" font-style="italic">embed + similarity</text>
+      <rect x="360" y="190" width="220" height="60" fill="#f5efe6" stroke="#b8472e" stroke-width="2" rx="2"/>
+      <text x="470" y="218" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#b8472e" font-weight="700">GRAPH RETRIEVAL</text>
+      <text x="470" y="236" text-anchor="middle" font-size="12" fill="#4a4239" font-style="italic">NL → Cypher → rows</text>
+      <line x1="580" y1="130" x2="640" y2="170" stroke="#2a5d62" stroke-width="2"/>
+      <line x1="580" y1="220" x2="640" y2="180" stroke="#b8472e" stroke-width="2"/>
+      <rect x="640" y="140" width="180" height="60" fill="#1f1a14" rx="2"/>
+      <text x="730" y="168" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#f5efe6" font-weight="700">MERGED CONTEXT</text>
+      <text x="730" y="186" text-anchor="middle" font-size="12" fill="#ede5d6" font-style="italic">two signals, one prompt</text>
+      <line x1="730" y1="200" x2="730" y2="270" stroke="#1f1a14" stroke-width="2" marker-end="url(#g-arr-i)"/>
+      <rect x="640" y="270" width="180" height="60" fill="#b8472e" rx="2"/>
+      <text x="730" y="306" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" fill="#f5efe6" font-weight="700">LLM → answer</text>
+    </svg>
+    <figcaption>SESSION 16+ GOAL — TWO RETRIEVAL CHANNELS, ONE LLM</figcaption>
+  </figure>
+
+  <p>Two retrieval channels feeding one LLM:</p>
+  <ul>
+    <li><strong>Vector channel</strong> — what Sessions 12–14 built. Captures semantic similarity. Misses multi-hop / relational answers.</li>
+    <li><strong>Graph channel</strong> — translate the natural-language question into a Cypher query, run it against the knowledge graph, format the rows as context. Captures explicit relationships. Misses prose that wasn't extracted into the graph.</li>
+  </ul>
+  <p>The LLM sees both. Recall improves because the channels fail differently; precision improves because graph rows are <strong>structured</strong>, <strong>typed</strong>, and (importantly) <strong>deterministic</strong> — given the same query against the same graph, you get the same rows. That's what the lecturer means by "for the LLM, this is gold" — graph rows are much less likely to mislead than a fuzzy vector match.</p>
+
+  <div class="correction">
+    <span class="label">A FEW ACCURACY NOTES ON THAT PICTURE</span>
+    <p><strong>A graph doesn't eliminate hallucination.</strong> Hallucination comes from the LLM's sampling step, not from retrieval. Graph retrieval reduces the <em>opportunity</em> to hallucinate by giving the model better-grounded context, but the model is still probabilistic. Don't let anyone tell you GraphRAG is "hallucination-free."</p>
+    <p><strong>Neo4j 5.11+ can store vectors too.</strong> Since the August 2023 release, Neo4j has native vector indexes — you can keep both the graph <em>and</em> the embeddings in the same database and run <code>db.index.vector.queryNodes(...)</code>. That's the "two-in-one" the lecturer mentioned.</p>
+    <p><strong>You still need to build the graph.</strong> Going from unstructured documents to a graph is the hard part. Two paths (Session 16 will go deeper): (1) <strong>LLM-driven extraction</strong> — LangChain ships <code>LLMGraphTransformer</code> (in <code>langchain-experimental</code>) which prompts an LLM to extract <code>(node, relationship, node)</code> triples from each chunk. Quality is highly LLM-dependent. (2) <strong>Schema-first extraction</strong> — if your documents follow a known structure (insurance policies, financial reports, SOP manuals), define an explicit schema and a deterministic extractor. Slower to build, much more reliable.</p>
+  </div>
+</section>
+
+<section class="chapter" id="s7">
+  <div class="chapter-marker">CHAPTER 07</div>
+  <h2>Recap</h2>
+  <p>The Session 15 takeaways:</p>
+  <ol>
+    <li><strong>Vanilla RAG struggles with multi-hop and relationship-shaped questions.</strong> A graph view of the corpus gives the retriever a second channel that handles exactly those cases.</li>
+    <li><strong>A graph database stores two entities — nodes and relationships — both of which carry labels/types and arbitrary property maps.</strong> There is no fixed schema; you add fields per node as needed.</li>
+    <li><strong>Cypher is Neo4j's query language.</strong> It is pattern-based: you draw what the subgraph should look like — <code>(:Label)-[:TYPE]-&gt;(:Label)</code> — and the engine finds the matches. <code>CREATE</code>, <code>MATCH</code>, <code>WHERE</code>, <code>RETURN</code>, <code>ORDER BY</code>, <code>SET</code>, and aggregation functions are the core surface; grouping is implicit.</li>
+    <li><strong>LangChain talks to Neo4j via the <code>langchain-neo4j</code> package.</strong> <code>Neo4jGraph(...)</code> is the connection; <code>kg.query("…")</code> runs Cypher and returns a list of dicts.</li>
+    <li><strong>For learning, use Neo4j Desktop (free, Community-based).</strong> For production, Aura (managed) or Enterprise (self-hosted with full features). Pick a password you can recover.</li>
+    <li><strong>GraphRAG = vector channel + graph channel → LLM.</strong> The graph channel needs you to build the graph first; Session 16 covers how.</li>
+  </ol>
+</section>
+
+<hr class="divider">
+
+<section class="chapter glossary" id="glossary">
+  <div class="chapter-marker">GLOSSARY</div>
+  <h2>Glossary</h2>
+  <dl>
+    <dt>Node</dt><dd>A graph-database entity. Carries zero or more labels and zero or more properties.</dd>
+    <dt>Relationship (edge)</dt><dd>A typed, directed connection between two nodes. Carries exactly one type and zero or more properties.</dd>
+    <dt>Label</dt><dd>A category marker on a node (e.g. <code>:Person</code>, <code>:Company</code>). A node may have several.</dd>
+    <dt>Type</dt><dd>The single category marker on a relationship (e.g. <code>:WORKS_AT</code>). Always exactly one per relationship.</dd>
+    <dt>Property</dt><dd>A key-value pair on a node or relationship. The value can be a primitive, list, or map. Schema-less by default.</dd>
+    <dt>Cypher</dt><dd>Neo4j's declarative query language. Pattern-based syntax; clauses include <code>CREATE</code>, <code>MERGE</code>, <code>MATCH</code>, <code>WHERE</code>, <code>RETURN</code>, <code>ORDER BY</code>, <code>SET</code>, <code>WITH</code>, plus aggregation functions.</dd>
+    <dt>MERGE</dt><dd>"Match if it exists, else create." The upsert primitive. Pair with <code>ON CREATE SET</code> / <code>ON MATCH SET</code> for branch-specific updates.</dd>
+    <dt>WITH</dt><dd>Pipes results from one clause to the next, controlling which variables stay in scope.</dd>
+    <dt>Bolt</dt><dd>Neo4j's binary client/server protocol. Default port <code>7687</code>. URL form <code>bolt://host:port</code> (or <code>neo4j+s://...</code> for Aura with TLS).</dd>
+    <dt>Neo4jGraph</dt><dd>The LangChain class (in <code>langchain-neo4j</code>) wrapping a Neo4j connection. Methods: <code>.query(cypher)</code>, <code>.refresh_schema()</code>, <code>.schema</code>.</dd>
+    <dt>Neo4j Community</dt><dd>Open-source GPLv3 edition. Single user database, no role-based security, documented ceiling of 34B nodes / 34B rels / 68B properties.</dd>
+    <dt>Neo4j Aura</dt><dd>Neo4j-managed cloud service. Tiers: Free (small caps, currently ~200K nodes / 400K rels), Professional, Business Critical. Automated backups; hosted UI included.</dd>
+    <dt>Neo4j Enterprise</dt><dd>Commercial license. Unlimited graph size, multiple databases, RBAC, advanced constraints. Self-hosted.</dd>
+    <dt>Neo4j Desktop</dt><dd>Free local installer based on Community. Same engine, no automated backup, no hosted URL.</dd>
+    <dt>GraphRAG</dt><dd>Retrieval-augmented generation that runs both a vector retriever and a graph retriever, feeding both into the LLM context. The named approach is most associated with Edge et al., Microsoft Research, <em>From Local to Global: A Graph RAG Approach to Query-Focused Summarization</em>, arXiv:2404.16130 (2024).</dd>
+    <dt>Schema-less</dt><dd>Property keys are stored per node/relationship, not on a global table definition. Adding a property to one node does not require touching the others (or any kind of migration).</dd>
+  </dl>
+</section>
+
+<section class="chapter sources" id="sources">
+  <div class="chapter-marker">SOURCES</div>
+  <h2>Sources</h2>
+  <ul>
+    <li>Edge, Trinh, Cheng, et al., <em>From Local to Global: A Graph RAG Approach to Query-Focused Summarization</em>, Microsoft Research, arXiv:2404.16130 (2024).</li>
+    <li><em>The Cypher Manual</em> — neo4j.com/docs/cypher-manual/current (CREATE, MATCH, MERGE, WHERE, WITH, aggregation, patterns).</li>
+    <li><em>Neo4j Aura pricing &amp; limits</em> — neo4j.com/cloud/platform/aura-graph-database/pricing (current tier caps).</li>
+    <li><em>Neo4j edition comparison</em> — neo4j.com/subscriptions/#editions (cross-checked against <code>GraphRAG_Project2/Neo4jInstallation.docx</code>).</li>
+    <li>LangChain <code>Neo4jGraph</code> — python.langchain.com / <code>langchain-neo4j</code> package on PyPI.</li>
+    <li>Neo4j vector index (since 5.11) — neo4j.com/blog/vector-search-in-neo4j-5-11/.</li>
+    <li>LangChain <code>LLMGraphTransformer</code> — <code>langchain_experimental.graph_transformers</code> (for Session 16 reference).</li>
+    <li>Spring Data Neo4j — <code>spring-data-neo4j</code> reference docs (for the Java/Spring bridge in §2).</li>
+    <li><code>GraphRAG_Project2/KnowledgeGraphFundamentals (1) (1).py</code> — the lecturer's Cypher walkthrough, reproduced verbatim in §5.</li>
+    <li><code>GraphRAG_Project2/Neo4jInstallation.docx</code> — the edition feature matrix in §3.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

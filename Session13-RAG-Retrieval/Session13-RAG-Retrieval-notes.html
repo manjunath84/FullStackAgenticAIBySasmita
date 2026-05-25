@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 13 — RAG, Part 2: Retrieval</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 60px; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(48px, 7vw, 84px); line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 600px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 600px; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 30px 0 30px 32px; border-left: 4px solid var(--terracotta); margin: 50px 0 60px; position: relative; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 80px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 40px; line-height: 1.05; margin-bottom: 28px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 24px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 16px 0 22px 24px; color: var(--ink-soft); font-size: 17px; }
+.chapter ul li, .chapter ol li { margin-bottom: 8px; line-height: 1.65; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--highlight); padding: 22px 26px; margin: 22px 0; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.55; border-radius: 3px; }
+pre code { background: transparent; border: none; color: inherit; padding: 0; font-size: 13.5px; }
+.tbl { width: 100%; border-collapse: collapse; margin: 22px 0; font-size: 15px; }
+.tbl th, .tbl td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--terracotta); text-transform: uppercase; font-weight: 700; }
+.tbl td { color: var(--ink-soft); }
+.tbl td strong { color: var(--ink); }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 28px; margin: 30px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--ochre); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 16px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 22px 26px; margin: 26px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 8px; line-height: 1.6; }
+.bridge p:last-child { margin-bottom: 0; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 22px 0; font-size: 15px; color: var(--ink); }
+.correction strong { color: var(--terracotta); }
+figure.infographic { margin: 40px -40px 40px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg, figure.infographic img { width: 100%; height: auto; display: block; }
+figure.diagram { margin: 28px 0; padding: 18px; background: rgba(31, 26, 20, 0.02); border: 1px solid var(--line); }
+figure.diagram svg { width: 100%; height: auto; display: block; }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); text-align: center; margin-top: 10px; }
+.glossary { margin-top: 70px; padding-top: 40px; border-top: 2px solid var(--ink); }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 16px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 90px; padding-top: 32px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; }
+.sources { margin-top: 30px; font-size: 14px; color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; }
+.sources a { color: var(--terracotta); text-decoration: none; }
+.sources a:hover { text-decoration: underline; }
+.sources li { margin-bottom: 6px; list-style: none; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 48px; }
+  .thesis { font-size: 20px; padding-left: 20px; }
+  .chapter h2 { font-size: 30px; }
+  figure.infographic { margin: 32px -24px; }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 13</div>
+    <div class="toc-title">RAG, Part 2<br>Retrieval</div>
+    <ol>
+      <li><a href="#s1">Where we are</a></li>
+      <li><a href="#svg">Visual reference</a></li>
+      <li><a href="#s2">Two views of the store</a></li>
+      <li><a href="#s3">The chain &mdash; piece by piece</a></li>
+      <li><a href="#s4">Full read path</a></li>
+      <li><a href="#s5">Live debug story</a></li>
+      <li><a href="#s6">Preview of Session 14</a></li>
+      <li><a href="#s7">Recap</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      66 MIN<br>
+      3 SPEAKERS<br>
+      2026-05-19
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 13 &middot; STUDY NOTES</div>
+      <h1>RAG, Part 2:<span class="accent">Retrieval.</span></h1>
+      <p class="hero-sub">Question in. Cosine similarity. Top-k chunks. Stuff into a prompt. LLM out. One composed chain, end to end.</p>
+      <div class="hero-meta">
+        <span>2026-05-19</span>
+        <span>66 MIN</span>
+        <span>LANGCHAIN LCEL &middot; CHATPROMPTTEMPLATE &middot; RUNNABLEPASSTHROUGH</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      Session 12 built an indexed store. This session reads from it. The mechanic is one composed <em>Runnable</em>: retrieve top-k chunks, stuff them into a prompt alongside the question, call the LLM. Same store, two views — one for debugging, one for production.
+    </div>
+
+    <figure class="infographic" id="svg">
+      <img src="Session13-RAG-Retrieval-infographic.svg" alt="Session 13 visual: RAG retrieval chain. Question fans out to retriever (similarity search, k=4) and RunnablePassthrough; both feed ChatPromptTemplate, which feeds ChatOpenAI at temperature 0, producing an AIMessage." />
+    </figure>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">&sect; 01 &mdash; WHERE WE ARE</div>
+      <h2>Indexing is done. Now we read.</h2>
+      <p><strong>Session 12</strong> built the indexing pipeline: a 57-page Databricks PDF was loaded with <code>PyPDFLoader</code>, split into 90 chunks by <code>RecursiveCharacterTextSplitter</code>, embedded with OpenAI's API, and stored in a vector store. At the end of that session the store sat there full of <code>(id, vector, metadata, page_content)</code> tuples, waiting to be queried.</p>
+      <p><strong>This session</strong> is everything that happens <em>after</em> a question arrives: how the question gets matched against those vectors, how the matched chunks are stuffed back into a prompt, and how an LLM call is wrapped around the whole thing as a single composable chain.</p>
+      <p>Four pieces this session adds:</p>
+      <ol>
+        <li><strong>Retriever vs. similarity search</strong> &mdash; two views of the same store, one for production, one for debugging.</li>
+        <li><strong>The chain</strong> &mdash; composing <code>retriever &rarr; format &rarr; prompt &rarr; LLM</code> with LangChain's LCEL pipe syntax.</li>
+        <li><strong><code>RunnablePassthrough</code></strong> &mdash; how the user's question gets forwarded through the chain alongside the retrieved context.</li>
+        <li><strong>A live debug story</strong> &mdash; what it looks like when retrieval silently returns nothing, and how to spot it.</li>
+      </ol>
+      <p>Forward look: re-rankers, MMR, and prompt engineering (few-shot, chain-of-thought, ReAct, role-task-goal) are previewed and explicitly deferred to <strong>Session 14</strong>.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>Session 12 was indexing &mdash; equivalent to populating a database at deploy time. This session is the <strong>request-time read path</strong>: controller (your question) &rarr; service (the chain) &rarr; repository (the vector store retriever) &rarr; back up with a response.</p>
+        <p>The piece that's unfamiliar is that the "repository" returns by <strong>vector similarity</strong>, not by primary key or by an indexed column.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">&sect; 02 &mdash; TWO VIEWS</div>
+      <h2>Two ways to look at the same vector store.</h2>
+      <p>A LangChain vector store gives you two APIs over the same indexed corpus. They do the same underlying work &mdash; embed the query, compute cosine similarity against every stored vector, sort, return top-<em>k</em> &mdash; but they expose it differently.</p>
+
+      <h3>similarity_search &mdash; the debug view</h3>
+      <pre><code>docs = vector_store.similarity_search(question, k=4)
+for d in docs:
+    print(d.page_content[:200], d.metadata)</code></pre>
+      <p>Returns a plain <code>List[Document]</code>. You can read each chunk's text immediately. This is what you reach for when retrieval looks wrong and you want to see <em>which</em> chunks came back. It does not compose into a chain.</p>
+
+      <h3>as_retriever &mdash; the chain-pipeable view</h3>
+      <pre><code>retriever = vector_store.as_retriever(search_kwargs={"k": 4})</code></pre>
+      <p>Returns a <code>Retriever</code> object &mdash; an opaque callable that, when invoked, runs the same search and returns the same <code>List[Document]</code>. The difference is that a retriever is a <code>Runnable</code>, so it slots into the <code>|</code> (pipe) composition syntax LCEL uses. You can't read its output directly until you invoke it.</p>
+
+      <div class="callout">
+        <div class="callout-label">RULE OF THUMB</div>
+        <p>Use <code>as_retriever</code> in production chains. Use <code>similarity_search</code> when you want to <em>see</em> what got returned. They are not different algorithms; they are different shapes of the same call.</p>
+      </div>
+
+      <h3>What k is</h3>
+      <p><code>k</code> is the number of nearest chunks to return. <code>k=4</code> is the working default in this codebase. There is no theoretical "right" <em>k</em>; it depends on chunk size and how much context the model needs. Common range: 3&ndash;10.</p>
+
+      <h3>What's actually happening underneath</h3>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace">
+          <rect x="20" y="20" width="180" height="40" fill="#1f1a14"/>
+          <text x="110" y="46" text-anchor="middle" fill="#f5efe6" font-size="12" letter-spacing="1" font-weight="700">QUESTION TEXT</text>
+
+          <line x1="110" y1="60" x2="110" y2="90" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="110,95 105,85 115,85" fill="#1f1a14"/>
+
+          <rect x="20" y="100" width="180" height="40" fill="#2a5d62"/>
+          <text x="110" y="126" text-anchor="middle" fill="#f5efe6" font-size="12" letter-spacing="1" font-weight="700">EMBED(QUESTION)</text>
+
+          <line x1="200" y1="120" x2="280" y2="120" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="285,120 275,115 275,125" fill="#1f1a14"/>
+
+          <rect x="290" y="100" width="200" height="40" fill="#5ba0a8"/>
+          <text x="390" y="126" text-anchor="middle" fill="#1f1a14" font-size="12" letter-spacing="1" font-weight="700">1536-DIM QUERY VECTOR</text>
+
+          <line x1="390" y1="140" x2="390" y2="170" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="390,175 385,165 395,165" fill="#1f1a14"/>
+
+          <rect x="220" y="180" width="360" height="40" fill="#c89b3c"/>
+          <text x="400" y="206" text-anchor="middle" fill="#1f1a14" font-size="12" letter-spacing="1" font-weight="700">COSINE_SIM(QUERY, CHUNK_i) FOR ALL i</text>
+
+          <line x1="400" y1="220" x2="400" y2="240" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="400,245 395,235 405,235" fill="#1f1a14"/>
+
+          <rect x="290" y="250" width="220" height="30" fill="#b8472e"/>
+          <text x="400" y="270" text-anchor="middle" fill="#f5efe6" font-size="11" letter-spacing="1" font-weight="700">SORT &middot; TAKE TOP-K CHUNKS</text>
+
+          <text x="700" y="120" fill="#8b7d65" font-size="11" font-style="italic" font-family="Spectral, Georgia, serif">90 chunk vectors</text>
+          <text x="700" y="138" fill="#8b7d65" font-size="11" font-style="italic" font-family="Spectral, Georgia, serif">already in store</text>
+        </svg>
+        <figcaption>RETRIEVAL UNDER THE HOOD &mdash; ONE QUERY EMBED, MANY DOT PRODUCTS</figcaption>
+      </figure>
+
+      <p><strong>Cosine similarity</strong> is one minus the angle between two vectors, normalized so identical-direction vectors score 1.0 and orthogonal vectors score 0. The geometric intuition: text with similar meaning produces vectors pointing in similar directions, regardless of length. Magnitude doesn't matter; direction does.</p>
+      <p>The 50 (or 90, or 90,000) chunk vectors don't have to be re-embedded &mdash; they were embedded once during indexing and now sit in memory. Only the question is embedded on each query.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE &mdash; AND WHERE IT BREAKS</div>
+        <p><code>as_retriever()</code> returns something that <em>looks</em> like a <code>JpaRepository.findByX()</code> method &mdash; you call it, you get a list of entities back.</p>
+        <p>The mechanism is what differs: the "lookup" is not an indexed B-tree scan on a column; it is a brute-force or approximate-nearest-neighbor scan over high-dimensional vectors. For 90 chunks that's instant; for 90 million you'd reach for an ANN index (FAISS HNSW, ScaNN) &mdash; but the <em>interface</em> the retriever presents to the rest of the code is the same.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">&sect; 03 &mdash; THE CHAIN</div>
+      <h2>Building the chain &mdash; piece by piece.</h2>
+      <p>The goal is to wire up: <em>"take a user question, retrieve the top-4 relevant chunks, paste them into a prompt template alongside the question, call an LLM, return the answer."</em> In LangChain this is one composed <code>Runnable</code>.</p>
+
+      <pre><code>from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
+# 1. The prompt template &mdash; text with two named slots.
+stuff_template = """Answer based on the context below.
+
+Context: {context}
+
+Question: {question}
+
+Answer:"""
+
+stuff_prompt = ChatPromptTemplate.from_template(stuff_template)
+
+# 2. The LLM. temperature=0 &rArr; greedy decoding, least creative.
+llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
+
+# 3. Turn a List[Document] into one string the prompt can interpolate.
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+# 4. The chain itself.
+stuff_chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | stuff_prompt
+    | llm
+)
+
+# 5. Run it.
+answer = stuff_chain.invoke("How many organizations worldwide use Databricks?")</code></pre>
+
+      <h3>ChatPromptTemplate &mdash; the parameterised prompt</h3>
+      <p>A prompt template is a string with <code>{variable}</code> placeholders. <code>ChatPromptTemplate.from_template(...)</code> wraps that string in a <code>Runnable</code> so it can be piped. When this runnable is invoked with a dict like <code>{"context": "...", "question": "..."}</code>, it substitutes the variables and returns a message ready to send to the model.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>This is the same idea as Spring's <code>@Value("${some.prop}")</code> placeholder substitution, or a <code>MessageFormat</code> template &mdash; declare slots in a string, fill them in at runtime with a parameter map. The only twist is that the rendered string is then handed to an LLM rather than written to a log.</p>
+      </div>
+
+      <h3>The LLM with temperature=0</h3>
+      <p><code>temperature</code> controls how the model samples from its output distribution. <strong>Zero means: at each token, pick the single most likely token deterministically.</strong> For a Q&amp;A-over-documents task you want this &mdash; you don't want creative paraphrasing, you want the same answer every time for the same context. Higher temperatures (0.7&ndash;1.0) are for writing, brainstorming, code generation when you want variety.</p>
+      <p>This is also why an LLM is <em>not</em> a database lookup, even at <code>temperature=0</code>: it still generates token-by-token from learned distributions, it just commits to the argmax each step. Two different model versions, two different fine-tunes, or even two different sampling implementations can give different outputs from the "same" greedy decoding. Determinism here is best-effort, not contractual.</p>
+
+      <h3>format_docs &mdash; collapsing retrieved chunks into one string</h3>
+      <p>The retriever returns a <code>List[Document]</code>. The prompt template expects a single string for <code>{context}</code>. <code>format_docs</code> is the glue: it joins each chunk's <code>.page_content</code> with a blank-line separator into one block. No reranking, no filtering, no metadata &mdash; just text concatenation. In production you'd often add chunk headers, source citations, or a token budget here.</p>
+
+      <h3>RunnablePassthrough &mdash; forward the input unchanged</h3>
+      <p>Look at the chain again:</p>
+      <pre><code>{"context": retriever | format_docs, "question": RunnablePassthrough()}</code></pre>
+      <p>This dict is itself a <code>Runnable</code>. When invoked with a single input (the user's question string), LCEL runs <strong>both branches in parallel</strong> with that same input:</p>
+      <ul>
+        <li>The <code>context</code> branch sends the question to <code>retriever</code>, gets back 4 documents, pipes them through <code>format_docs</code>, ends up with one big context string.</li>
+        <li>The <code>question</code> branch sends the question through <code>RunnablePassthrough()</code>, which is a no-op identity function. The string comes out the other side untouched.</li>
+      </ul>
+      <p>The two outputs are assembled into <code>{"context": "...", "question": "..."}</code> and handed to <code>stuff_prompt</code>. That's how a single input becomes two named template variables.</p>
+      <p>Without <code>RunnablePassthrough()</code>, you'd have to write a tiny lambda that returns its argument. <code>RunnablePassthrough()</code> is just LangChain's named identity function &mdash; a marker that says "this slot wants the original input, verbatim."</p>
+
+      <h3>What "stuff" means in stuff_chain</h3>
+      <p>The name is not arbitrary. <strong>"Stuff"</strong> is LangChain's term for the pattern of <em>stuffing all retrieved documents into a single prompt and making one LLM call</em>. The alternatives, for situations where the retrieved content is too large to fit:</p>
+      <table class="tbl">
+        <thead><tr><th>Strategy</th><th>What it does</th><th>When to use</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Stuff</strong></td><td>Concatenate all chunks into one prompt, one LLM call.</td><td>Default. Works when retrieved chunks fit in the context window.</td></tr>
+          <tr><td><strong>Map-Reduce</strong></td><td>Run the LLM on each chunk separately (map), then a final LLM call combines the partial outputs (reduce).</td><td>Many chunks, each independently useful; summarization over a long corpus.</td></tr>
+          <tr><td><strong>Refine</strong></td><td>Run the LLM on the first chunk to get a draft answer, then iteratively update it with each next chunk.</td><td>When chunks are sequential and later ones genuinely refine earlier conclusions.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="correction">
+        <strong>Clarification.</strong> The speaker mentioned "MapReduce" as a retrieval technique. Map-Reduce, Refine, and Stuff are <strong>document-combining strategies</strong> in LangChain &mdash; they control how retrieved chunks are passed to the LLM, not how they are retrieved. The retrieval-side counterpart to consider is <strong>MMR</strong> (next session).
+      </div>
+
+      <h3>The pipe &mdash; what | actually does</h3>
+      <p><code>a | b</code> in LCEL means <em>"run a, take its output, feed it as input to b."</em> It is the LangChain equivalent of Unix shell pipes, or Java 8's <code>Function.andThen()</code>. Every component in the chain is a <code>Runnable</code>; pipes compose them into bigger <code>Runnable</code>s. The whole <code>stuff_chain</code> is itself one <code>Runnable</code> you can pipe into yet more things, or call <code>.invoke()</code>, <code>.stream()</code>, or <code>.batch()</code> on.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>Think of <code>f.andThen(g).andThen(h)</code> building a <code>Function&lt;Input, Output&gt;</code> out of three smaller functions. LCEL's <code>f | g | h</code> is the same idea, with the added feature that a dict-of-runnables fans out and runs branches in parallel.</p>
+        <p>It is <strong>not</strong> Spring DI &mdash; there's no IoC container resolving beans at startup. It is closer to <strong>functional composition</strong> that happens to use the pipe symbol.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">&sect; 04 &mdash; FULL PATH</div>
+      <h2>The full read path, end to end.</h2>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 900 620" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace">
+          <!-- Input -->
+          <rect x="330" y="20" width="240" height="50" fill="#1f1a14"/>
+          <text x="450" y="44" text-anchor="middle" fill="#f5efe6" font-size="12" letter-spacing="2" font-weight="700">USER QUESTION (string)</text>
+          <text x="450" y="62" text-anchor="middle" fill="#f8e6cf" font-size="10" font-style="italic" font-family="Spectral, Georgia, serif">"How many orgs use Databricks?"</text>
+
+          <!-- Fork lines -->
+          <line x1="450" y1="70" x2="150" y2="130" stroke="#1f1a14" stroke-width="2"/>
+          <line x1="450" y1="70" x2="750" y2="130" stroke="#1f1a14" stroke-width="2"/>
+
+          <!-- Left branch: retriever -->
+          <rect x="30" y="140" width="240" height="50" fill="#2a5d62"/>
+          <text x="150" y="164" text-anchor="middle" fill="#f5efe6" font-size="12" letter-spacing="2" font-weight="700">RETRIEVER</text>
+          <text x="150" y="182" text-anchor="middle" fill="#5ba0a8" font-size="10">similarity_search &middot; k=4</text>
+
+          <line x1="150" y1="190" x2="150" y2="215" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="150,220 145,210 155,210" fill="#1f1a14"/>
+
+          <rect x="30" y="220" width="240" height="40" fill="#5ba0a8"/>
+          <text x="150" y="245" text-anchor="middle" fill="#1f1a14" font-size="11" font-weight="700">List[Document] &mdash; 4 chunks</text>
+
+          <line x1="150" y1="260" x2="150" y2="285" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="150,290 145,280 155,280" fill="#1f1a14"/>
+
+          <rect x="30" y="290" width="240" height="50" fill="#c89b3c"/>
+          <text x="150" y="314" text-anchor="middle" fill="#1f1a14" font-size="12" letter-spacing="2" font-weight="700">FORMAT_DOCS</text>
+          <text x="150" y="332" text-anchor="middle" fill="#1f1a14" font-size="10">join("\n\n", chunks.page_content)</text>
+
+          <line x1="150" y1="340" x2="150" y2="365" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="150,370 145,360 155,360" fill="#1f1a14"/>
+
+          <rect x="30" y="370" width="240" height="40" fill="#b8472e"/>
+          <text x="150" y="395" text-anchor="middle" fill="#f5efe6" font-size="11" font-weight="700">context: string</text>
+
+          <!-- Right branch: passthrough -->
+          <rect x="630" y="140" width="240" height="50" fill="#b8472e"/>
+          <text x="750" y="164" text-anchor="middle" fill="#f5efe6" font-size="12" letter-spacing="2" font-weight="700">RUNNABLEPASSTHROUGH</text>
+          <text x="750" y="182" text-anchor="middle" fill="#f8e6cf" font-size="10" font-style="italic" font-family="Spectral, Georgia, serif">identity</text>
+
+          <line x1="750" y1="190" x2="750" y2="365" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="750,370 745,360 755,360" fill="#1f1a14"/>
+
+          <rect x="630" y="370" width="240" height="40" fill="#d96d4a"/>
+          <text x="750" y="395" text-anchor="middle" fill="#1f1a14" font-size="11" font-weight="700">question: string (unchanged)</text>
+
+          <!-- Join lines -->
+          <line x1="150" y1="410" x2="450" y2="445" stroke="#1f1a14" stroke-width="2"/>
+          <line x1="750" y1="410" x2="450" y2="445" stroke="#1f1a14" stroke-width="2"/>
+
+          <!-- Prompt template -->
+          <rect x="290" y="445" width="320" height="50" fill="#c89b3c"/>
+          <text x="450" y="469" text-anchor="middle" fill="#1f1a14" font-size="12" letter-spacing="2" font-weight="700">CHATPROMPTTEMPLATE</text>
+          <text x="450" y="487" text-anchor="middle" fill="#1f1a14" font-size="10">substitutes {context} and {question}</text>
+
+          <line x1="450" y1="495" x2="450" y2="520" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="450,525 445,515 455,515" fill="#1f1a14"/>
+
+          <!-- LLM -->
+          <rect x="290" y="525" width="320" height="50" fill="#1f1a14"/>
+          <text x="450" y="549" text-anchor="middle" fill="#f5efe6" font-size="12" letter-spacing="2" font-weight="700">CHATOPENAI &middot; TEMPERATURE 0</text>
+          <text x="450" y="567" text-anchor="middle" fill="#f8e6cf" font-size="10">greedy decoding</text>
+
+          <line x1="450" y1="575" x2="450" y2="595" stroke="#1f1a14" stroke-width="2"/>
+          <polygon points="450,600 445,590 455,590" fill="#1f1a14"/>
+
+          <text x="450" y="615" text-anchor="middle" fill="#1f1a14" font-size="12" font-weight="700">AIMessage("Databricks is used by 20,000+ organizations&hellip;")</text>
+        </svg>
+        <figcaption>END-TO-END READ PATH &mdash; ONE INVOCATION OF STUFF_CHAIN</figcaption>
+      </figure>
+
+      <p>The whole chain rebuilds this graph for every invocation. The store and the index are persistent; the chain run is not. <strong>A new <code>.invoke()</code> call has no memory of previous calls</strong> unless something explicitly puts prior turns back into the context (chat history, summaries, etc.). That's a follow-on topic.</p>
+    </section>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">&sect; 05 &mdash; DEBUG STORY</div>
+      <h2>When retrieval silently returns nothing.</h2>
+      <p>For most of this session the chain returned irrelevant or generic-sounding answers (<em>"Udemy is a platform that allows users to browse and purchase assets&hellip;"</em> to the question "what is Unity Catalog?"). The model had clearly seen no relevant context. The chain didn't crash; it just produced confidently wrong answers grounded in the LLM's training data instead of the document.</p>
+      <p>The diagnostic step was the right one:</p>
+      <pre><code>vector_store.similarity_search(question, k=4)
+# returned: []</code></pre>
+      <p>Empty list. The retriever was returning zero documents. That's a different failure mode from "the model answered wrong" &mdash; the model never got any chunks to ground on, so it was free-associating from its pretraining.</p>
+
+      <p><strong>Possible causes</strong>, in order of likelihood:</p>
+      <ol>
+        <li><strong>Cells run out of order in the notebook.</strong> The <code>chunks</code> variable existed, embeddings were created, but <code>vector_store.add_documents(chunks)</code> was never re-run after a kernel reset &mdash; so the store was empty even though <code>chunks</code> was populated. <em>This was the actual cause; restarting the kernel and running top-to-bottom fixed it.</em></li>
+        <li><strong>Embedding API call failed silently.</strong> A bad API key or rate-limit error during indexing can leave the store partially populated.</li>
+        <li><strong>Chunking produced empty <code>page_content</code>.</strong> If PDF extraction failed on a particular page, chunks for that page may be blank.</li>
+      </ol>
+
+      <div class="callout">
+        <div class="callout-label">THE TEACHING MOMENT</div>
+        <p>When a RAG system answers wrong, the question is never <em>just</em> "is the model bad?" The pipeline has four upstream layers that can each be silently broken. The fastest debug tool is <code>similarity_search</code>: if it returns documents and they look relevant, the problem is the model or the prompt; if it returns garbage or nothing, the problem is upstream.</p>
+        <p>A practical guard for notebooks: after <code>vector_store.add_documents(...)</code>, assert non-empty results on a known query before building any chain on top.</p>
+      </div>
+
+      <div class="correction">
+        <strong>Side note on transcription.</strong> The speaker's worked example asked about <em>"Modify 54"</em> &mdash; he meant <strong>CPT Modifier 54</strong>, the US medical-coding modifier for <em>"surgical care only"</em> (the surgeon performed the procedure but didn't provide pre- or post-operative care). The transcript also rendered this as "Sergeant Weaver" in places; both phrasings refer to Modifier 54.
+      </div>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">&sect; 06 &mdash; NEXT SESSION</div>
+      <h2>Re-rankers, MMR, and prompt engineering.</h2>
+      <p>The speaker named several topics he plans to cover next, in two buckets.</p>
+
+      <h3>Better retrieval &mdash; re-rankers and MMR</h3>
+      <p><strong>Re-ranker</strong> is a second model that scores the (query, chunk) pairs returned by the first-stage retriever and re-sorts them. The first stage is fast (vector similarity); the second stage is slow but more accurate (a cross-encoder reads query and chunk <em>together</em> rather than embedding them separately). The pattern is universal in modern search: cheap recall, expensive precision.</p>
+      <p>The speaker called this <em>"the interview topic"</em> for RAG, along with chunking.</p>
+
+      <p><strong>MMR (Maximal Marginal Relevance)</strong> is a different idea: instead of returning the top-k purely by similarity, MMR returns chunks that are <em>both</em> relevant to the query <em>and</em> dissimilar to each other. Without MMR, the top-4 results may all be near-duplicates from one section of the document; with MMR, you trade a little relevance for diversity, so the model sees broader coverage. Configured via:</p>
+      <pre><code>retriever = vector_store.as_retriever(
+    search_type="mmr",
+    search_kwargs={"k": 4, "fetch_k": 20, "lambda_mult": 0.5}
+)</code></pre>
+      <p><code>lambda_mult=1.0</code> &rarr; pure similarity (same as default), <code>lambda_mult=0.0</code> &rarr; pure diversity. The 0.5 default is a balanced trade.</p>
+
+      <h3>Prompt engineering techniques</h3>
+      <p>Names the lecturer dropped, with what they actually mean:</p>
+      <table class="tbl">
+        <thead><tr><th>Technique</th><th>One-line definition</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Zero-shot</strong></td><td>Just ask the question. Default.</td></tr>
+          <tr><td><strong>Few-shot</strong></td><td>Include several example (input, output) pairs in the prompt so the model infers the pattern.</td></tr>
+          <tr><td><strong>Chain-of-Thought (CoT)</strong></td><td>Instruct the model to reason step-by-step before answering. Often improves multi-step reasoning.</td></tr>
+          <tr><td><strong>Tree of Thoughts (ToT)</strong></td><td>Generalisation of CoT that explores multiple reasoning branches and picks the best &mdash; expensive, used for hard search-style problems. (The speaker called this <em>"Tree of Map"</em> &mdash; the correct name is Tree of Thoughts.)</td></tr>
+          <tr><td><strong>ReAct (Reason + Act)</strong></td><td>Interleave reasoning steps with tool calls. Foundational for agentic systems.</td></tr>
+          <tr><td><strong>Role-Task-Goal</strong></td><td>Set a role ("You are a medical coder"), a task ("Map this text to CPT codes"), and a goal ("Return only valid 2025 codes"). Composable with the others.</td></tr>
+        </tbody>
+      </table>
+      <p>These get covered properly next session.</p>
+
+      <h3>Vectorless RAG</h3>
+      <p>A phrase the speaker used in passing. There's no single industry definition, but in 2025 it's being used to mean <em>"long-context models can sometimes do the job of a vector store by just being shown a lot of documents directly, with a smarter loader doing the relevance work."</em> See Session 12 &sect;2 on context rot for why this isn't a slam dunk &mdash; long contexts degrade quality. Treat "vectorless RAG" as an evolving research direction, not an established pattern.</p>
+    </section>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">&sect; 07 &mdash; RECAP</div>
+      <h2>The retrieval pipeline in one screen.</h2>
+      <ol>
+        <li>A vector store gives you <strong>two views of the same search</strong>: <code>similarity_search</code> returns documents you can read; <code>as_retriever</code> returns a chainable <code>Runnable</code>. Use the first to debug, the second to compose.</li>
+        <li><strong>Cosine similarity</strong> turns "find the most relevant chunks" into "find the vectors closest in direction to the query vector."</li>
+        <li>A <strong>prompt template</strong> declares slots; a chain fills them at invocation time.</li>
+        <li><strong><code>RunnablePassthrough</code></strong> forwards the input unchanged &mdash; the way you keep the user's question available alongside the retrieved context.</li>
+        <li>The whole thing composes with <code>|</code> into a single <code>Runnable</code>. <strong>"Stuff"</strong> is the default strategy (concatenate chunks into one prompt, one LLM call); Map-Reduce and Refine are alternatives when stuff doesn't fit.</li>
+        <li>When answers look wrong, the fastest test is <code>similarity_search</code> &mdash; if it returns nothing, the problem is upstream of the model.</li>
+      </ol>
+      <p>Next: re-rankers, MMR, and prompting techniques.</p>
+    </section>
+
+    <section class="glossary" id="glossary">
+      <h2 style="font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 32px; margin-bottom: 24px;">Glossary</h2>
+      <dl>
+        <dt>Retriever</dt>
+        <dd>A <code>Runnable</code> wrapping a vector store's similarity search, suitable for piping into LCEL chains.</dd>
+        <dt>similarity_search(query, k)</dt>
+        <dd>Convenience method on a vector store that returns a <code>List[Document]</code> directly. Not pipeable; useful for debugging.</dd>
+        <dt>k</dt>
+        <dd>The number of top chunks returned by the retriever.</dd>
+        <dt>Cosine similarity</dt>
+        <dd>Measures the cosine of the angle between two vectors; 1.0 = same direction, 0 = orthogonal. The standard metric for embedding-based retrieval.</dd>
+        <dt>LCEL (LangChain Expression Language)</dt>
+        <dd>LangChain's declarative pipe-style chain composition; every component is a <code>Runnable</code>, composed with <code>|</code>.</dd>
+        <dt>Runnable</dt>
+        <dd>LangChain's interface for any composable unit (LLM call, prompt template, retriever, lambda). Supports <code>.invoke</code>, <code>.batch</code>, <code>.stream</code>.</dd>
+        <dt>RunnablePassthrough</dt>
+        <dd>A no-op <code>Runnable</code> that returns its input unchanged. Used to forward the original input into a downstream component.</dd>
+        <dt>format_docs</dt>
+        <dd>By convention, a helper that joins a <code>List[Document]</code> into a single string for prompt interpolation.</dd>
+        <dt>ChatPromptTemplate</dt>
+        <dd>A prompt template with <code>{variable}</code> slots that get substituted at invocation time.</dd>
+        <dt>Stuff (chain type)</dt>
+        <dd>Combine all retrieved chunks into one prompt, one LLM call. The default and simplest pattern.</dd>
+        <dt>Map-Reduce (chain type)</dt>
+        <dd>Run the LLM on each chunk independently, then combine partial outputs in a final LLM call. For when chunks don't all fit.</dd>
+        <dt>Refine (chain type)</dt>
+        <dd>Iterate over chunks, updating an answer at each step. For sequential refinement.</dd>
+        <dt>Re-ranker</dt>
+        <dd>A second-stage cross-encoder model that re-scores retrieved chunks against the query for higher precision.</dd>
+        <dt>MMR (Maximal Marginal Relevance)</dt>
+        <dd>Retrieval strategy that balances similarity to the query against diversity among the returned chunks. Controlled via <code>lambda_mult</code>.</dd>
+        <dt>Temperature</dt>
+        <dd>LLM sampling parameter. 0 = greedy (most reproducible); higher = more variety. For RAG Q&amp;A, use 0.</dd>
+        <dt>CPT Modifier 54</dt>
+        <dd>The worked example used by the speaker. In US medical coding, modifier 54 means <em>"surgical care only"</em> &mdash; the surgeon performed the procedure but did not provide pre- or post-operative care. (The transcript's "Modify 54" / "Sergeant Weaver" are mistranscriptions.)</dd>
+      </dl>
+
+      <div class="sources">
+        <p style="margin-top: 30px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); font-weight: 700;">SOURCES</p>
+        <ul style="margin-top: 12px;">
+          <li>LangChain Expression Language (LCEL) &mdash; <a href="https://python.langchain.com/docs/concepts/lcel/">python.langchain.com</a></li>
+          <li>LangChain <em>RunnablePassthrough</em> &mdash; <a href="https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.passthrough.RunnablePassthrough.html">api_reference</a></li>
+          <li>LangChain vector store retriever (<code>as_retriever</code>, MMR) &mdash; <a href="https://python.langchain.com/docs/how_to/vectorstore_retriever/">python.langchain.com</a></li>
+          <li>LangChain document chain types (Stuff, Map-Reduce, Refine) &mdash; <a href="https://python.langchain.com/api_reference/langchain/chains/langchain.chains.combine_documents.map_reduce.MapReduceDocumentsChain.html">api_reference</a></li>
+          <li>Carbonell &amp; Goldstein, <em>The use of MMR, diversity-based reranking for reordering documents and producing summaries</em> (1998)</li>
+          <li>Yao et al., <em>ReAct: Synergizing Reasoning and Acting in Language Models</em> &mdash; <a href="https://arxiv.org/abs/2210.03629">arxiv.org/abs/2210.03629</a></li>
+          <li>Wei et al., <em>Chain-of-Thought Prompting Elicits Reasoning</em> &mdash; <a href="https://arxiv.org/abs/2201.11903">arxiv.org/abs/2201.11903</a></li>
+          <li>Yao et al., <em>Tree of Thoughts</em> &mdash; <a href="https://arxiv.org/abs/2305.10601">arxiv.org/abs/2305.10601</a></li>
+          <li>CPT Modifier 54 &mdash; <a href="https://www.aapc.com/blog/44326-modifier-54-mastery/">aapc.com</a> &middot; <a href="https://www.cms.gov/medicare-coverage-database/view/article.aspx?articleId=53472">cms.gov</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      <span>SASMITA COURSE &middot; SESSION 13</span>
+      <span>2026-05-19</span>
+    </footer>
+
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 12 — RAG, Part 1: Indexing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 60px; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(48px, 7vw, 84px); line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 600px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 600px; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 30px 0 30px 32px; border-left: 4px solid var(--terracotta); margin: 50px 0 60px; position: relative; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 80px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 40px; line-height: 1.05; margin-bottom: 28px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 24px; margin: 36px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 16px 0 22px 24px; color: var(--ink-soft); font-size: 17px; }
+.chapter ul li, .chapter ol li { margin-bottom: 8px; line-height: 1.65; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--highlight); padding: 22px 26px; margin: 22px 0; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.55; border-radius: 3px; }
+pre code { background: transparent; border: none; color: inherit; padding: 0; font-size: 13.5px; }
+.tbl { width: 100%; border-collapse: collapse; margin: 22px 0; font-size: 15px; }
+.tbl th, .tbl td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--terracotta); text-transform: uppercase; font-weight: 700; }
+.tbl td { color: var(--ink-soft); }
+.tbl td strong { color: var(--ink); }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 28px; margin: 30px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--ochre); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 16px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 22px 26px; margin: 26px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 8px; line-height: 1.6; }
+.bridge p:last-child { margin-bottom: 0; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 22px 0; font-size: 15px; color: var(--ink); }
+.correction strong { color: var(--terracotta); }
+.pipeline { display: flex; flex-wrap: wrap; gap: 0; align-items: stretch; margin: 28px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.pipeline-step { flex: 1; min-width: 100px; background: var(--ink); color: var(--paper); padding: 16px 12px; text-align: center; position: relative; }
+.pipeline-step.chunk { background: var(--terracotta); }
+.pipeline-step.embed { background: var(--teal); }
+.pipeline-step.store { background: var(--ochre); color: var(--ink); }
+.pipeline-step:not(:last-child)::after { content: '→'; position: absolute; right: -8px; top: 50%; transform: translateY(-50%); color: var(--ink); font-size: 14px; z-index: 2; background: var(--paper); width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.pipeline-step .label { font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; font-size: 11px; }
+.pipeline-step .sub { font-size: 10px; opacity: 0.85; }
+figure.infographic { margin: 40px -40px 40px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg { width: 100%; height: auto; display: block; }
+.glossary { margin-top: 70px; padding-top: 40px; border-top: 2px solid var(--ink); }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 16px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 90px; padding-top: 32px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; }
+.sources { margin-top: 30px; font-size: 14px; color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; }
+.sources a { color: var(--terracotta); text-decoration: none; }
+.sources a:hover { text-decoration: underline; }
+.sources li { margin-bottom: 6px; list-style: none; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 48px; }
+  .thesis { font-size: 20px; padding-left: 20px; }
+  .chapter h2 { font-size: 30px; }
+  .pipeline { flex-direction: column; }
+  .pipeline-step:not(:last-child)::after { content: '↓'; right: 50%; top: auto; bottom: -8px; transform: translateX(50%); }
+  figure.infographic { margin: 32px -24px; }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 12</div>
+    <div class="toc-title">RAG, Part 1<br>Indexing</div>
+    <ol>
+      <li><a href="#s1">Why RAG exists</a></li>
+      <li><a href="#s2">Context window &amp; rot</a></li>
+      <li><a href="#svg">Visual reference</a></li>
+      <li><a href="#s3">The indexing pipeline</a></li>
+      <li><a href="#s4">Load — extracting text</a></li>
+      <li><a href="#s5">Chunk — splitting text</a></li>
+      <li><a href="#s6">Embed — text to vectors</a></li>
+      <li><a href="#s7">Store — vector databases</a></li>
+      <li><a href="#s8">Worked example</a></li>
+      <li><a href="#s9">Real-world scale</a></li>
+      <li><a href="#s10">Security &amp; compliance</a></li>
+      <li><a href="#s11">Recap</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      68 MIN<br>
+      3 SPEAKERS<br>
+      2026-05-19
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 12 · STUDY NOTES</div>
+      <h1>RAG, Part 1:<span class="accent">Indexing</span></h1>
+      <p class="hero-sub">Load. Chunk. Embed. Store. The pipeline that lets an LLM answer questions over your documents — without retraining anything.</p>
+      <div class="hero-meta">
+        <span>2026-05-19</span>
+        <span>68 MIN</span>
+        <span>LANGCHAIN · PYPDF · TEXT-EMBEDDING-3 · CHROMA / FAISS</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      An LLM is trained on the public internet. It knows <em>nothing</em> about your drug policy, billing codes, or onboarding manual. RAG closes that gap at query time — it does not modify the model; it changes the prompt.
+    </div>
+
+    <figure class="infographic" id="svg">
+      <img src="Session12-RAG-Indexing-infographic.svg" alt="Session 12 visual: RAG indexing pipeline. Load → Chunk → Embed → Store. Context window vs context rot. Live run: 57 pages → 90 chunks × 1536 dims." />
+    </figure>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">§ 01 — WHY RAG</div>
+      <h2>The model doesn't know your data.</h2>
+      <p>An LLM is trained on <strong>generic public data</strong>. It knows the open web; it does not know your company's drug-testing policy, your billing codes, or your onboarding handbook. RAG (Retrieval-Augmented Generation) is the standard technique for letting the model answer questions over <em>your</em> data without retraining it.</p>
+      <p>The mechanic is simple: at question time, fetch the most relevant snippets from your documents, paste them into the prompt as <strong>context</strong>, let the model answer using that context. The model is not modified; the prompt is augmented.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>Think of RAG as a query-time <code>JOIN</code> between a vector store (your indexed docs) and an LLM call. The model is a stateless service; the vector store is its read-only data source.</p>
+        <p>Fine-tuning is closer to redeploying the service with new weights. RAG just changes the request payload.</p>
+      </div>
+
+      <p>RAG has two phases:</p>
+      <table class="tbl">
+        <thead><tr><th>Phase</th><th>When it runs</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Indexing</strong></td><td>Offline / batch</td><td>Load documents → chunk → embed → store in a vector database</td></tr>
+          <tr><td><strong>Retrieval</strong></td><td>Online / per-request</td><td>Embed the user's question → similarity-search the vector store → stuff top-<em>k</em> chunks into the prompt → call the LLM</td></tr>
+        </tbody>
+      </table>
+      <p>Today is <strong>only indexing</strong>. Retrieval is Session 13.</p>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">§ 02 — CONTEXT</div>
+      <h2>Context window vs. context rot.</h2>
+      <p><strong>Context window</strong> is the maximum number of <strong>tokens</strong> the model can process in a single call — input prompt + retrieved context + the model's output, all counted together. A token is roughly 3–4 characters of English, not a whole word. Gemini 2.5 Pro advertises around 2 million tokens; most production models sit between 128k and 1M.</p>
+
+      <p><strong>Context rot</strong> is the part most learners miss. Even when you have a 2M-token window, quality starts degrading well before you fill it. Chroma's 2025 study tested 18 frontier models (GPT-4.1, Claude 4, Gemini 2.5, Qwen3, …) and <em>every one</em> got worse as input length grew. A 200k-window model can show meaningful degradation by 50k tokens. The model doesn't crash — it just gets less reliable at following instructions, more prone to hallucination, less responsive to corrections.</p>
+
+      <div class="callout">
+        <div class="callout-label">WHY RAG STILL MATTERS WITH HUGE CONTEXT WINDOWS</div>
+        <p>If your whole 500-page manual fits in 1M tokens, why bother? Because of context rot. Sending the whole book is <strong>slower, more expensive, and less accurate</strong> than sending the 4 most relevant chunks. RAG gives the model "infinite context" by only ever showing it the right small slice.</p>
+        <p>The speaker's rule of thumb: keep effective usage under ~50% of the window. That's the practical reason for retrieval over context-stuffing.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">§ 03 — PIPELINE</div>
+      <h2>The four steps of indexing.</h2>
+      <div class="pipeline">
+        <div class="pipeline-step"><div class="label">1 · LOAD</div><div class="sub">PDF → text</div></div>
+        <div class="pipeline-step chunk"><div class="label">2 · CHUNK</div><div class="sub">split logical units</div></div>
+        <div class="pipeline-step embed"><div class="label">3 · EMBED</div><div class="sub">text → vector</div></div>
+        <div class="pipeline-step store"><div class="label">4 · STORE</div><div class="sub">vector DB</div></div>
+      </div>
+      <p>Each step has real choices and real failure modes. The most common reason a RAG system answers badly is not the LLM — it's an upstream choice in this pipeline.</p>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">§ 04 — LOAD</div>
+      <h2>Getting text out of source documents.</h2>
+      <p>PDFs are the hard case. They're not text files; they're page-layout containers that may contain scanned images, two-column layouts, tables, charts, hyperlinks, and handwriting. Pulling clean text out of them is called <strong>OCR + layout parsing</strong>, and it is the single most error-prone step in the pipeline. <em>If extraction is wrong, nothing downstream can recover.</em></p>
+
+      <table class="tbl">
+        <thead><tr><th>Tool</th><th>What it is</th><th>When to reach for it</th></tr></thead>
+        <tbody>
+          <tr><td><strong>PyPDF</strong> (<code>pypdf</code>)</td><td>Pure-Python PDF reader</td><td>Simple, mostly-text PDFs; default in LangChain's <code>PyPDFLoader</code></td></tr>
+          <tr><td><strong>PyMuPDF</strong></td><td>C-backed PDF library, faster</td><td>When PyPDF is too slow or misses layout</td></tr>
+          <tr><td><strong>Docling</strong></td><td>IBM open-source; outputs Markdown directly</td><td>Complex PDFs with tables/charts; you want Markdown for structured chunking later</td></tr>
+          <tr><td><strong>LangExtract</strong></td><td>Google library (Apache-2.0), Gemini-powered structured extraction with source grounding</td><td>When you need <em>structured fields</em> (medications, dosages, …), not just text. Has an interactive visualization showing where each value came from</td></tr>
+          <tr><td><strong>Azure AI Document Intelligence</strong></td><td>Microsoft commercial service (formerly Form Recognizer)</td><td>Production scale, complex layouts, prebuilt models (invoice, receipt, ID, contract) and custom fine-tuning</td></tr>
+        </tbody>
+      </table>
+
+      <p>LangChain's <code>DocumentLoader</code> class is a thin wrapper around most of these — you import one of <code>PyPDFLoader</code>, <code>DoclingLoader</code>, etc., call <code>.load()</code>, and get back a list of <code>Document</code> objects, each with <code>.page_content</code> and <code>.metadata</code> (source path, page number, creation time).</p>
+
+      <pre><code>from langchain_community.document_loaders import PyPDFLoader
+
+loader = PyPDFLoader("policy.pdf")
+documents = loader.load()
+print(f"Loaded {len(documents)} pages")
+print(documents[0].page_content[:400])
+print(documents[0].metadata)
+# → {'source': 'policy.pdf', 'page': 0, 'creationdate': '...', ...}</code></pre>
+
+      <div class="callout">
+        <div class="callout-label">WHY SO MANY TOOLS</div>
+        <p>PDF extraction is the messiest layer in RAG. PDFs vary wildly — scanned faxes vs. digital exports, single-column vs. multi-column, embedded tables vs. raster images. No single tool wins on all of them. The speaker's homework: try several on your own documents and compare.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">§ 05 — CHUNK</div>
+      <h2>Splitting documents into retrievable pieces.</h2>
+      <p>You don't embed a whole book as one vector; you split it into <strong>chunks</strong> and embed each. A chunk is whatever you decide a "logical unit" is — a paragraph, a section, a page, or a fixed character window.</p>
+      <p>Two reasons to split:</p>
+      <ol>
+        <li>Embedding models have their own input limits (a few thousand tokens).</li>
+        <li>Retrieval is more useful when each match is a focused snippet, not an entire book.</li>
+      </ol>
+
+      <h3>RecursiveCharacterTextSplitter</h3>
+      <p>The session's working example:</p>
+      <pre><code>from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,        # target characters per chunk
+    chunk_overlap=200,      # characters repeated between adjacent chunks
+    length_function=len,
+    separators=["\n\n", "\n", " ", ""]
+)
+chunks = text_splitter.split_documents(documents)</code></pre>
+
+      <p><strong>How "recursive" works.</strong> The splitter tries the first separator (<code>"\n\n"</code>, paragraph breaks). If a resulting piece is still over <code>chunk_size</code>, it falls back to the next separator (<code>"\n"</code>, then <code>" "</code>, finally character-level). The goal is to break on the <em>coarsest natural boundary</em> that keeps each piece under the limit. That's why actual chunk sizes vary — some pieces split at 600 chars because a paragraph break happened to land there.</p>
+
+      <p>In the live run: 57 pages → 90 chunks → min 1 char, max 999 chars, avg ~707. The range tells you separators were doing real work.</p>
+
+      <h3>Why overlap</h3>
+      <p><code>chunk_overlap=200</code> means the last 200 characters of chunk N reappear as the first 200 characters of chunk N+1. The purpose is to preserve context across the boundary so an idea split across two chunks can still be retrieved as one — and so adjacent chunks are recognizably neighbors when you inspect them.</p>
+      <p>Yes, this means the same content gets embedded twice in two different vectors. That redundancy is deliberate; it's how the splitter compensates for not knowing the "true" semantic boundaries.</p>
+
+      <h3>Other splitters</h3>
+      <p><code>RecursiveCharacterTextSplitter</code> is the default when you have <strong>no control over document structure</strong> (user-uploaded files, mixed formats). When you <em>do</em> know the structure, structure-aware splitters work better:</p>
+      <ul>
+        <li><strong><code>MarkdownHeaderTextSplitter</code></strong> — chunks at <code>#</code>, <code>##</code>, <code>###</code> boundaries. Use this if you converted with Docling, since Docling outputs Markdown.</li>
+        <li><strong><code>HTMLHeaderTextSplitter</code></strong> — same idea for HTML tags.</li>
+        <li><strong><code>RecursiveJsonSplitter</code></strong> — preserves JSON structure.</li>
+        <li><strong>Page-level chunking</strong> — just use each PDF page as a chunk. Crude but often surprisingly fine for big books.</li>
+      </ul>
+
+      <h3>Picking chunk_size and overlap</h3>
+      <p>There is no formula. It's trial-and-error against your data and your retrieval quality. Common starting points: 500–1000 characters with 10–20% overlap. The honest signal is that <strong>chunking is hit-and-trial</strong>, and bad chunk boundaries are a top cause of bad RAG accuracy.</p>
+
+      <div class="callout">
+        <div class="callout-label">THE REAL PRINCIPLE</div>
+        <p>A chunk should be <strong>one logical unit</strong>. If a single explanation gets split across two chunks, retrieval may return only half of it and the model will hallucinate the rest. Structure-aware splitting (Markdown headers, sections) protects against this; fixed-size character splitting only approximates it.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">§ 06 — EMBED</div>
+      <h2>Turning chunks into vectors.</h2>
+      <p>An <strong>embedding</strong> is a fixed-length list of floating-point numbers that represents the meaning of a piece of text. Two chunks with similar meaning produce vectors that are close together in high-dimensional space (small cosine distance).</p>
+
+      <pre><code>from langchain_openai import OpenAIEmbeddings
+embeddings = OpenAIEmbeddings()   # defaults to text-embedding-ada-002</code></pre>
+
+      <p>Current OpenAI embedding models — the session referred to "ada-002" and "large-003" but the real names are <code>-3-large</code> / <code>-3-small</code>:</p>
+      <table class="tbl">
+        <thead><tr><th>Model</th><th>Dimensions</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>text-embedding-ada-002</code></td><td>1536</td><td>Legacy. Still works, still in code.</td></tr>
+          <tr><td><code>text-embedding-3-small</code></td><td>1536 (configurable down)</td><td>Cheaper, current default for most cases</td></tr>
+          <tr><td><code>text-embedding-3-large</code></td><td>3072 by default; shorten via <code>dimensions</code> param</td><td>Highest quality. A truncated <code>3-large</code> at 256 dims still beats full <code>ada-002</code> at 1536.</td></tr>
+        </tbody>
+      </table>
+
+      <p>Each chunk becomes a vector of, e.g., 1536 floats. The session printed one for inspection: a 1536-dim vector of seemingly meaningless numbers — that's the point. The numbers aren't human-readable; only their <em>geometric relationships to other vectors</em> matter.</p>
+
+      <p>Alternatives:</p>
+      <ul>
+        <li><strong>Hugging Face</strong> open-source models (the Sentence-BERT family and similar) via <code>HuggingFaceEmbeddings</code>. Free, runs locally, no data leaves your infrastructure.</li>
+        <li>Any encoder-based transformer can produce embeddings. Historically, <strong>encoder-only</strong> models (BERT lineage) outperformed decoder-only ones for embeddings, which is why Sentence-BERT became dominant. Today, modern decoder-based embedding models (including OpenAI's <code>text-embedding-3</code>) are competitive at the top of the <a href="https://huggingface.co/spaces/mteb/leaderboard" style="color: var(--terracotta);">MTEB benchmark</a> — the encoder/decoder distinction is less load-bearing than it used to be.</li>
+      </ul>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>An embedding is like a <em>deterministic</em> hash function — same text in, same vector out — except instead of hashing to avoid collisions, it hashes to <strong>preserve similarity</strong>. Two strings that mean the same thing land near each other in vector space. That's the property a regular hash explicitly destroys.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">§ 07 — STORE</div>
+      <h2>The vector database.</h2>
+      <p>Embeddings need a home that supports <strong>similarity search</strong> — "give me the 4 vectors nearest to this query vector." A normal SQL index can't do that efficiently; you need a vector store.</p>
+
+      <table class="tbl">
+        <thead><tr><th>Store</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Chroma</strong></td><td>Local / embedded, open source</td><td>Default starter; runs in-process, persists to disk</td></tr>
+          <tr><td><strong>FAISS</strong></td><td>In-memory library by Meta AI Research (<em>Facebook AI Similarity Search</em>)</td><td>C++ core with Python bindings; very fast; you manage persistence yourself.</td></tr>
+          <tr><td><strong>InMemoryVectorStore</strong> (LangChain)</td><td>Pure-Python in-process dict-of-vectors</td><td>What the live code actually uses — fine for demos, not for production</td></tr>
+          <tr><td><strong>Pinecone</strong></td><td>Managed cloud</td><td>Pay-per-use; no infra to run</td></tr>
+          <tr><td><strong>Azure Cosmos DB</strong> (vector mode)</td><td>Managed cloud</td><td>Integrates with Azure stack</td></tr>
+        </tbody>
+      </table>
+
+      <div class="correction">
+        <strong>Note on the live code.</strong> The speaker said "FAISS, by Facebook" when introducing local stores, but the working notebook (<code>RAG.py</code>) actually uses LangChain's <code>InMemoryVectorStore</code>. Both are local/in-process; FAISS is the more serious option once you outgrow demos.
+      </div>
+
+      <pre><code>from langchain_core.vectorstores import InMemoryVectorStore
+
+vector_store = InMemoryVectorStore(embeddings)
+ids = vector_store.add_documents(documents=chunks)   # embeds + stores
+retriever = vector_store.as_retriever(search_kwargs={"k": 4})</code></pre>
+
+      <p><code>add_documents</code> internally calls the embedding model for each chunk, then stores <code>(id, vector, metadata, page_content)</code> tuples. <code>as_retriever(k=4)</code> returns the 4 nearest chunks for any query — but retrieval mechanics are Session 13.</p>
+    </section>
+
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">§ 08 — WORKED EXAMPLE</div>
+      <h2>What the live run produced.</h2>
+      <p>Input: 57-page Databricks PDF.</p>
+      <pre><code>Loaded 57 pages
+Created 90 chunks from 57 pages
+Chunk statistics:
+  Min: 1 chars
+  Max: 999 chars
+  Avg: 707 chars</code></pre>
+      <p>90 chunks × 1536 dims = a 90 × 1536 matrix of floats sitting in <code>vector_store</code>. That's the indexed corpus. Retrieval will turn an incoming question into one more 1536-dim vector and compute its similarity against all 90.</p>
+      <p>The session also showed (without going deep) that asking <em>"Modifier 54?"</em> against a healthcare policy PDF returned a correct, document-grounded answer — i.e. the pipeline works end-to-end. The retriever and prompt-chain code is in <code>RAG.py</code> but was explicitly deferred to Session 13.</p>
+    </section>
+
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">§ 09 — REAL-WORLD</div>
+      <h2>Why production looks different.</h2>
+      <p>The speaker described a production system at his employer (health insurance) that processes <strong>appeal documents</strong> — court filings from members contesting denied claims. Volume: millions of documents per week, billions per year. Each document is 20–100 pages, multi-format (digital PDFs, scanned faxes, handwritten letters). From each, the system must extract 20–30 structured fields (member ID, intent, dates, supporting evidence).</p>
+      <p>This is the use case where <strong>Azure Document Intelligence</strong> earns its cost over open-source loaders:</p>
+      <ul>
+        <li>Pre-trained models for layout, invoice, receipt, ID, contract, health insurance card, bank statement, etc.</li>
+        <li>A <strong>Read</strong> model for plain OCR.</li>
+        <li><strong>Custom model</strong> support — annotate a few samples of a new format and Doc Intelligence fine-tunes an extractor for it.</li>
+        <li>Architecture pattern: a <strong>router</strong> classifies the incoming format and dispatches to the matching custom model; if no model matches, the document is queued for annotation and a new model is trained.</li>
+      </ul>
+      <p>Pricing (as cited in session): roughly $1 per 10,000 pages for the cheaper models. Always verify against current Azure pricing.</p>
+    </section>
+
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">§ 10 — SECURITY</div>
+      <h2>Embedding proprietary data.</h2>
+      <p>When you embed proprietary documents using a third-party API (OpenAI, Azure OpenAI, Anthropic), the text of those chunks is sent over the network. The speaker's points, restated precisely:</p>
+      <ul>
+        <li>Enterprise contracts with Microsoft / OpenAI / Anthropic typically include <strong>data-handling terms</strong> (no training on customer data, regional residency, etc.) — these are real legal protections, but they are <em>contractual</em>, not absolute guarantees that data cannot leak.</li>
+        <li>Before production deployment, enterprise projects go through an <strong>AI/security review</strong> ("AIRB" or equivalent) where a dedicated cybersecurity team scans the data flow, the model, and the keys.</li>
+        <li>API keys are usually short-lived (token-based, auto-refreshing on the order of a minute) and protected by network-layer controls (firewall, private endpoints).</li>
+        <li><strong>Local / open-source embedding models</strong> sidestep most of this entirely — the data never leaves your network.</li>
+      </ul>
+      <p>If your organization can't send data to a third-party API, use Hugging Face models hosted on your own infrastructure. Quality is close to OpenAI's for most use cases.</p>
+    </section>
+
+    <section class="chapter" id="s11">
+      <div class="chapter-marker">§ 11 — RECAP</div>
+      <h2>The indexing pipeline in one screen.</h2>
+      <ol>
+        <li><strong>Load</strong> — extract text from your source documents (PyPDF, Docling, LangExtract, Doc Intelligence). The messiest step; pick the right tool for your format.</li>
+        <li><strong>Chunk</strong> — split text into logical units. <code>RecursiveCharacterTextSplitter</code> is a sensible default; Markdown/HTML splitters are better when you have structure.</li>
+        <li><strong>Embed</strong> — turn each chunk into a fixed-length vector via an embedding model (OpenAI <code>text-embedding-3-*</code>, Hugging Face open source).</li>
+        <li><strong>Store</strong> — keep the vectors in a vector database (Chroma, FAISS, Pinecone) that supports similarity search.</li>
+      </ol>
+      <p>Retrieval — what happens at query time — is next session.</p>
+    </section>
+
+    <section class="glossary" id="glossary">
+      <h2 style="font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 32px; margin-bottom: 24px;">Glossary</h2>
+      <dl>
+        <dt>RAG (Retrieval-Augmented Generation)</dt>
+        <dd>Prompting technique where retrieved documents are inserted into the LLM's context at query time. Not fine-tuning; not memory.</dd>
+        <dt>Context window</dt>
+        <dd>Total tokens the model can process in one call (input + retrieved context + output, all combined).</dd>
+        <dt>Context rot</dt>
+        <dd>Empirical finding that LLM output quality degrades as input length grows, well before the context window is full. Documented by Chroma (2025) across 18 frontier models.</dd>
+        <dt>Token</dt>
+        <dd>A sub-word unit (~3–4 English characters). Models see tokens, not words.</dd>
+        <dt>Chunk</dt>
+        <dd>A piece of a document, sized to fit through an embedding model and to be a useful retrieval result.</dd>
+        <dt>Embedding</dt>
+        <dd>A fixed-length vector of floats that represents the meaning of a piece of text; similar meaning → close vectors.</dd>
+        <dt>Vector store / vector database</dt>
+        <dd>A system that indexes embeddings for fast nearest-neighbor search.</dd>
+        <dt>OCR (Optical Character Recognition)</dt>
+        <dd>Extracting text from images of text.</dd>
+        <dt>Multimodal (in this context)</dt>
+        <dd>Documents that mix text, tables, charts, and images on one page.</dd>
+        <dt>Indexing vs. retrieval</dt>
+        <dd>Offline preparation vs. online query-time lookup.</dd>
+        <dt>k (in retrieval)</dt>
+        <dd>The number of nearest chunks to return for a query (e.g., <code>k=4</code>).</dd>
+      </dl>
+
+      <div class="sources">
+        <p style="margin-top: 30px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); font-weight: 700;">SOURCES</p>
+        <ul style="margin-top: 12px;">
+          <li>Chroma Research, <em>Context Rot: How Increasing Input Tokens Impacts LLM Performance</em> — <a href="https://research.trychroma.com/context-rot">research.trychroma.com/context-rot</a></li>
+          <li>OpenAI, <em>New embedding models and API updates</em> — <a href="https://openai.com/index/new-embedding-models-and-api-updates/">openai.com</a></li>
+          <li>FAISS — <a href="https://github.com/facebookresearch/faiss">github.com/facebookresearch/faiss</a> · arXiv 2401.08281 (Douze et al., 2024)</li>
+          <li>Google LangExtract — <a href="https://github.com/google/langextract">github.com/google/langextract</a></li>
+          <li>Docling (IBM) — <a href="https://github.com/docling-project/docling">github.com/docling-project/docling</a></li>
+          <li>Azure AI Document Intelligence — <a href="https://learn.microsoft.com/azure/ai-services/document-intelligence/">learn.microsoft.com</a></li>
+          <li>LangChain Document Loaders — <a href="https://python.langchain.com/docs/integrations/document_loaders/">python.langchain.com</a></li>
+          <li>LangChain Text Splitters — <a href="https://python.langchain.com/docs/concepts/text_splitters/">python.langchain.com</a></li>
+          <li>MTEB Leaderboard — <a href="https://huggingface.co/spaces/mteb/leaderboard">huggingface.co/spaces/mteb/leaderboard</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      <span>SASMITA COURSE · SESSION 12</span>
+      <span>2026-05-19</span>
+    </footer>
+
+  </main>
+</div>
+</body>
+</html>

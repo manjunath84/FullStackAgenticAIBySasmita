@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="paper">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SasmitaCourse — Index · 24 sessions + 2 MCP deep-dives on AI / ML / Agentic AI</title>
+<meta name="description" content="Course index for the 24-session SasmitaCourse on AI, ML, and Agentic AI, plus 2 supplementary MCP deep-dive lectures — from the 2017 Transformer hinge through to wiring LangGraph multi-agent flows into Databricks.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,700&family=Spectral:wght@300;400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper: #f5efe6; --paper-2: #ede5d6; --highlight: #f8e6cf;
+    --ink: #1f1a14;   --ink-soft: #4a4239; --ink-mute: #8b7d65; --line: #d4c9b5;
+    --terracotta: #b8472e; --terracotta-light: #d96d4a;
+    --teal: #2a5d62;       --teal-light: #5ba0a8;
+    --ochre: #c89b3c;      --spring: #6db33f;
+    --violet: #8a4f9f;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body:    'Spectral', Georgia, serif;
+    --font-mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--font-body); font-size: 17px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--terracotta); outline-offset: 3px; border-radius: 2px; }
+
+  /* ----- container ----- */
+  .container { max-width: 1240px; margin: 0 auto; padding: 56px 32px 100px; }
+  @media (max-width: 700px) { .container { padding: 32px 18px 60px; } }
+
+  /* ----- hero ----- */
+  header.hero { margin-bottom: 32px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+  .hero .eyebrow {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--terracotta); font-weight: 600; margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-family: var(--font-display); font-style: italic; font-weight: 500;
+    font-size: clamp(36px, 5.5vw, 60px); line-height: 1.05; letter-spacing: -0.5px;
+    margin: 0 0 16px; color: var(--ink);
+  }
+  .hero h1 em.accent { color: var(--terracotta); font-style: italic; }
+  .hero .lead {
+    font-family: var(--font-display); font-style: italic; font-size: 22px;
+    color: var(--ink-soft); max-width: 820px; margin: 0 0 18px;
+  }
+  .hero .meta {
+    display: flex; flex-wrap: wrap; gap: 18px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--ink-mute);
+    letter-spacing: 0.5px;
+  }
+  .hero .meta span { padding: 4px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper-2); }
+
+  /* ----- track filter ----- */
+  nav.tracks {
+    margin: 28px 0 36px;
+    display: flex; flex-wrap: wrap; gap: 8px;
+    font-family: var(--font-mono); font-size: 12px;
+  }
+  nav.tracks button {
+    cursor: pointer; padding: 6px 14px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 4px;
+    color: var(--ink-soft); font-family: var(--font-mono); font-size: 12px;
+    letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  nav.tracks button:hover { background: var(--paper-2); border-color: var(--terracotta); color: var(--terracotta); }
+  nav.tracks button.active {
+    background: var(--terracotta); color: var(--paper); border-color: var(--terracotta);
+  }
+
+  /* ----- card grid ----- */
+  .grid {
+    display: grid; gap: 22px;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  }
+  @media (max-width: 540px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 22px 22px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .card:hover {
+    border-color: var(--terracotta);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(31,26,20,0.08);
+  }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600;
+  }
+  .card-head .num { color: var(--terracotta); }
+  .card-head .track {
+    padding: 3px 10px; border-radius: 3px;
+    background: rgba(184,71,46,0.10); color: var(--terracotta);
+    font-size: 10px; letter-spacing: 1px;
+  }
+  /* track tinting */
+  .track-foundations           { background: rgba(184,71,46,0.10) !important; color: var(--terracotta) !important; }
+  .track-ann-training-math     { background: rgba(42,93,98,0.12) !important; color: var(--teal) !important; }
+  .track-nlp-and-embeddings    { background: rgba(200,155,60,0.16) !important; color: var(--ochre) !important; }
+  .track-transformer-architecture { background: rgba(109,179,63,0.14) !important; color: var(--spring) !important; }
+  .track-langchain-and-rag     { background: rgba(138,79,159,0.13) !important; color: var(--violet) !important; }
+  .track-graphrag              { background: rgba(217,109,74,0.16) !important; color: var(--terracotta-light) !important; }
+  .track-agents-and-langgraph  { background: rgba(91,160,168,0.18) !important; color: var(--teal-light) !important; }
+  .track-databricks            { background: rgba(42,93,98,0.18) !important; color: var(--teal) !important; }
+
+  .card-title {
+    margin: 0; font-family: var(--font-display); font-style: italic; font-weight: 600;
+    font-size: 22px; line-height: 1.2; color: var(--ink);
+  }
+  .card-slug {
+    font-family: var(--font-mono); font-size: 11px; color: var(--ink-mute);
+  }
+  .card-slug code {
+    background: transparent; padding: 0; border: none; font-size: 11px;
+  }
+  .card-summary {
+    margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink-soft);
+    flex-grow: 1;
+  }
+  .card-foot {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    padding-top: 12px; border-top: 1px solid var(--line);
+    font-family: var(--font-mono); font-size: 12px;
+  }
+  .card-foot a {
+    text-decoration: none; padding: 6px 12px; border-radius: 4px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.5px; transition: background 0.12s, color 0.12s;
+    border-bottom: none;
+  }
+  .card-foot a.primary {
+    background: var(--terracotta); color: var(--paper);
+  }
+  .card-foot a.primary:hover { background: var(--teal); }
+  .card-foot a.secondary {
+    background: transparent; color: var(--ink-soft);
+    border: 1px solid var(--line);
+  }
+  .card-foot a.secondary:hover { color: var(--terracotta); border-color: var(--terracotta); }
+  .card-date { margin-left: auto; color: var(--ink-mute); font-size: 11px; }
+
+  /* ----- footer ----- */
+  footer.doc {
+    margin-top: 60px; padding-top: 22px; border-top: 1px solid var(--line);
+    color: var(--ink-mute); font-family: var(--font-mono); font-size: 12px;
+    text-align: center; letter-spacing: 0.3px;
+  }
+  footer.doc a { color: var(--terracotta); text-decoration: none; border-bottom: 1px dotted var(--terracotta-light); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="hero">
+    <div class="eyebrow">SasmitaCourse · Index</div>
+    <h1>24 sessions on AI, ML, and <em class="accent">Agentic AI</em></h1>
+    <p class="lead">A weekly cohort course taught by Sasmita. From the 2017 Transformer hinge through to wiring LangGraph multi-agent flows into Databricks. Plus two supplementary MCP deep-dive lectures.</p>
+    <div class="meta">
+      <span>24 sessions · 2 MCP deep-dives</span>
+      <span>Audience: backend dev, new to AI/ML</span>
+      <span>Style: vintage paper deep notes</span>
+      <span>Last updated 2026-05-21</span>
+    </div>
+  </header>
+
+  <nav class="tracks" aria-label="Filter by track">
+    <button class="active" data-track="all">All</button>
+    <button data-track="Foundations">Foundations</button>
+    <button data-track="ANN training math">ANN training math</button>
+    <button data-track="NLP & embeddings">NLP & embeddings</button>
+    <button data-track="Transformer architecture">Transformer architecture</button>
+    <button data-track="LangChain & RAG">LangChain & RAG</button>
+    <button data-track="GraphRAG">GraphRAG</button>
+    <button data-track="Agents & LangGraph">Agents & LangGraph</button>
+    <button data-track="Databricks">Databricks</button>
+  </nav>
+
+  <div class="grid">
+<article class="card" data-track="Foundations">
+  <header class="card-head">
+    <span class="num">Session 01</span>
+    <span class="track track-foundations">Foundations</span>
+  </header>
+  <h3 class="card-title">Why 2017 Split AI in Two</h3>
+  <div class="card-slug"><code>FoundationModels-Opener</code></div>
+  <p class="card-summary">Course opener. AI's 70-year arc and why 2017 (the Transformer paper) divides classical-ML AI from foundation-model AI. Sets up the AI ⊃ ML ⊃ DL ⊃ GenAI nesting, foundation-models-as-a-service, and where agentic systems fit.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session1-FoundationModels-Opener/Session1-FoundationModels-Opener-notes.html">Read notes →</a>
+    <a class="secondary" href="Session1-FoundationModels-Opener/Session1-FoundationModels-Opener-infographic-viewer.html">Infographic</a>
+    <span class="card-date">2026-05-19</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Foundations">
+  <header class="card-head">
+    <span class="num">Session 02</span>
+    <span class="track track-foundations">Foundations</span>
+  </header>
+  <h3 class="card-title">Responsible AI + the three ML paradigms</h3>
+  <div class="card-slug"><code>ResponsibleAI-MLParadigms</code></div>
+  <p class="card-summary">OWASP Top 10 for LLM applications (v1.0 plus the v2.0 diff) and the three classical ML paradigms (supervised / unsupervised / semi-supervised). Bridge between Session 1's framing and Session 3's math.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session2-ResponsibleAI-MLParadigms/Session2-ResponsibleAI-MLParadigms-notes.html">Read notes →</a>
+    <a class="secondary" href="Session2-ResponsibleAI-MLParadigms/Session2-ResponsibleAI-MLParadigms-infographic-viewer.html">Infographic</a>
+    <span class="card-date">2026-05-20</span>
+  </footer>
+</article>
+
+<article class="card" data-track="ANN training math">
+  <header class="card-head">
+    <span class="num">Session 03</span>
+    <span class="track track-ann-training-math">ANN training math</span>
+  </header>
+  <h3 class="card-title">The perceptron and gradient descent</h3>
+  <div class="card-slug"><code>Perceptron-GradientDescent</code></div>
+  <p class="card-summary">First math-heavy session. Derives linear regression trained by gradient descent under the lecturer's "perceptron" umbrella — inputs → weighted sum → identity activation → MSE → gradient-descent update rule. Introduces the learning-rate knob.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session3-Perceptron-GradientDescent/Session3-Perceptron-GradientDescent-notes.html">Read notes →</a>
+    <a class="secondary" href="Session3-Perceptron-GradientDescent/Session3-Perceptron-GradientDescent-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="ANN training math">
+  <header class="card-head">
+    <span class="num">Session 04</span>
+    <span class="track track-ann-training-math">ANN training math</span>
+  </header>
+  <h3 class="card-title">Activation functions (and the MSE derivative)</h3>
+  <div class="card-slug"><code>ActivationFunctions</code></div>
+  <p class="card-summary">The four activation functions (step, sigmoid, tanh, ReLU) — formulas, derivatives, where each lives in a network. Plus the MSE gradient derivation the lecturer owed from Session 3, and definitions of epoch / batch size.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session4-ActivationFunctions/Session4-ActivationFunctions-notes.html">Read notes →</a>
+    <a class="secondary" href="Session4-ActivationFunctions/Session4-ActivationFunctions-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="NLP & embeddings">
+  <header class="card-head">
+    <span class="num">Session 05</span>
+    <span class="track track-nlp-and-embeddings">NLP & embeddings</span>
+  </header>
+  <h3 class="card-title">Cleaning text before it can be a number</h3>
+  <div class="card-slug"><code>TextPreprocessing</code></div>
+  <p class="card-summary">Why text needs preprocessing for ML, the Python NLP ecosystem (NLTK / Gensim / spaCy), and the classical four-step pipeline: lowercase → tokenize → stem or lemmatize → stopword-remove.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session5-TextPreprocessing/Session5-TextPreprocessing-notes.html">Read notes →</a>
+    <a class="secondary" href="Session5-TextPreprocessing/Session5-TextPreprocessing-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="NLP & embeddings">
+  <header class="card-head">
+    <span class="num">Session 06</span>
+    <span class="track track-nlp-and-embeddings">NLP & embeddings</span>
+  </header>
+  <h3 class="card-title">Text becomes a vector — three generations</h3>
+  <div class="card-slug"><code>Embeddings-Evolution</code></div>
+  <p class="card-summary">Three generations of text-to-vector: CountVectorizer → TF-IDF → Word2Vec. Each generation's limits (no context, polysemy, order-blindness) motivate the next. Introduces the Transformer paper and the encoder/decoder distinction.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session6-Embeddings-Evolution/Session6-Embeddings-Evolution-notes.html">Read notes →</a>
+    <a class="secondary" href="Session6-Embeddings-Evolution/Session6-Embeddings-Evolution-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Transformer architecture">
+  <header class="card-head">
+    <span class="num">Session 07</span>
+    <span class="track track-transformer-architecture">Transformer architecture</span>
+  </header>
+  <h3 class="card-title">The Transformer encoder (concepts)</h3>
+  <div class="card-slug"><code>TransformerEncoder</code></div>
+  <p class="card-summary">Conceptual walkthrough of the Transformer encoder — tokenization, embeddings, positional encoding at concept level, self-attention as cross-token relationship, the encoder block (attention + FFN + residual + LayerNorm), and why blocks stack 6 deep.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session7-TransformerEncoder/Session7-TransformerEncoder-notes.html">Read notes →</a>
+    <a class="secondary" href="Session7-TransformerEncoder/Session7-TransformerEncoder-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Transformer architecture">
+  <header class="card-head">
+    <span class="num">Session 08</span>
+    <span class="track track-transformer-architecture">Transformer architecture</span>
+  </header>
+  <h3 class="card-title">Positional encoding (the math)</h3>
+  <div class="card-slug"><code>PositionalEncoding</code></div>
+  <p class="card-summary">The math of positional encoding inside the Transformer. Why integer / binary schemes fail, the four properties any good PE needs, the multi-frequency sin/cos formula with worked example for d_model=4, the heatmap pattern, and add-vs-concatenate.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session8-PositionalEncoding/Session8-PositionalEncoding-notes.html">Read notes →</a>
+    <a class="secondary" href="Session8-PositionalEncoding/Session8-PositionalEncoding-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Transformer architecture">
+  <header class="card-head">
+    <span class="num">Session 09</span>
+    <span class="track track-transformer-architecture">Transformer architecture</span>
+  </header>
+  <h3 class="card-title">Multi-head self-attention</h3>
+  <div class="card-slug"><code>MultiHeadAttention</code></div>
+  <p class="card-summary">The attention sublayer end-to-end. The n×n weight matrix, the softmax(QKᵀ/√d_k)·V formula, the learned W_Q / W_K / W_V projections, multi-head with h=8 parallel heads, concat + W_O, and the full encoder block stacking.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session9-MultiHeadAttention/Session9-MultiHeadAttention-notes.html">Read notes →</a>
+    <a class="secondary" href="Session9-MultiHeadAttention/Session9-MultiHeadAttention-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Transformer architecture">
+  <header class="card-head">
+    <span class="num">Session 10</span>
+    <span class="track track-transformer-architecture">Transformer architecture</span>
+  </header>
+  <h3 class="card-title">The decoder, end-to-end</h3>
+  <div class="card-slug"><code>TransformerDecoder</code></div>
+  <p class="card-summary">The decoder block — masked self-attention (causal mask), cross-attention (Q from decoder, K/V from encoder), the autoregressive generation loop, the linear+softmax output head, temperature, and the encoder-only / decoder-only / encoder-decoder taxonomy. Closes with a Hugging Face tour.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session10-TransformerDecoder/Session10-TransformerDecoder-notes.html">Read notes →</a>
+    <a class="secondary" href="Session10-TransformerDecoder/Session10-TransformerDecoder-infographic-viewer.html">Infographic</a>
+    <span class="card-date">2026-05-18</span>
+  </footer>
+</article>
+
+<article class="card" data-track="LangChain & RAG">
+  <header class="card-head">
+    <span class="num">Session 11</span>
+    <span class="track track-langchain-and-rag">LangChain & RAG</span>
+  </header>
+  <h3 class="card-title">LangChain — the unifying layer</h3>
+  <div class="card-slug"><code>LangChain</code></div>
+  <p class="card-summary">Why LangChain exists — the portability problem across provider SDKs. init_chat_model, role-tagged messages, model parameters, .env key management. The four-product ecosystem: LangChain (build) + LangGraph (orchestrate) + LangSmith (closed-source eval) + LangFuse (open-source eval).</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session11-LangChain/Session11-LangChain-notes.html">Read notes →</a>
+    <a class="secondary" href="Session11-LangChain/Session11-LangChain-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="LangChain & RAG">
+  <header class="card-head">
+    <span class="num">Session 12</span>
+    <span class="track track-langchain-and-rag">LangChain & RAG</span>
+  </header>
+  <h3 class="card-title">RAG Part 1 — indexing</h3>
+  <div class="card-slug"><code>RAG-Indexing</code></div>
+  <p class="card-summary">The indexing half of RAG — taking a directory of documents and turning it into something an LLM can search. Four steps: load → chunk → embed → store, with real tooling choices at each step. Retrieval is deferred to Session 13.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session12-RAG-Indexing/Session12-RAG-Indexing-notes.html">Read notes →</a>
+    <a class="secondary" href="Session12-RAG-Indexing/Session12-RAG-Indexing-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="LangChain & RAG">
+  <header class="card-head">
+    <span class="num">Session 13</span>
+    <span class="track track-langchain-and-rag">LangChain & RAG</span>
+  </header>
+  <h3 class="card-title">RAG Part 2 — retrieval</h3>
+  <div class="card-slug"><code>RAG-Retrieval</code></div>
+  <p class="card-summary">The retrieval half of RAG — similarity search against the indexed store, top-k stitching into the prompt, composition as a LangChain LCEL Runnable. Includes a live debug story where similarity_search returning [] turned out to be a notebook execution-order bug.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session13-RAG-Retrieval/Session13-RAG-Retrieval-notes.html">Read notes →</a>
+    <a class="secondary" href="Session13-RAG-Retrieval/Session13-RAG-Retrieval-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="LangChain & RAG">
+  <header class="card-head">
+    <span class="num">Session 14</span>
+    <span class="track track-langchain-and-rag">LangChain & RAG</span>
+  </header>
+  <h3 class="card-title">RAG Part 3 — rerankers + hybrid search</h3>
+  <div class="card-slug"><code>Rerankers-HybridSearch</code></div>
+  <p class="card-summary">Two upgrades on top of basic RAG: cross-encoder rerankers (rescore the candidate set with a heavier model) and hybrid search (vector similarity + BM25 keyword). Plus a step-by-step revisit of the Session 12/13 pipeline with intermediate state printed.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session14-Rerankers-HybridSearch/Session14-Rerankers-HybridSearch-notes.html">Read notes →</a>
+    <a class="secondary" href="Session14-Rerankers-HybridSearch/Session14-Rerankers-HybridSearch-infographic-viewer.html">Infographic</a>
+    <span class="card-date">2026-05-19</span>
+  </footer>
+</article>
+
+<article class="card" data-track="GraphRAG">
+  <header class="card-head">
+    <span class="num">Session 15</span>
+    <span class="track track-graphrag">GraphRAG</span>
+  </header>
+  <h3 class="card-title">GraphRAG Part 1 — why graphs, Neo4j, Cypher</h3>
+  <div class="card-slug"><code>GraphRAG-Neo4j</code></div>
+  <p class="card-summary">GraphRAG opener. Why vanilla RAG isn't enough for multi-hop questions, what a graph database is, Neo4j's three editions (Community / Aura / Enterprise), connecting from Python via langchain-neo4j, and the minimum Cypher syntax — CREATE / MATCH / MERGE / WHERE / aggregation.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session15-GraphRAG-Neo4j/Session15-GraphRAG-Neo4j-notes.html">Read notes →</a>
+    <a class="secondary" href="Session15-GraphRAG-Neo4j/Session15-GraphRAG-Neo4j-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="GraphRAG">
+  <header class="card-head">
+    <span class="num">Session 16</span>
+    <span class="track track-graphrag">GraphRAG</span>
+  </header>
+  <h3 class="card-title">GraphRAG Part 2 — ingestion</h3>
+  <div class="card-slug"><code>GraphRAG-Ingestion</code></div>
+  <p class="card-summary">Wiring three complex business documents into Neo4j as both a knowledge graph and a vector store. Uses LangChain's LLMGraphTransformer to extract nodes and relationships without a hand-written ontology. Stops at vector indexing; retrieval is Session 17.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session16-GraphRAG-Ingestion/Session16-GraphRAG-Ingestion-notes.html">Read notes →</a>
+    <a class="secondary" href="Session16-GraphRAG-Ingestion/Session16-GraphRAG-Ingestion-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="GraphRAG">
+  <header class="card-head">
+    <span class="num">Session 17</span>
+    <span class="track track-graphrag">GraphRAG</span>
+  </header>
+  <h3 class="card-title">GraphRAG Part 3 — the retrieval half</h3>
+  <div class="card-slug"><code>GraphRAG-Retrieval</code></div>
+  <p class="card-summary">The two-channel retriever — structured (full-text + Cypher) + unstructured (vector). Pydantic Entities extraction, Lucene fuzzy queries, the db.index.fulltext.queryNodes Cypher pattern, and composition with RunnableParallel / RunnableLambda. Demo through four policy-domain questions.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session17-GraphRAG-Retrieval/Session17-GraphRAG-Retrieval-notes.html">Read notes →</a>
+    <a class="secondary" href="Session17-GraphRAG-Retrieval/Session17-GraphRAG-Retrieval-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Agents & LangGraph">
+  <header class="card-head">
+    <span class="num">Session 18</span>
+    <span class="track track-agents-and-langgraph">Agents & LangGraph</span>
+  </header>
+  <h3 class="card-title">From LLM to Agent — Tools, ReAct loop, LangChain</h3>
+  <div class="card-slug"><code>Agents-ReAct</code></div>
+  <p class="card-summary">From LLM to Agent. Ollama for local models, the @tool decorator, third-party tools (Tavily / Apify / ElevenLabs / GitHub / Wikipedia), and the ReAct loop via create_react_agent. Also: AI agent vs Agentic AI, why agents fail (bad tool logic, missing domain context).</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session18-Agents-ReAct/Session18-Agents-ReAct-notes.html">Read notes →</a>
+    <a class="secondary" href="Session18-Agents-ReAct/Session18-Agents-ReAct-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Agents & LangGraph">
+  <header class="card-head">
+    <span class="num">Session 19</span>
+    <span class="track track-agents-and-langgraph">Agents & LangGraph</span>
+  </header>
+  <h3 class="card-title">LangGraph Part 1 — state, nodes, edges</h3>
+  <div class="card-slug"><code>LangGraph-StateGraph</code></div>
+  <p class="card-summary">LangGraph's four primitives — State, Node, Edge, Conditional Edge — plus the build → add → compile → invoke rhythm. Three worked examples: linear greet graph, router pattern with conditional dispatch, and a hand-wired ReAct loop with MessagesState and ToolNode.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session19-LangGraph-StateGraph/Session19-LangGraph-StateGraph-notes.html">Read notes →</a>
+    <a class="secondary" href="Session19-LangGraph-StateGraph/Session19-LangGraph-StateGraph-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Agents & LangGraph">
+  <header class="card-head">
+    <span class="num">Session 20</span>
+    <span class="track track-agents-and-langgraph">Agents & LangGraph</span>
+  </header>
+  <h3 class="card-title">LangGraph Part 2 — reflection + conditional routing</h3>
+  <div class="card-slug"><code>LangGraph-Reflection</code></div>
+  <p class="card-summary">Two more LangGraph patterns. The reflection pattern (draft → critique → revise → end with LLM-as-judge) and the prebuilt create_react_agent as the one-line replacement for the hand-built ReAct loop. Plus a customer-service conditional-routing worked example.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session20-LangGraph-Reflection/Session20-LangGraph-Reflection-notes.html">Read notes →</a>
+    <a class="secondary" href="Session20-LangGraph-Reflection/Session20-LangGraph-Reflection-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Agents & LangGraph">
+  <header class="card-head">
+    <span class="num">Session 21</span>
+    <span class="track track-agents-and-langgraph">Agents & LangGraph</span>
+  </header>
+  <h3 class="card-title">LangGraph — human-in-the-loop with interrupt()</h3>
+  <div class="card-slug"><code>LangGraph-HumanInLoop</code></div>
+  <p class="card-summary">Human-in-the-loop with interrupt(). The Command(resume=...) return type, three checkpointer implementations (MemorySaver / SqliteSaver / PostgresSaver), thread_id as the session key. Worked example: task → generate_code → human_review (interrupt) → create_tests → END.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session21-LangGraph-HumanInLoop/Session21-LangGraph-HumanInLoop-notes.html">Read notes →</a>
+    <a class="secondary" href="Session21-LangGraph-HumanInLoop/Session21-LangGraph-HumanInLoop-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Agents & LangGraph">
+  <header class="card-head">
+    <span class="num">Session 22</span>
+    <span class="track track-agents-and-langgraph">Agents & LangGraph</span>
+  </header>
+  <h3 class="card-title">Subgraphs in LangGraph + first look at MCP</h3>
+  <div class="card-slug"><code>Subgraphs-MCP</code></div>
+  <p class="card-summary">Subgraphs in LangGraph (using a compiled StateGraph as a node in another) plus an intro to MCP. Two subgraph integration patterns depending on state-sharing; the Command(graph=Command.PARENT) escape hatch. MCP architecture (host / client / server) and its three primitives (tools / resources / prompts).</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session22-Subgraphs-MCP/Session22-Subgraphs-MCP-notes.html">Read notes →</a>
+    <a class="secondary" href="Session22-Subgraphs-MCP/Session22-Subgraphs-MCP-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Agents & LangGraph">
+  <header class="card-head">
+    <span class="num">MCP · L1</span>
+    <span class="track track-agents-and-langgraph">Agents & LangGraph</span>
+  </header>
+  <h3 class="card-title">Agents, Tools, and what MCP is for</h3>
+  <div class="card-slug"><code>Cursor-MCP-LangchainAgent</code></div>
+  <p class="card-summary">MCP-deep-dive Lecture 1. Agents as LLM + tools + memory + planning. LangChain's @tool decorator, why a flat list of tools doesn't scale, and the framing of MCP as the "USB-C of LLM tools" — JSON-RPC over stdio/HTTP with a shared discovery mechanism. Tour of Cursor wired to ~30 MCP servers as the consumer-side reference.</p>
+  <footer class="card-foot">
+    <a class="primary" href="MCP/Cursor-MCP-LangchainAgent-notes.html">Read notes →</a>
+    <a class="secondary" href="MCP/Cursor-MCP-LangchainAgent-infographic-viewer.html">Infographic</a>
+    <span class="card-date">2026-05-20</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Agents & LangGraph">
+  <header class="card-head">
+    <span class="num">MCP · L2</span>
+    <span class="track track-agents-and-langgraph">Agents & LangGraph</span>
+  </header>
+  <h3 class="card-title">Build your own MCP server and client</h3>
+  <div class="card-slug"><code>Build-your-own-MCPServer_Client</code></div>
+  <p class="card-summary">MCP-deep-dive Lecture 2 — the producer side. FastMCP in ~30 lines of Python: instantiate, decorate functions with @mcp.tool / @mcp.resource / @mcp.prompt, run. Matching client lists capabilities and calls each. When to write your own server (domain logic, security, team standardisation) vs lean on third-party.</p>
+  <footer class="card-foot">
+    <a class="primary" href="MCP/Build-your-own-MCPServer_Client-notes.html">Read notes →</a>
+    <a class="secondary" href="MCP/Build-your-own-MCPServer_Client-infographic-viewer.html">Infographic</a>
+    <span class="card-date">2026-05-20</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Databricks">
+  <header class="card-head">
+    <span class="num">Session 23</span>
+    <span class="track track-databricks">Databricks</span>
+  </header>
+  <h3 class="card-title">Databricks for AI engineers — platform tour</h3>
+  <div class="card-slug"><code>Databricks-Platform</code></div>
+  <p class="card-summary">First of two Databricks sessions. Unity Catalog (catalog → schema → table hierarchy), the medallion architecture, the Genie text-to-SQL agent and its Conversation API. Tour of Lakebase, AI/BI Dashboards, MLflow, Playground, Databricks Apps. Sets up Session 24's hands-on build.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session23-Databricks-Platform/Session23-Databricks-Platform-notes.html">Read notes →</a>
+    <a class="secondary" href="Session23-Databricks-Platform/Session23-Databricks-Platform-infographic-viewer.html">Infographic</a>
+    <span class="card-date">—</span>
+  </footer>
+</article>
+
+<article class="card" data-track="Databricks">
+  <header class="card-head">
+    <span class="num">Session 24</span>
+    <span class="track track-databricks">Databricks</span>
+  </header>
+  <h3 class="card-title">Wiring LangGraph into Databricks (Mosaic AI Agent Framework)</h3>
+  <div class="card-slug"><code>LangGraph-MosaicAI</code></div>
+  <p class="card-summary">Wiring LangGraph multi-agent flows into Databricks via the Mosaic AI Agent Framework — GenieAgent, UCFunctionToolkit for system.ai.* functions, the supervisor pattern in pure LangGraph, and the MLflow ChatAgent wrapper that adapts the compiled graph to Databricks' deployment surface.</p>
+  <footer class="card-foot">
+    <a class="primary" href="Session24-LangGraph-MosaicAI/Session24-LangGraph-MosaicAI-notes.html">Read notes →</a>
+    <a class="secondary" href="Session24-LangGraph-MosaicAI/Session24-LangGraph-MosaicAI-infographic-viewer.html">Infographic</a>
+    <span class="card-date">2026-05-20</span>
+  </footer>
+</article>
+  </div>
+
+  <footer class="doc">
+    <p>SasmitaCourse · 24 sessions + 2 MCP deep-dives · index built 2026-05-21 · vintage paper style.<br>
+    Each card links to its session's full deep notes (.html) and standalone infographic (.svg).<br>
+    Conventions: <a href="CLAUDE.md">CLAUDE.md</a> · rename history: <a href="RENAMING-LOG.md">RENAMING-LOG.md</a></p>
+  </footer>
+
+</div>
+
+<script>
+  // Track filter
+  (function () {
+    var buttons = document.querySelectorAll('nav.tracks button');
+    var cards   = document.querySelectorAll('.card');
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        buttons.forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var t = btn.getAttribute('data-track');
+        cards.forEach(function (c) {
+          var match = (t === 'all') || (c.getAttribute('data-track') === t);
+          c.style.display = match ? '' : 'none';
+        });
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

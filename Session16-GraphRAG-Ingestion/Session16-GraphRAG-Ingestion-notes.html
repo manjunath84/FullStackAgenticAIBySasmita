@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 16 — GraphRAG, end-to-end ingestion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 60px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(44px, 6.5vw, 78px); line-height: 0.98; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 640px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 600px; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 24px; line-height: 1.45; color: var(--ink); padding: 32px 0 32px 32px; border-left: 4px solid var(--terracotta); margin: 40px 0 60px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -30px; font-size: 100px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 80px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.05; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 32px 0 14px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 14px 0 22px 24px; color: var(--ink-soft); }
+.chapter ul li, .chapter ol li { margin-bottom: 10px; font-size: 17px; line-height: 1.7; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 22px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; border-left: 4px solid var(--ochre); }
+pre code { background: transparent; border: none; color: var(--paper); padding: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 20px 26px; margin: 26px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 22px 0; font-size: 15.5px; color: var(--ink); line-height: 1.65; }
+.correction strong { color: var(--terracotta); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 30px; margin: 32px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 16px; margin-bottom: 12px; }
+.callout p:last-child { margin-bottom: 0; }
+table.tbl { width: 100%; border-collapse: collapse; margin: 22px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+table.tbl th, table.tbl td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.tbl th { background: var(--paper-2); font-weight: 700; color: var(--ink); letter-spacing: 1px; font-size: 11px; text-transform: uppercase; }
+table.tbl td { color: var(--ink-soft); }
+table.tbl tr:hover td { background: rgba(248, 230, 207, 0.3); }
+figure.infographic { margin: 36px -40px 36px; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic img, figure.infographic svg { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) { figure.infographic { margin: 28px -20px; } }
+figure.diagram { margin: 32px -20px; background: var(--paper); border: 1px solid var(--line); padding: 20px 24px 14px; box-shadow: 0 8px 24px rgba(31, 26, 20, 0.06); }
+figure.diagram svg { width: 100%; height: auto; display: block; }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-mute); letter-spacing: 2px; margin-top: 12px; text-align: center; }
+@media (max-width: 900px) { figure.diagram { margin: 24px -16px; padding: 14px 14px 10px; } }
+.glossary { margin-top: 80px; padding-top: 48px; border-top: 2px solid var(--ink); }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 18px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 80px; padding-top: 32px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 44px; }
+  .thesis { font-size: 20px; padding-left: 20px; }
+  .chapter h2 { font-size: 30px; }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 16</div>
+    <div class="toc-title">GraphRAG,<br>ingestion side.</div>
+    <ol>
+      <li><a href="#s1">Where we are</a></li>
+      <li><a href="#s2">Why a graph + vectors</a></li>
+      <li><a href="#s3">Neo4j as two-in-one</a></li>
+      <li><a href="#s4">APOC + connection</a></li>
+      <li><a href="#s5">The corpus</a></li>
+      <li><a href="#s6">Chunking</a></li>
+      <li><a href="#s7">LLMGraphTransformer</a></li>
+      <li><a href="#s8">The retrieval problem &amp; fix</a></li>
+      <li><a href="#s9">Vector indexing</a></li>
+      <li><a href="#s10">Visual summary</a></li>
+      <li><a href="#s11">Imports map</a></li>
+      <li><a href="#s12">Forward to Session 17</a></li>
+      <li><a href="#s13">Pitfalls</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      67 MIN<br>
+      2 SPEAKERS<br>
+      2026-05-03
+      <div class="rev-badge">REV v1</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 16 · GRAPHRAG · INGESTION</div>
+      <h1>Build the graph.<br><span class="accent">Index the vectors.</span></h1>
+      <p class="hero-sub">One Neo4j database, two retrievers, three flags. Today is the half that runs offline — tomorrow's session is the half that runs every question.</p>
+      <div class="hero-meta">
+        <span>67 MIN</span>
+        <span>LANGCHAIN · NEO4J · APOC</span>
+        <span>3 BUSINESS DOCS · gpt-4o-mini</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      GraphRAG is plain RAG with a <em>second retriever</em> in parallel. The second retriever doesn't query a chunk store — it queries a <em>graph</em> built from those same documents by an LLM. Today is "build the graph and the vectors." Tomorrow is "use them."
+    </div>
+
+    <div class="correction" style="margin-bottom: 40px;">
+      <strong>FIVE FIXES TO CARRY FORWARD</strong><br>
+      (1) The "entity" secondary label is literally <code>__Entity__</code> with <em>double underscores</em> on both sides — verify with <code>MATCH (n) RETURN DISTINCT labels(n)</code>.
+      (2) The parameter is <code>baseEntityLabel</code> (camelCase), not <code>base_entity_label</code>.
+      (3) <code>LLMGraphTransformer</code> lives in <code>langchain_experimental</code> — pin it.
+      (4) <code>pre_delete_collection=True</code> re-bills your embeddings every run; comment it out after the first successful index.
+      (5) AssemblyAI typos: "Fabco" → <strong>FobCo</strong>, "Richmond AG" → <strong>RhineChem AG</strong>, "Dosh Bank" → <strong>Deutsche Handelsbank</strong>, "Inno Terms" → <strong>Incoterms</strong>, "Med Fries" → <strong>MedFridge</strong>, "Epoch" → <strong>APOC</strong>.
+    </div>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">CHAPTER 01</div>
+      <h2>Where we are</h2>
+      <p>Session 15 covered the Cypher fundamentals — nodes, relationships, labels, properties, <code>MATCH</code>, <code>WHERE</code>, aggregation — and surveyed Neo4j editions (Community / Aura / Enterprise). Session 16 picks up the second project: wire a real document corpus into Neo4j as a <strong>knowledge graph and a vector store at the same time</strong>, using LangChain's <code>LLMGraphTransformer</code> to do the unstructured-text → nodes-and-relationships extraction. The session stops at the indexing step. Session 17 covers retrieval — fuzzy entity extraction from the user's question, graph traversal, vector similarity, and a <code>RunnableParallel</code> chain that fuses both before the LLM call.</p>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">CHAPTER 02</div>
+      <h2>Why a graph in addition to vectors</h2>
+      <p>Vector RAG works well when answers are <em>locally present</em> in some chunk — one paragraph holds the answer and cosine similarity finds it. It struggles when the answer is <strong>scattered across reasoning chains</strong>: clause 14(b) refers to a memo FIN-HS-09, which itself depends on a definition in Annex D. Chunking can break those bridges; similarity over a chunk that mentions "downgrade" doesn't know that "downgrade" is gated by a separate adoption-score clause elsewhere.</p>
+      <p>A graph stores entities (companies, contracts, batches, SKUs, clauses) and the relationships <em>between</em> them as first-class objects. A question like <em>"does this 22-minute excursion trigger quarantine, and can it be pre-released?"</em> can be answered by traversing <code>Batch ─[RELEASED_BY]→ Distributor ─[FOLLOWS_SOP]→ Policy</code>. The graph gives the LLM a relational map; the vector store gives it the raw text. GraphRAG sends <strong>both</strong> to the LLM in the same prompt.</p>
+      <div class="correction"><strong>WORTH SAYING OUT LOUD.</strong> "Graph DB makes the LLM smarter" overstates what's happening. Like RAG, GraphRAG only changes what shows up in the LLM's <em>input context</em>. The model isn't trained on the graph; it just sees a few extra lines of <code>node — REL → node</code> triples alongside the retrieved text chunks before it answers.</div>
+      <div class="bridge"><span class="bridge-label">JAVA / SPRING BRIDGE</span>
+        <p>Think of the graph layer as a <strong>read-optimised projection</strong> built off the same documents — like a Spring <code>@QueryProjection</code> or a CQRS read model. The source of truth is still the document text (your "command side"); the graph is a derived view shaped for relational lookup. The vector index is a second derived view shaped for similarity lookup. Both project from one source.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">CHAPTER 03</div>
+      <h2>Neo4j as a two-in-one store</h2>
+      <p>The lecturer's pitch: with the right plugins, <strong>one Neo4j database holds both the graph and the embeddings</strong>. No separate Pinecone / Chroma / FAISS. Mechanically:</p>
+      <ul>
+        <li>Each document chunk is stored as a <strong>node with label <code>Document</code></strong>.</li>
+        <li>That node gets a <code>text</code> property (the chunk text) and an <code>embedding</code> property (a 1,536-dimensional vector for <code>text-embedding-3-small</code>).</li>
+        <li>A <strong>vector index</strong> is built over the <code>embedding</code> property; cosine similarity uses Neo4j's built-in HNSW backend.</li>
+        <li>Separately, each chunk's content is run through an LLM (<code>gpt-4o-mini</code> here) that extracts entities + relationships; those become additional nodes (<code>Company</code>, <code>Batch</code>, <code>Clause</code>, ...) and edges (<code>RELEASED_BY</code>, <code>QUARANTINED</code>, ...), all linked back to the source <code>Document</code> node by a <code>MENTIONS</code> edge.</li>
+      </ul>
+      <p>So the same physical database stores: the raw chunks (with vectors) <em>and</em> the LLM-derived knowledge graph (with relationships). At query time the application hits both in parallel.</p>
+      <div class="callout"><span class="callout-label">REMEMBER THIS</span>
+        <p>"Vector DB" inside Neo4j is just <em>a property on a node + an HNSW index over that property</em>. It is not a separate engine. The same Cypher you learned in Session 15 still applies; you simply have one more index type available.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">CHAPTER 04</div>
+      <h2>Prerequisites: APOC, then a connection</h2>
+      <p>Before anything below runs you need <strong>APOC</strong> ("<em>A</em>wesome <em>P</em>rocedures <em>O</em>n <em>C</em>ypher") installed as a Neo4j plugin. Neo4j Desktop → your database → <strong>Plugins → APOC → Install</strong>. LangChain's <code>Neo4jGraph.refresh_schema()</code> calls <code>apoc.meta.schema()</code> under the hood; without APOC you get cryptic <em>procedure-not-found</em> errors. (Bloom and the GenAI plugin are nice-to-have; APOC is the only hard requirement for this code path.)</p>
+      <p>The <code>.env</code> file holds four secrets — keep them out of source control:</p>
+<pre><code>NEO4J_URI=bolt://127.0.0.1:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=&lt;your-password&gt;
+NEO4J_DATABASE=batch5demo
+OPENAI_API_KEY=&lt;your-key&gt;</code></pre>
+      <p>Loading the env, then creating the database programmatically:</p>
+<pre><code>import os, re
+from dotenv import load_dotenv
+from neo4j import GraphDatabase
+
+load_dotenv(".env")
+NEO4J_URI      = os.getenv("NEO4J_URI", "bolt://127.0.0.1:7687")
+NEO4J_USERNAME = os.getenv("NEO4J_USERNAME", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "")
+NEO4J_DATABASE = os.getenv("NEO4J_DATABASE", "batch5demo")
+
+def ensure_database_exists() -&gt; None:
+    """Create the named database if missing (Neo4j 5+, requires system DB permission)."""
+    if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", NEO4J_DATABASE):
+        raise ValueError(f"Unsafe NEO4J_DATABASE name: {NEO4J_DATABASE!r}")
+    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
+    with driver.session(database="system") as session:
+        session.run(f"CREATE DATABASE `{NEO4J_DATABASE}` IF NOT EXISTS")
+    driver.close()
+
+ensure_database_exists()</code></pre>
+      <p><code>CREATE DATABASE ... IF NOT EXISTS</code> is itself a Cypher statement — same language from Session 15, just executed against the <code>system</code> database. The lecturer's first run failed because the <code>.env</code> file wasn't saved (and later because the file extension was wrong); both are normal first-time gotchas. The <code>re.match</code> guard exists because the database name is interpolated into a Cypher string and Cypher only allows <code>[a-zA-Z][a-zA-Z0-9_-]*</code> for unquoted database names.</p>
+      <p>Then build the LangChain wrapper:</p>
+<pre><code>from langchain_neo4j import Neo4jGraph
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+chat       = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+kg = Neo4jGraph(
+    url=NEO4J_URI, username=NEO4J_USERNAME,
+    password=NEO4J_PASSWORD, database=NEO4J_DATABASE,
+)
+kg.refresh_schema()
+print("Connection established and schema refreshed.")</code></pre>
+      <p><code>kg</code> is the long-lived handle for everything that follows — <code>kg.query(...)</code> for raw Cypher, <code>kg.add_graph_documents(...)</code> for bulk writes. <code>refresh_schema()</code> pings the database for its current node-labels / relationship-types so LangChain can answer "what's in here?" questions later.</p>
+      <div class="bridge"><span class="bridge-label">JAVA / SPRING BRIDGE</span>
+        <p><code>Neo4jGraph(...)</code> is the <code>DataSource</code> + <code>JdbcTemplate</code> rolled into one bean. <code>kg.query(...)</code> is your raw <code>execute(sql)</code>; the higher-level <code>kg.add_graph_documents(...)</code> is a domain-specific repository method built on top.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">CHAPTER 05</div>
+      <h2>The corpus: three deliberately messy business documents</h2>
+      <p>The code uses three short policy documents — picked because they're the kind of thing where pure-vector RAG fails. Every line is load-bearing and answers depend on conditional rules that reference each other:</p>
+      <ol>
+        <li><strong>MedFridge cold-chain policy</strong> — batch B-4421 of MF-Insulin-Pro, courier Apex Cold, distributor NordicCare; quarantine rules vs pre-release exception conditioned on excursion duration, a Medical Affairs email, and a residual-risk form.</li>
+        <li><strong>HelioStack SaaS — Enterprise Agreement EA-2024-771 with ACME Corp</strong> — committed ARR, downgrade clauses 14(b) / 14(c), ASC 606 revenue memo FIN-HS-09, adoption-score gate at day 180.</li>
+        <li><strong>FobCo / RhineChem trade brief</strong> — letter of credit LCI-9001 from Deutsche Handelsbank, UCP 600 field 46A, Incoterms 2020 (CIF Hamburg vs FOB-on-B/L discrepancy), force-majeure addendum FM-22.</li>
+      </ol>
+      <div class="correction"><strong>TRANSCRIPT TYPOS.</strong> AssemblyAI heard several proper nouns wrong. The lecturer's "Fabco Mumbai" is <strong>FobCo</strong>; "Richmond AG" / "Rinchaim" is <strong>RhineChem AG</strong>; "Dosh Bank" is <strong>Deutsche Handelsbank</strong>; "Inno Terms" is <strong>Incoterms 2020</strong>; "Med Fries" / "Medfries" is <strong>MedFridge</strong>; "Asim Corp" is <strong>ACME Corp</strong>; "Aura 1" is <strong>AuraDB</strong>; "Epoch" is <strong>APOC</strong>; "Sushmita" / "Smita" is the instructor <strong>Sasmita</strong>. The actual Python literals use the corrected forms.</div>
+      <p>These documents are wrapped as <code>langchain_core.documents.Document</code> instances with <code>page_content</code> (the text) and a <code>metadata</code> dict (title, source, domain). <code>Document</code> is the same envelope used in Project 1's RAG code.</p>
+<pre><code>from langchain_core.documents import Document
+
+raw_documents = [
+    Document(
+        page_content="POLICY PACK: MedFridge Ltd ...",
+        metadata={"title":  "MedFridge cold-chain rules",
+                  "source": "business:medfridge-policy-pack",
+                  "domain": "pharma_logistics"},
+    ),
+    # ... HelioStack EA, FobCo LC ...
+]</code></pre>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">CHAPTER 06</div>
+      <h2>Chunking — same as plain RAG</h2>
+      <p>Nothing new here. Same <code>TokenTextSplitter</code> used in Project 1, same <code>chunk_size=512</code>, <code>chunk_overlap=24</code>.</p>
+<pre><code>from langchain_text_splitters import TokenTextSplitter
+
+text_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=24)
+documents     = text_splitter.split_documents(raw_documents)</code></pre>
+      <p>These chunks are what get embedded <em>and</em> what get fed to the LLM for entity extraction. One chunk → one <code>Document</code> node in Neo4j → one set of derived entity nodes pointing back to it via <code>MENTIONS</code>.</p>
+      <div class="callout"><span class="callout-label">A NOTE ON UNITS</span>
+        <p>"Chunk size 512" here means <strong>512 tokens</strong> (because <code>TokenTextSplitter</code> counts tokens), not 512 characters. A token is roughly ¾ of a word for English text. Don't confuse "chunk" (a slice of text) with "embedding dimension" (the length of the vector that represents that slice — 1,536 for <code>text-embedding-3-small</code>).</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">CHAPTER 07</div>
+      <h2>The new bit: <code>LLMGraphTransformer</code></h2>
+      <p>This is the lift that makes GraphRAG cheap to set up. You hand it an LLM and a list of <code>Document</code> chunks. It returns <code>GraphDocument</code> objects — Python objects containing nodes, relationships, and a back-pointer to the source document — <em>without you having to define any ontology</em>.</p>
+<pre><code>from langchain_experimental.graph_transformers import LLMGraphTransformer
+
+llm_transformer  = LLMGraphTransformer(llm=chat)
+graph_documents  = llm_transformer.convert_to_graph_documents(documents)
+print(graph_documents[0])  # inspect what came back</code></pre>
+      <p>Internally, <code>convert_to_graph_documents</code> prompts the LLM with each chunk and asks it to extract entities and the relationships between them as structured JSON. The result is a list of <code>GraphDocument</code>s, each with:</p>
+      <ul>
+        <li><code>nodes</code>: e.g. <code>Node(id='ACME Corp', type='Company', properties={})</code></li>
+        <li><code>relationships</code>: e.g. <code>Relationship(source=..., target=..., type='SIGNED_AGREEMENT')</code></li>
+        <li><code>source</code>: the original <code>Document</code> chunk</li>
+      </ul>
+      <p>At this point <strong>nothing has been written to Neo4j yet</strong> — <code>graph_documents</code> is a Python list in memory.</p>
+      <div class="correction"><strong>EXPERIMENTAL.</strong> <code>LLMGraphTransformer</code> lives in <code>langchain_experimental</code>, not the stable LangChain core. API surface and prompt internals can change between versions; pin <code>langchain-experimental</code> in <code>requirements.txt</code> when you build anything production-shaped.</div>
+
+      <h3>What the LLM actually decides</h3>
+      <p>Two things to internalise:</p>
+      <ol>
+        <li><strong>The "schema" is whatever the LLM picks.</strong> Node types might be <code>Company</code>, <code>Product</code>, <code>Clause</code>, <code>Batch</code>, <code>Person</code>, <code>Currency</code>, ... — whatever this prompt produces for these documents. Run it twice and you'll likely get slightly different shapes. That's the price of not specifying an ontology upfront.</li>
+        <li><strong>Node properties usually come back empty.</strong> <code>LLMGraphTransformer</code> by default extracts entities and relationships but doesn't try to populate property dictionaries on the nodes. The substance lives in the <strong>node <code>id</code></strong> (a human-readable string like <code>"ACME Corp"</code> or <code>"Batch B-4421"</code>) and the <strong>relationship type</strong> (like <code>SIGNED_AGREEMENT</code>). If you need rich properties on each entity you can pass <code>node_properties=True</code> (or a list of allowed keys) to the constructor — at the cost of more tokens per chunk and slower extraction.</li>
+      </ol>
+      <div class="callout"><span class="callout-label">PICK A STRONGER MODEL FOR EXTRACTION</span>
+        <p>The lecturer used <code>gpt-4o-mini</code> to save money. That's fine for class. In production the <strong>graph-extraction step is where model quality pays off</strong>: a stronger reasoning model picks up more entities, deduplicates them better, and produces cleaner relationship labels. Retrieval cost dwarfs the cost of one good extraction run — extraction happens once per document; retrieval happens on every question.</p>
+      </div>
+      <div class="bridge"><span class="bridge-label">JAVA / SPRING BRIDGE</span>
+        <p><code>LLMGraphTransformer</code> is shaped like a <code>BeanPostProcessor</code> that scans arbitrary input and synthesises bean definitions on the fly. The catch: the "definitions" are non-deterministic. Two runs over the same input can produce different bean wiring. <strong>Where the analogy breaks:</strong> Spring's processors are deterministic — same input, same beans. Treat <code>LLMGraphTransformer</code>'s output as a starting point you might want to review, especially for high-stakes corpora.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">CHAPTER 08</div>
+      <h2>The retrieval problem this creates — and the fix</h2>
+      <p>Recall from Session 15: to query a Cypher graph you write things like <code>MATCH (p:Person) RETURN p</code> — you need to <strong>know the label</strong> to match on. If the LLM has invented 30 different node types across 3 documents, retrieval becomes a nightmare. You'd have to enumerate every possible label.</p>
+      <p>LangChain's fix: tell <code>add_graph_documents</code> to stamp <em>every</em> extracted node with a second, <em>common</em> label — <code>__Entity__</code>. The original LLM-chosen label stays (so a node can still be <code>Company</code>, <code>Batch</code>, <code>Clause</code>, ...) but it gets <code>__Entity__</code> <em>in addition</em>. From Session 15 you already know a Cypher node can carry multiple labels (<code>:Company:TechCompany</code>) — this is just that same feature put to work.</p>
+<pre><code>kg.add_graph_documents(
+    graph_documents,
+    include_source=True,
+    baseEntityLabel=True,
+)</code></pre>
+      <p>Two flags do the heavy lifting:</p>
+      <table class="tbl">
+        <thead><tr><th>Flag</th><th>What it does</th><th>Why you want it</th></tr></thead>
+        <tbody>
+          <tr><td><code>baseEntityLabel=True</code></td><td>Adds the secondary label <code>__Entity__</code> to every node, plus a uniqueness constraint on <code>id</code></td><td>One label to match on at retrieval time; deduplication of repeated entities across chunks</td></tr>
+          <tr><td><code>include_source=True</code></td><td>Creates a <code>Document</code> node for each source chunk and links every extracted entity to it via <code>[:MENTIONS]</code></td><td>Lets you trace any answer back to the chunk it came from (provenance)</td></tr>
+        </tbody>
+      </table>
+      <div class="correction"><strong>WHAT THE LABEL IS ACTUALLY CALLED.</strong> The lecturer said "the secondary label is <em>entity</em>." Close, but the literal label written into Neo4j is <code>__Entity__</code> — with double underscores on both sides. You can verify by opening Neo4j Browser and running <code>MATCH (n) RETURN DISTINCT labels(n)</code>. This matters because next session's fulltext index is created with <code>FOR (e:__Entity__) ON EACH [e.id]</code> — get the underscores wrong and the index doesn't apply.</div>
+      <div class="correction"><strong>CAMEL-CASE, NOT SNAKE-CASE.</strong> The parameter is <code>baseEntityLabel</code> (camelCase). LangChain accepts both <code>baseEntityLabel</code> and <code>include_source</code> here, so it looks like it doesn't matter — but the camelCase form is what's documented and what later library versions standardise on.</div>
+
+      <h3>Topology after <code>add_graph_documents</code></h3>
+      <p>After the call, the graph looks like the diagram below — one <code>Document</code> node per chunk, fanning out via <code>MENTIONS</code> to the LLM-extracted entities, with domain relationships between those entities:</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="d1-arrow-ink" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#1f1a14"/></marker>
+            <marker id="d1-arrow-teal" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#2a5d62"/></marker>
+            <marker id="d1-arrow-terr" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#b8472e"/></marker>
+          </defs>
+          <!-- center Document node -->
+          <rect x="290" y="20" width="180" height="70" fill="#2a5d62" stroke="#1f1a14" stroke-width="2"/>
+          <text x="380" y="48" font-family="JetBrains Mono, monospace" font-size="13" fill="#f5efe6" text-anchor="middle" font-weight="700">:Document</text>
+          <text x="380" y="68" font-family="JetBrains Mono, monospace" font-size="10" fill="#5ba0a8" text-anchor="middle">chunk #4</text>
+          <text x="380" y="82" font-family="JetBrains Mono, monospace" font-size="10" fill="#5ba0a8" text-anchor="middle">text + embedding</text>
+
+          <!-- entity nodes -->
+          <ellipse cx="100" cy="200" rx="85" ry="48" fill="#f8e6cf" stroke="#1f1a14" stroke-width="1.8"/>
+          <text x="100" y="190" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14" text-anchor="middle">:Company</text>
+          <text x="100" y="206" font-family="JetBrains Mono, monospace" font-size="10" fill="#b8472e" text-anchor="middle" font-weight="700">:__Entity__</text>
+          <text x="100" y="222" font-family="JetBrains Mono, monospace" font-size="10" fill="#4a4239" text-anchor="middle">id: "MedFridge"</text>
+
+          <ellipse cx="380" cy="280" rx="85" ry="48" fill="#f8e6cf" stroke="#1f1a14" stroke-width="1.8"/>
+          <text x="380" y="270" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14" text-anchor="middle">:Batch</text>
+          <text x="380" y="286" font-family="JetBrains Mono, monospace" font-size="10" fill="#b8472e" text-anchor="middle" font-weight="700">:__Entity__</text>
+          <text x="380" y="302" font-family="JetBrains Mono, monospace" font-size="10" fill="#4a4239" text-anchor="middle">id: "Batch B-4421"</text>
+
+          <ellipse cx="660" cy="200" rx="85" ry="48" fill="#f8e6cf" stroke="#1f1a14" stroke-width="1.8"/>
+          <text x="660" y="190" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14" text-anchor="middle">:Distributor</text>
+          <text x="660" y="206" font-family="JetBrains Mono, monospace" font-size="10" fill="#b8472e" text-anchor="middle" font-weight="700">:__Entity__</text>
+          <text x="660" y="222" font-family="JetBrains Mono, monospace" font-size="10" fill="#4a4239" text-anchor="middle">id: "NordicCare"</text>
+
+          <!-- MENTIONS edges from doc to entities -->
+          <line x1="295" y1="85" x2="170" y2="170" stroke="#2a5d62" stroke-width="1.8" marker-end="url(#d1-arrow-teal)"/>
+          <line x1="380" y1="92" x2="380" y2="226" stroke="#2a5d62" stroke-width="1.8" marker-end="url(#d1-arrow-teal)"/>
+          <line x1="465" y1="85" x2="590" y2="170" stroke="#2a5d62" stroke-width="1.8" marker-end="url(#d1-arrow-teal)"/>
+
+          <text x="200" y="125" font-family="JetBrains Mono, monospace" font-size="10" fill="#2a5d62" font-weight="700">MENTIONS</text>
+          <text x="395" y="160" font-family="JetBrains Mono, monospace" font-size="10" fill="#2a5d62" font-weight="700">MENTIONS</text>
+          <text x="510" y="125" font-family="JetBrains Mono, monospace" font-size="10" fill="#2a5d62" font-weight="700">MENTIONS</text>
+
+          <!-- domain edges between entities -->
+          <line x1="185" y1="200" x2="297" y2="265" stroke="#b8472e" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#d1-arrow-terr)"/>
+          <line x1="465" y1="265" x2="577" y2="210" stroke="#b8472e" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#d1-arrow-terr)"/>
+          <text x="225" y="250" font-family="JetBrains Mono, monospace" font-size="9" fill="#b8472e" font-weight="700">RELEASED</text>
+          <text x="500" y="245" font-family="JetBrains Mono, monospace" font-size="9" fill="#b8472e" font-weight="700">SHIPPED_TO</text>
+        </svg>
+        <figcaption>FIG. 1 — One Document node per chunk · MENTIONS in teal · domain edges (dashed terracotta) between entities</figcaption>
+      </figure>
+
+      <p>The lecturer's database after loading had <strong>25 nodes</strong> all sharing the <code>__Entity__</code> label plus their LLM-chosen labels, plus a small set of <code>Document</code> nodes connected by <code>MENTIONS</code>.</p>
+      <div class="bridge"><span class="bridge-label">JAVA / SPRING BRIDGE</span>
+        <p><code>__Entity__</code> is a <strong>marker interface</strong> for the retrieval layer. The original label (<code>Company</code>, <code>Batch</code>) describes <em>what the thing is</em>; <code>__Entity__</code> just says <em>"this is searchable in our knowledge graph."</em> Next session's retrieval code matches on <code>__Entity__</code> to be polymorphic over node types — same way you might match on <code>Identifiable</code> to be polymorphic over JPA entity classes.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">CHAPTER 09</div>
+      <h2>Indexing the vectors — Neo4j as a vector store</h2>
+      <p>The graph half is done. The vector half uses <code>Neo4jVector.from_documents</code>, which:</p>
+      <ol>
+        <li>Calls the embedding model for each <code>Document</code> chunk.</li>
+        <li>Stores the resulting vector as a property on a <code>Document</code>-labelled node in Neo4j.</li>
+        <li>Creates a Neo4j <strong>vector index</strong> so cosine-similarity lookups are fast.</li>
+      </ol>
+<pre><code>from langchain_neo4j import Neo4jVector
+
+vector_index = Neo4jVector.from_documents(
+    documents=documents,                  # the chunked Document list from §6
+    embedding=embeddings,                 # OpenAIEmbeddings instance
+    url=NEO4J_URI, username=NEO4J_USERNAME,
+    password=NEO4J_PASSWORD, database=NEO4J_DATABASE,
+    index_name="graphrag_classnote_vector",
+    node_label="Document",                # which nodes get the embedding property
+    embedding_node_property="embedding",  # the property name for the vector
+    text_node_property="text",            # the property name for the chunk text
+    pre_delete_collection=True,
+)</code></pre>
+      <p>Key parameters:</p>
+      <ul>
+        <li><strong><code>node_label="Document"</code></strong> — pick which nodes get embeddings. Here we embed the source chunks (one chunk = one <code>Document</code> node). You could in principle embed any other label (e.g. every <code>Clause</code>), but indexing the chunks is the common pattern because the chunk text is what gets stuffed back into the LLM prompt at retrieval time.</li>
+        <li><strong><code>embedding_node_property="embedding"</code></strong> — the property name where the vector is stored. After this runs, every <code>Document</code> node has an <code>embedding</code> property of length 1,536.</li>
+        <li><strong><code>text_node_property="text"</code></strong> — the property name for the chunk text itself. If a <code>text</code> property doesn't already exist, this creates it.</li>
+        <li><strong><code>index_name="graphrag_classnote_vector"</code></strong> — names the vector index. Useful when you have multiple indexes (different corpora, different label families) in the same database.</li>
+      </ul>
+      <div class="correction"><strong><code>pre_delete_collection=True</code> IS A DEVELOPMENT-ONLY SWITCH.</strong> Setting this <em>drops and rebuilds</em> the entire vector index every time the script runs. Convenient when you're iterating, but every rerun costs another full embeddings invoice. <strong>In production, embed once, comment this block out, and let retrieval work against the cached index.</strong> The lecturer explicitly called this out: indexing is offline and runs once; retrieval is online and runs every question.</div>
+
+      <h3>Why the lecturer pointed at one specific node</h3>
+      <p>The <code>Document</code> nodes already had a <code>text</code> property by the time <code>Neo4jVector.from_documents</code> ran, because <code>add_graph_documents(..., include_source=True)</code> had created them earlier and copied the chunk text into <code>text</code>. So <code>Neo4jVector.from_documents</code> here only needs to <em>add</em> the <code>embedding</code> property and build the index — it doesn't re-create the nodes. The two phases (graph + vector) layer onto the same <code>Document</code> nodes.</p>
+      <div class="callout"><span class="callout-label">REMEMBER THIS</span>
+        <p>The non-<code>Document</code> entity nodes (<code>:Company:__Entity__</code>, <code>:Batch:__Entity__</code>, ...) are <strong>not</strong> embedded. The vector store only indexes the chunks. Retrieval over entities happens by a different mechanism — fuzzy fulltext search on the entity <code>id</code>, which we'll set up in Session 17.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">CHAPTER 10</div>
+      <h2>What just happened, in one picture</h2>
+      <p>The end state of this session is a single Neo4j database that holds three things layered together:</p>
+      <ol>
+        <li><strong>Document nodes</strong> — one per chunk — carrying <code>text</code> and <code>embedding</code> properties, indexed by a Neo4j vector index for similarity search.</li>
+        <li><strong>Entity nodes</strong> — LLM-extracted from each chunk — carrying their LLM-chosen primary label <em>and</em> a shared <code>__Entity__</code> secondary label.</li>
+        <li><strong>Relationships</strong> — <code>MENTIONS</code> from each <code>Document</code> to the entities it spawned, plus domain edges (<code>RELEASED_BY</code>, <code>CARRIED</code>, <code>SIGNED_AGREEMENT</code>, etc.) between entities.</li>
+      </ol>
+      <p>Visualise the database (Neo4j Browser → click on any <code>Document</code> node) and you'll see a "hub" pattern: the chunk in the centre, every entity it mentions splayed around it. Click an entity and you'll see the domain relationships that link it to entities from <em>other</em> chunks — the cross-document reasoning that pure vector RAG would have missed.</p>
+
+      <figure class="infographic">
+        <img src="Session16-GraphRAG-Ingestion-infographic.svg" alt="Session 16 infographic: pipeline, dual-label trick, MENTIONS topology, three flags">
+      </figure>
+    </section>
+
+    <section class="chapter" id="s11">
+      <div class="chapter-marker">CHAPTER 11</div>
+      <h2>What gets imported (and why)</h2>
+      <p>The full set of imports in this session — annotated, because several appear before they're used:</p>
+<pre><code>from langchain_core.documents       import Document
+from langchain_core.output_parsers  import StrOutputParser      # next session
+from langchain_core.prompts         import ChatPromptTemplate
+from langchain_core.runnables       import RunnableLambda, RunnableParallel  # next session
+from langchain_experimental.graph_transformers import LLMGraphTransformer
+from langchain_neo4j                import Neo4jGraph, Neo4jVector
+from langchain_neo4j.vectorstores.neo4j_vector import remove_lucene_chars     # next session
+from langchain_openai               import ChatOpenAI, OpenAIEmbeddings
+from langchain_text_splitters       import TokenTextSplitter
+from pydantic                       import BaseModel, Field    # next session</code></pre>
+      <p>The lecturer flagged <code>RunnableLambda</code> / <code>RunnableParallel</code> as the imports for <em>next session's</em> retrieval chain — they exist because the final pipeline runs <strong>two retrievers in parallel</strong> (graph + vector) and merges their output. <code>remove_lucene_chars</code> and Pydantic are also next-session: they support entity extraction from the user's question and fuzzy fulltext matching.</p>
+      <div class="bridge"><span class="bridge-label">JAVA / SPRING BRIDGE</span>
+        <p><code>RunnableParallel</code> ≈ Spring's <code>@Async</code> + <code>CompletableFuture.allOf(...)</code>: fan out to two retrievers concurrently, gather the results, hand the joined output to the next stage. Same fork-join shape, lighter syntax.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s12">
+      <div class="chapter-marker">CHAPTER 12</div>
+      <h2>Forward reference — what Session 17 covers</h2>
+      <p>Today's notes intentionally stop at indexing. The retrieval half — the more involved piece — is the agenda for the next session:</p>
+      <ul>
+        <li><strong>Entity extraction from the user's question</strong> with a Pydantic-typed structured output.</li>
+        <li><strong>A fulltext index on <code>__Entity__.id</code></strong> so user-mentioned entities can be matched fuzzily (typo-tolerant, edit-distance 2).</li>
+        <li><strong>A <code>!MENTIONS</code> graph traversal</strong> — pull every domain relationship around the matched entity but <em>skip</em> the <code>MENTIONS</code> back-links (which only point back at source chunks).</li>
+        <li><strong>A two-branch retriever</strong>: graph traversal results + vector similarity results, concatenated.</li>
+        <li><strong>A <code>RunnableParallel</code> chain</strong> that fans these out and pipes the merged context into the final LLM prompt.</li>
+        <li><strong>Demo questions</strong> that stress reasoning across the three corpora — including a 22-minute excursion near the policy boundary and a downgrade exactly at the 20% threshold.</li>
+      </ul>
+    </section>
+
+    <section class="chapter" id="s13">
+      <div class="chapter-marker">CHAPTER 13</div>
+      <h2>Common pitfalls (paid for in class)</h2>
+      <ul>
+        <li><strong>Neo4j Desktop not running.</strong> The Bolt driver returns "ServiceUnavailable / connection refused." Start the DBMS in Neo4j Desktop before running Python.</li>
+        <li><strong>APOC plugin missing.</strong> <code>kg.refresh_schema()</code> fails with <code>procedure apoc.meta.schema not registered</code>. Install APOC via the Plugins tab.</li>
+        <li><strong><code>.env</code> file not saved or wrong extension.</strong> Symptom: <code>OPENAI_API_KEY</code> ends up empty and the OpenAI call raises "no API key in source code." The lecturer hit this twice — once because the file wasn't saved, once because the extension was off.</li>
+        <li><strong>Database name typo or reuse.</strong> A stopped database silently fails authentication. Always check the database is <em>Started</em> in Neo4j Desktop before connecting.</li>
+        <li><strong>Re-running indexing every iteration.</strong> <code>pre_delete_collection=True</code> re-charges your embeddings invoice each run. Once embeddings are stable, comment the entire <code>Neo4jVector.from_documents</code> block out and let retrieval use the existing index.</li>
+      </ul>
+    </section>
+
+    <div class="glossary" id="glossary">
+      <h2 style="font-family:'Fraunces',serif;font-style:italic;font-size:32px;margin-bottom:24px;">Glossary</h2>
+      <dl>
+        <dt>APOC</dt><dd>"Awesome Procedures On Cypher," the standard Neo4j plugin that adds schema introspection (<code>apoc.meta.schema</code>), bulk operations, and many utility procedures. Required by LangChain's <code>Neo4jGraph.refresh_schema()</code>.</dd>
+        <dt><code>__Entity__</code></dt><dd>The secondary label LangChain stamps on every LLM-extracted node when you pass <code>baseEntityLabel=True</code>. Note the double underscores. Used as a marker for retrieval.</dd>
+        <dt><code>MENTIONS</code></dt><dd>The relationship LangChain creates when you pass <code>include_source=True</code>, connecting each LLM-extracted entity back to the <code>Document</code> node (source chunk) it was extracted from. Gives provenance and supports the "skip-source-link" pattern in traversal.</dd>
+        <dt><code>Document</code> node</dt><dd>One node per chunk, holding the chunk's text and (after vector indexing) its embedding. The vector index is built over the <code>embedding</code> property of these nodes.</dd>
+        <dt><code>GraphDocument</code></dt><dd>LangChain's in-memory representation of an LLM extraction result for one source <code>Document</code>: a list of <code>Node</code> objects + a list of <code>Relationship</code> objects + a pointer to the source.</dd>
+        <dt>HNSW</dt><dd>Hierarchical Navigable Small World, the approximate-nearest-neighbour algorithm Neo4j uses under the hood for vector indexes. You don't have to configure it by hand for this code path.</dd>
+        <dt><code>LLMGraphTransformer</code></dt><dd><code>langchain_experimental.graph_transformers.LLMGraphTransformer</code>. Wraps an LLM call that converts unstructured text chunks into <code>GraphDocument</code>s without requiring you to specify an ontology.</dd>
+        <dt>Ontology</dt><dd>The agreed-upon set of node labels and relationship types. With <code>LLMGraphTransformer</code> you give up control of the ontology in exchange for not having to hand-author it.</dd>
+        <dt><code>pre_delete_collection</code></dt><dd><code>Neo4jVector.from_documents</code> parameter; drops and rebuilds the vector index on every call. Convenient for iteration, expensive for billing. Turn it off after the first successful run.</dd>
+        <dt><code>refresh_schema()</code></dt><dd><code>Neo4jGraph</code> method that re-queries the database for its label/relationship inventory. Calls APOC under the hood.</dd>
+        <dt><code>text-embedding-3-small</code></dt><dd>OpenAI's small embedding model. 1,536-dimensional output. Cheaper than <code>text-embedding-3-large</code>; sufficient for class-scale corpora.</dd>
+      </dl>
+    </div>
+
+    <footer>
+      <span>SESSION 16 · GRAPHRAG INGESTION</span>
+      <span>2026-05-03 · 67 MIN · 2 SPEAKERS</span>
+      <span>SOURCES: LANGCHAIN · NEO4J · OPENAI</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

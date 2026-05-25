@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 9 — Multi-Head Self-Attention</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 80px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(48px, 7vw, 84px); line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 600px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 580px; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.45; color: var(--ink); padding: 40px 0 40px 32px; border-left: 4px solid var(--terracotta); margin: 60px 0 80px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -30px; font-size: 100px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 96px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 42px; line-height: 1.05; margin-bottom: 28px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 24px; margin: 40px 0 16px; color: var(--ink); }
+.chapter p { margin-bottom: 20px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 16px 0 24px 24px; color: var(--ink-soft); }
+.chapter ul li, .chapter ol li { margin-bottom: 10px; font-size: 17px; line-height: 1.7; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.6; overflow-x: auto; border-left: 4px solid var(--ochre); }
+pre code { background: transparent; border: none; color: var(--paper); padding: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 22px 26px; margin: 28px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15.5px; color: var(--ink); line-height: 1.65; }
+.correction strong { color: var(--terracotta); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 28px 32px; margin: 36px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 17px; margin-bottom: 12px; }
+.callout p:last-child { margin-bottom: 0; }
+.equation { background: var(--ink); color: var(--paper); padding: 26px 28px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 17px; margin: 32px 0; letter-spacing: 0.5px; line-height: 1.9; }
+.equation .l1 { color: var(--teal-light); }
+.equation .l2 { color: var(--ochre); }
+.equation .small { font-size: 12px; color: var(--ink-mute); display: block; margin-top: 14px; letter-spacing: 1px; }
+table.tbl { width: 100%; border-collapse: collapse; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+table.tbl th, table.tbl td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--line); }
+table.tbl th { background: var(--paper-2); font-weight: 700; color: var(--ink); letter-spacing: 1px; font-size: 11px; text-transform: uppercase; }
+table.tbl td { color: var(--ink-soft); }
+table.tbl tr:hover td { background: rgba(248, 230, 207, 0.3); }
+.props { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 28px 0; }
+.prop { background: rgba(251, 247, 239, 0.7); border-left: 4px solid var(--teal-light); padding: 18px 22px; }
+.prop h4 { font-family: 'Fraunces', serif; font-style: italic; font-size: 20px; color: var(--ink); margin-bottom: 6px; }
+.prop p { font-size: 15px; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+.pipeline { display: flex; flex-wrap: wrap; gap: 0; align-items: stretch; margin: 32px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.pipeline-step { flex: 1; min-width: 110px; background: var(--ink); color: var(--paper); padding: 16px 12px; text-align: center; position: relative; }
+.pipeline-step.embed { background: var(--teal); }
+.pipeline-step.position { background: var(--ochre); color: var(--ink); }
+.pipeline-step.attention { background: var(--terracotta); }
+.pipeline-step:not(:last-child)::after { content: '→'; position: absolute; right: -8px; top: 50%; transform: translateY(-50%); color: var(--ink); font-size: 14px; z-index: 2; background: var(--paper); width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.pipeline-step .label { font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; font-size: 11px; }
+.pipeline-step .sub { font-size: 10px; opacity: 0.85; }
+figure.infographic { margin: 40px -40px 40px; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic img, figure.infographic svg { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+.glossary { margin-top: 80px; padding-top: 48px; border-top: 2px solid var(--ink); }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 18px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 100px; padding-top: 32px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 48px; }
+  .thesis { font-size: 22px; padding-left: 20px; }
+  .chapter h2 { font-size: 32px; }
+  .props { grid-template-columns: 1fr; }
+  .pipeline { flex-direction: column; }
+  .pipeline-step:not(:last-child)::after { content: '↓'; right: 50%; top: auto; bottom: -8px; transform: translateX(50%); }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 09</div>
+    <div class="toc-title">Multi-Head<br>Self-Attention</div>
+    <ol>
+      <li><a href="#s1">What attention is for</a></li>
+      <li><a href="#s2">Shape of the output</a></li>
+      <li><a href="#s3">The formula</a></li>
+      <li><a href="#s4">Walking left-to-right</a></li>
+      <li><a href="#s5">Worked example</a></li>
+      <li><a href="#s6">Where Q, K, V come from</a></li>
+      <li><a href="#s7">Multi-head: why × 8</a></li>
+      <li><a href="#s8">The full encoder block</a></li>
+      <li><a href="#s9">All-in-one picture</a></li>
+      <li><a href="#s10">What is learned</a></li>
+      <li><a href="#s11">Interview summary</a></li>
+      <li><a href="#s12">Quick reference</a></li>
+      <li><a href="#svg">Visual reference</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      65.5 MIN<br>
+      6 SPEAKERS<br>
+      2026-05-18
+      <div class="rev-badge">REV v1</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 09 · TRANSFORMER ENCODER</div>
+      <h1>Multi-Head<br><span class="accent">Self-Attention.</span></h1>
+      <p class="hero-sub">Every token looks at every other token, with learned weights. Run the whole thing eight times in parallel. Concatenate. Project. That's attention.</p>
+      <div class="hero-meta">
+        <span>65.5 MIN</span>
+        <span>VASWANI ET AL. §3.2.1–3.2.2</span>
+        <span>h = 8 · d_k = 64</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      Self-attention is one formula — <em>softmax(QKᵀ / √d_k) · V</em> — run <em>eight times in parallel</em> with different learned projections, then combined. Everything else in this session is built around understanding that one formula.
+    </div>
+
+    <div class="correction" style="margin-bottom: 60px;">
+      <strong>THE SINGLE MOST IMPORTANT FIX FROM THE TRANSCRIPT</strong><br>
+      The lecturer said multiple times to "divide by d_k". The paper divides by <strong>√d_k</strong> (square root). With <code>d_k = 64</code>, that's dividing by 8, not by 64. The scaling exists so the dot products don't blow up as the dimension grows, and <code>√d_k</code> is the right scale for the variance of a dot product over <code>d_k</code> random dimensions. (<em>Vaswani et al. 2017, §3.2.1.</em>) Everything else this session — the lecturer's 112 → 14 example, the 96 → 12 example — is consistent with the √d_k scaling; the formula description just got dropped in transit.
+    </div>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">CHAPTER 01</div>
+      <h2>What attention is for</h2>
+      <p>The encoder's job is to turn each input token into a vector that captures not just <strong>what</strong> the token is, but also <strong>how it relates to every other token in the input</strong>. Position encoding (Session 8) told the model <em>where</em> each token sits. Attention tells it <em>what each token means in context</em>.</p>
+      <p>The example from Session 7 is the easy one to hold onto:</p>
+      <div class="callout">
+        <div class="callout-label">REMEMBER THIS</div>
+        <p>"<em>Ram is going to school. He is a good boy.</em>" — the model needs to know that <strong>he</strong> refers to <strong>Ram</strong>, not to <strong>school</strong>. Attention is the mechanism that lets the encoder bake that relationship into the vector for <em>he</em>.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">CHAPTER 02</div>
+      <h2>The shape of the output</h2>
+      <p>Forget the math for a moment. After self-attention runs on an input of <code>n</code> tokens, you can imagine an <code>n × n</code> matrix where cell <code>(i, j)</code> is "how much token <code>i</code> attends to token <code>j</code>":</p>
+      <table class="tbl">
+        <thead><tr><th></th><th>hi</th><th>i</th><th>am</th><th>going</th><th>to</th></tr></thead>
+        <tbody>
+          <tr><td><strong>hi</strong></td><td>0.70</td><td>0.05</td><td>0.10</td><td>0.10</td><td>0.05</td></tr>
+          <tr><td><strong>i</strong></td><td>0.10</td><td>0.65</td><td>0.10</td><td>0.10</td><td>0.05</td></tr>
+          <tr><td><strong>am</strong></td><td>0.05</td><td>0.20</td><td>0.55</td><td>0.15</td><td>0.05</td></tr>
+          <tr><td>...</td><td>...</td><td>...</td><td>...</td><td>...</td><td>...</td></tr>
+        </tbody>
+      </table>
+      <p>Two things are true of every row:</p>
+      <ul>
+        <li>All entries sit in <code>[0, 1]</code>.</li>
+        <li>Each row sums to exactly 1 — softmax is doing its job, turning raw similarity scores into a probability distribution over the input tokens.</li>
+      </ul>
+      <p>The numbers say "for token <code>i</code>, here's how much each other token contributes to my new representation."</p>
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>Think of attention as a weighted <code>Map&lt;TokenId, Double&gt;</code> for every query token, where the values always sum to 1.0. The new representation of token <code>i</code> is the weighted average of all the tokens, with weights from that map. <strong>Softmax</strong> is the operation that takes a raw score map and converts it to a normalized distribution.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">CHAPTER 03</div>
+      <h2>The formula</h2>
+      <div class="equation">
+        <span class="l1">Attention(Q, K, V)</span> =<br>
+        <span class="l2">softmax( Q · Kᵀ / √d_k ) · V</span>
+        <span class="small">scaled dot-product attention · Vaswani et al. 2017</span>
+      </div>
+      <p>Four moving parts:</p>
+      <ul>
+        <li><strong>Q (Query)</strong> — matrix of query vectors, one row per token. <em>"What am I looking for?"</em></li>
+        <li><strong>K (Key)</strong> — matrix of key vectors, one row per token. <em>"What can I be matched against?"</em></li>
+        <li><strong>V (Value)</strong> — matrix of value vectors, one row per token. <em>"What do I contribute if I'm matched?"</em></li>
+        <li><strong>d_k</strong> — dimensionality of the Query/Key vectors. <em>This is not d_model</em>; we'll come back to it in §7.</li>
+      </ul>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">CHAPTER 04</div>
+      <h2>Walking the formula left-to-right</h2>
+      <p>Take a tiny input: two tokens, <em>thinking</em> and <em>machines</em>.</p>
+      <h3>Step 1 — Form Q, K, V from the input</h3>
+      <p>The input is the matrix <code>X</code> of token embeddings (one row per token, each row is <code>d_model = 512</code>). Multiply <code>X</code> by three <strong>separate</strong> learned weight matrices <code>W_Q</code>, <code>W_K</code>, <code>W_V</code>:</p>
+      <pre><code>Q = X · W_Q     (shape: n × d_k)
+K = X · W_K     (shape: n × d_k)
+V = X · W_V     (shape: n × d_v)</code></pre>
+      <p>In the original paper, <code>d_k = d_v = 64</code> <em>per head</em>. The three <code>W</code> matrices are the learnable parameters — random at init, updated by backprop during training.</p>
+      <div class="correction">
+        <strong>CORRECTION</strong><br>
+        The lecturer said "you have W_Q, repeat that 2 times", which made it sound like K and V share a matrix with Q. They don't. There are <strong>three distinct learned matrices</strong> <code>W_Q</code>, <code>W_K</code>, <code>W_V</code>. They start with different random initializations and end up at different values after training.
+      </div>
+      <h3>Step 2 — Score every query against every key</h3>
+      <p><code>Q · Kᵀ</code> is an <code>n × n</code> matrix of raw similarity scores. Row <code>i</code>, column <code>j</code> is <code>Q_i · K_j</code> — the dot product of query <code>i</code> and key <code>j</code>. Large dot product = the two vectors point in similar directions = high relevance.</p>
+      <div class="correction">
+        <strong>WHY TRANSPOSE K</strong><br>
+        The lecturer said the transpose was "to match the dimensions". That's technically true but obscures the point. The real reason is that you want each cell of the result to be a <strong>dot product</strong> between one query row and one key row. If <code>Q</code> and <code>K</code> are both <code>(n × d_k)</code>, then <code>Q · Kᵀ</code> gives you an <code>(n × n)</code> matrix whose <code>(i, j)</code> entry is exactly <code>Q_i · K_j</code> — the similarity score you're after. Without the transpose you'd get a shape mismatch, but more importantly you wouldn't be computing the right thing.
+      </div>
+      <h3>Step 3 — Scale by √d_k</h3>
+      <p>Divide every entry by <code>√d_k</code>. For <code>d_k = 64</code>, that's <code>√64 = 8</code>. The lecturer's example slide showed dividing by 8 — that's because the example used <code>d_k = 64</code>, not because 8 is a magic number.</p>
+      <h3>Step 4 — Softmax row-wise</h3>
+      <p>Apply softmax across each row. This is where row-sum = 1 comes from:</p>
+      <pre><code>softmax(x_i) = exp(x_i) / Σ_j exp(x_j)</code></pre>
+      <h3>Step 5 — Multiply by V</h3>
+      <p>The <code>(n × n)</code> softmax output times the <code>(n × d_v)</code> value matrix gives an <code>(n × d_v)</code> output. Row <code>i</code> of the result is a weighted average of all the value vectors, with weights from the softmax — that's the new representation for token <code>i</code>.</p>
+    </section>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">CHAPTER 05</div>
+      <h2>Worked example (the <em>thinking-machines</em> slide)</h2>
+      <p>The diagram the lecturer kept returning to is from Jay Alammar's <em>Illustrated Transformer</em>. Two tokens: <code>x_1 = "thinking"</code>, <code>x_2 = "machines"</code>. The paper's example uses <code>d_k = 64</code>, so <code>√d_k = 8</code>.</p>
+      <table class="tbl">
+        <thead><tr><th></th><th>thinking → thinking</th><th>thinking → machines</th></tr></thead>
+        <tbody>
+          <tr><td>q_1 · k_j</td><td>112</td><td>96</td></tr>
+          <tr><td>÷ √d_k (= 8)</td><td>14</td><td>12</td></tr>
+          <tr><td>softmax over the row</td><td>0.88</td><td>0.12</td></tr>
+          <tr><td>weighted value</td><td>0.88 · v_1</td><td>0.12 · v_2</td></tr>
+        </tbody>
+      </table>
+      <p>Sum the two weighted values to get <code>z_1</code>, the new representation of <em>thinking</em>.</p>
+      <div class="callout">
+        <div class="callout-label">WHAT SPEAKER D WAS ASKING</div>
+        <p><strong>"Why is it Q1 in both rows?"</strong> Because we're computing the new representation of <em>thinking</em>, the query stays fixed as <code>q_1</code>. What varies across the row is which token we're scoring against — that's where <code>k_1, v_1</code> vs <code>k_2, v_2</code> come from. To compute <code>z_2</code> (new representation of <em>machines</em>), you fix <code>q_2</code> as the query and walk across <code>k_j, v_j</code> for all <code>j</code>. In matrix form, both rows compute simultaneously inside the single <code>Q · Kᵀ</code> multiply.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">CHAPTER 06</div>
+      <h2>Where Q, K, V come from (the training story)</h2>
+      <p>The longest detour in the lecture was on this point. The honest picture:</p>
+      <ul>
+        <li><code>W_Q</code>, <code>W_K</code>, <code>W_V</code> are <strong>initialized to random values</strong> at the start of training.</li>
+        <li>For every training batch: compute attention end-to-end, compute the loss against the supervised target, backpropagate, and nudge <code>W_Q</code>, <code>W_K</code>, <code>W_V</code> (and every other parameter) toward values that reduce the loss.</li>
+        <li>After enough training steps, these matrices encode useful projections — <em>what to look for</em> (Q), <em>what to be findable by</em> (K), <em>what to contribute</em> (V) — for the patterns in the training data.</li>
+      </ul>
+      <div class="correction">
+        <strong>CORRECTION — "SUPERVISED" VS "SELF-SUPERVISED"</strong><br>
+        The lecturer described BERT's masked language modeling and called it "supervised learning". MLM is <strong>self-supervised</strong>: the labels come from the input itself — you randomly hide a token and ask the model to predict it from context — no human annotator is involved. The mechanical description was right; the term was wrong. <em>(Devlin et al. 2018, §3.1 "Masked LM".)</em>
+      </div>
+      <div class="correction">
+        <strong>CORRECTION — "LAKHS OF EPOCHS"</strong><br>
+        The lecturer said pretraining takes "lakhs of epochs" (hundreds of thousands). The actual numbers: BERT-base was trained for ~1M <em>training steps</em>, which works out to <strong>~40 epochs</strong> over its 3.3B-word corpus — about three orders of magnitude smaller than "lakhs". Modern LLMs at GPT-3 scale typically train for <strong>less than one full epoch</strong> over their dataset (they see most tokens once or twice). "Epochs" is the wrong unit at this scale; the field reports <em>tokens seen</em> and <em>training steps</em>. <em>(Devlin et al. 2018, §3.4: 1M steps, ~40 epochs over 3.3B words.)</em>
+      </div>
+      <div class="correction">
+        <strong>CORRECTION — ORIGINAL TRANSFORMER ≠ BERT</strong><br>
+        The lecturer said the original Transformer is pretrained the way BERT is. It isn't. The original 2017 Transformer was trained end-to-end on <strong>English↔German and English↔French translation</strong> as a fully supervised seq2seq model. BERT (2018, encoder-only) introduced MLM pretraining. GPT (2018, decoder-only) introduced causal-LM pretraining. The encoder/decoder distinction predates both pretraining recipes.
+      </div>
+    </section>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">CHAPTER 07</div>
+      <h2>Multi-head — why we run it 8 times</h2>
+      <p>What's been described so far is <strong>one</strong> attention head. Multi-head attention runs <code>h = 8</code> heads in parallel, each with its <em>own</em> <code>W_Q^i</code>, <code>W_K^i</code>, <code>W_V^i</code> matrices, then concatenates their outputs.</p>
+      <div class="props">
+        <div class="prop"><h4>d_model</h4><p>512 — the embedding width that flows between encoder blocks</p></div>
+        <div class="prop"><h4>h</h4><p>8 — number of attention heads per layer</p></div>
+        <div class="prop"><h4>d_k = d_v</h4><p>64 — per-head Q/K/V dimension (= d_model / h)</p></div>
+        <div class="prop"><h4>N</h4><p>6 — number of stacked encoder layers</p></div>
+      </div>
+      <p>So each head projects the <code>d_model = 512</code> input <strong>down</strong> to <code>d_k = 64</code> for its Q/K computation, runs attention, then produces a <code>d_v = 64</code>-dim output. Stack 8 such outputs side-by-side: <code>8 × 64 = 512</code>. Multiply by one more learned matrix <code>W_O</code> (shape <code>512 × 512</code>) to mix the per-head outputs and produce the final <code>d_model = 512</code> result.</p>
+      <div class="equation">
+        <span class="l1">MultiHead(Q, K, V)</span> =<br>
+        <span class="l2">Concat(head_1, …, head_8) · W_O</span>
+        <span class="small">where head_i = Attention(Q·W_Q^i, K·W_K^i, V·W_V^i)</span>
+      </div>
+      <div class="correction">
+        <strong>CORRECTION — W_O IS A NEW MATRIX</strong><br>
+        The lecturer said <code>W_O</code> is "the concatenation of all the learning parameters". It isn't. <code>W_O</code> is a <strong>separate, new</strong> learnable matrix (shape <code>d_model × d_model</code>) that mixes the concatenated per-head outputs. Concatenation just stacks the head outputs side-by-side; <code>W_O</code> is the post-concatenation projection introduced specifically to give the model one more learnable linear combination. <em>(Vaswani et al. 2017, §3.2.2.)</em>
+      </div>
+      <div class="correction">
+        <strong>CORRECTION — d_k vs d_model</strong><br>
+        The lecturer said "DK is 512". That's <code>d_model</code>, not <code>d_k</code>. Per-head, <code>d_k = 64</code> in the paper. The <code>√d_k</code> scaling step uses <code>√64 = 8</code> — that's where the 8 in the worked example comes from. The fact that <code>h</code> is also 8 is a coincidence; conceptually they're unrelated knobs.
+      </div>
+      <h3>Why bother with multiple heads?</h3>
+      <p>Different heads learn to specialize in different <em>kinds</em> of relationships. The lecturer's canonical example (also from Alammar):</p>
+      <div class="callout">
+        <div class="callout-label">THE ANIMAL/STREET/IT EXAMPLE</div>
+        <p>"<em>The animal didn't cross the street because it was too tired.</em>" Resolving <strong>it</strong>: one head might attend strongly from <em>it</em> to <em>animal</em> (coreference). Another might attend from <em>it</em> to <em>tired</em> (the predicate that disambiguates the referent — only an animal gets tired, a street doesn't). Yet another might attend along the <em>cross the street</em> phrase. Each head captures a different slice of the relational structure. The post-concatenation <code>W_O</code> then learns to combine those slices.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">CHAPTER 08</div>
+      <h2>The full encoder block (where attention sits)</h2>
+      <p>The <code>N = 6</code> encoder layers in the paper each contain four sublayers, in order:</p>
+      <div class="pipeline">
+        <div class="pipeline-step attention"><div class="label">MH ATTENTION</div><div class="sub">8 heads in parallel</div></div>
+        <div class="pipeline-step"><div class="label">ADD &amp; NORM</div><div class="sub">residual + LayerNorm</div></div>
+        <div class="pipeline-step embed"><div class="label">FFN</div><div class="sub">two linear + ReLU</div></div>
+        <div class="pipeline-step"><div class="label">ADD &amp; NORM</div><div class="sub">residual + LayerNorm</div></div>
+      </div>
+      <p>The lecturer's "7 times" and "we have 6 encoder blocks, and it is multi-head" both refer to the same <code>N = 6</code> — the encoder stack is <strong>6 layers deep</strong>, not 7. The 8 you see floating around is the number of attention heads per layer (<code>h = 8</code>), not the number of layers.</p>
+      <p>The feed-forward network is what the lecturer kept calling "ANN" — a standard two-layer MLP applied <strong>position-wise</strong> (same MLP applied independently to each token's vector). The "Add &amp; Norm" sublayers wrap each block in a residual connection and layer-normalize the result. We'll cover Add &amp; Norm properly in Session 10 — the lecturer's description of it as "concatenation" needs unpicking and Session 10 is where it bites hardest.</p>
+    </section>
+
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">CHAPTER 09</div>
+      <h2>What's actually being computed, in one picture</h2>
+      <pre><code>INPUT          Q PROJECTIONS         ATTENTION             OUTPUT
+                  ┌─ W_Q^1 ─ Q^1 ┐
+                  │              │    softmax(QKᵀ/√d_k)·V
+X (n × 512) ─────┤─ W_Q^2 ─ Q^2 ├──── × 8 heads ──── concat ── W_O ── Z
+                  │              │         │
+                  └─ W_Q^8 ─ Q^8 ┘   (each head sees
+                                      its own Q^i, K^i, V^i,
+                                      each 64-dim)</code></pre>
+      <p>Each head independently computes its own attention output. Concatenate the 8 outputs (back to 512), apply <code>W_O</code>, get the final per-token representations that flow into the feed-forward sublayer.</p>
+    </section>
+
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">CHAPTER 10</div>
+      <h2>What the model is actually learning</h2>
+      <p>The lecturer kept saying "the model is learning QKV". A more precise statement: the model is learning the <strong>projection matrices</strong> <code>W_Q</code>, <code>W_K</code>, <code>W_V</code>, <code>W_O</code> — these are the parameters. <code>Q</code>, <code>K</code>, <code>V</code> themselves are computed at runtime by multiplying the input by those matrices. They are not stored.</p>
+      <p>This matters for the "where does Q, K, V come from at inference?" question Speaker B asked. At inference:</p>
+      <ul>
+        <li>You feed in your input tokens → get embeddings.</li>
+        <li>For each layer, multiply by the learned <code>W_Q</code>, <code>W_K</code>, <code>W_V</code> to get fresh <code>Q</code>, <code>K</code>, <code>V</code> for that input.</li>
+        <li>Run the attention formula.</li>
+      </ul>
+      <p>Nothing about the previous query is "cached" in the model itself across separate calls. (Within a single autoregressive generation, K and V from earlier steps <em>are</em> cached — but that's a decoder-side optimization, covered in Session 10.)</p>
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p><code>W_Q</code>, <code>W_K</code>, <code>W_V</code> are like Spring beans — singletons loaded once at application startup, used by every request. The <code>Q</code>, <code>K</code>, <code>V</code> matrices are like the per-request DTOs the beans produce when you hand them the input. The user's question "is it stored in cache for the next sentence?" maps to: <em>no</em>, the bean is the same, but the DTO is recomputed from scratch for each request.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s11">
+      <div class="chapter-marker">CHAPTER 11</div>
+      <h2>Interview-level summary</h2>
+      <div class="callout">
+        <div class="callout-label">THE TWO-SENTENCE VERSION</div>
+        <p><em>"Attention lets every token attend to every other token, with learned weights, to capture relationships."</em></p>
+        <p><em>"Multi-head is the same computation run in parallel with different projections, so the model can capture different kinds of relationships at the same time."</em></p>
+      </div>
+      <p>If you can say that out loud plus draw the box-diagram from §9 from memory, you have the concept. The literal formula <code>softmax(QKᵀ/√d_k)V</code> is worth memorizing because it's three lines and it's <em>the</em> formula in the field — but the intuition is what gets tested.</p>
+    </section>
+
+    <section class="chapter" id="s12">
+      <div class="chapter-marker">CHAPTER 12</div>
+      <h2>Quick reference — the dimensions, all in one place</h2>
+      <table class="tbl">
+        <thead><tr><th>Symbol</th><th>Meaning</th><th>Value in the paper</th></tr></thead>
+        <tbody>
+          <tr><td>d_model</td><td>embedding width flowing between blocks</td><td>512</td></tr>
+          <tr><td>h</td><td>number of attention heads per layer</td><td>8</td></tr>
+          <tr><td>d_k</td><td>per-head Query/Key dimension</td><td>64 (= d_model / h)</td></tr>
+          <tr><td>d_v</td><td>per-head Value dimension</td><td>64 (= d_model / h)</td></tr>
+          <tr><td>N</td><td>stacked encoder layers</td><td>6</td></tr>
+          <tr><td>d_ff</td><td>feed-forward sublayer hidden dimension</td><td>2048</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Keep clearly in head:</strong> scaling is by <code>√d_k</code>, not <code>d_k</code>; <code>W_Q</code>, <code>W_K</code>, <code>W_V</code> are <em>three separate</em> learned matrices; per-head <code>d_k = 64</code> (not 512 — that's <code>d_model</code>); <code>W_O</code> is a <em>new</em> matrix applied after concatenating heads; the encoder stack is N=6 layers, each with h=8 heads.</p>
+    </section>
+
+    <figure class="infographic" id="svg">
+      <img src="Session9-MultiHeadAttention-infographic.svg" alt="Multi-head self-attention — visual reference">
+    </figure>
+
+    <section class="glossary" id="glossary">
+      <h2 style="font-family: 'Fraunces', serif; font-style: italic; font-size: 36px; margin-bottom: 24px;">Glossary</h2>
+      <dl>
+        <dt>Attention</dt>
+        <dd>A mechanism that produces a new representation of each token as a weighted sum of all tokens, where the weights are learned at runtime from the data itself.</dd>
+        <dt>Q, K, V (Query, Key, Value)</dt>
+        <dd>Three projections of the input. Q asks "what am I looking for?", K answers "what can I be matched against?", V provides "what I contribute if I match." Computed at runtime as <code>X · W_Q</code>, <code>X · W_K</code>, <code>X · W_V</code>.</dd>
+        <dt>d_model</dt>
+        <dd>The embedding dimension flowing between encoder blocks. 512 in the original paper.</dd>
+        <dt>d_k</dt>
+        <dd>Per-head Query/Key dimension. 64 in the paper (= d_model / h). The scaling factor in attention is <code>√d_k</code>.</dd>
+        <dt>Head</dt>
+        <dd>One independent attention computation with its own <code>W_Q^i</code>, <code>W_K^i</code>, <code>W_V^i</code> matrices. The paper uses <code>h = 8</code> heads per layer.</dd>
+        <dt>W_O (output projection)</dt>
+        <dd>The post-concatenation learned matrix that mixes per-head outputs back to <code>d_model</code>. Shape <code>(h · d_v) × d_model</code> = <code>512 × 512</code>.</dd>
+        <dt>Softmax</dt>
+        <dd>Function that turns a vector of raw scores into a probability distribution: <code>softmax(x_i) = exp(x_i) / Σ_j exp(x_j)</code>. All outputs in [0,1], sum to 1.</dd>
+        <dt>Self-supervised learning</dt>
+        <dd>Training where labels are derived from the input itself (e.g., predict a masked token). No human annotation. Distinct from supervised learning.</dd>
+        <dt>Masked Language Modeling (MLM)</dt>
+        <dd>BERT's self-supervised pretraining objective: randomly mask ~15% of input tokens, train the model to predict them from surrounding context.</dd>
+        <dt>Training step</dt>
+        <dd>One forward/backward pass on one batch of data. Not the same as an "epoch" (a full pass over the dataset). LLMs are typically measured in steps or tokens, not epochs.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <span>SESSION 09 · 2026-05-18</span>
+      <span>VASWANI ET AL. 2017 §3.2 · ALAMMAR ILLUSTRATED TRANSFORMER</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

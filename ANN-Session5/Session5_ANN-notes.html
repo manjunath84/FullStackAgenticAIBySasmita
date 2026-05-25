@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANN-Session 5 — Building your first neural network in Keras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 22px; color: var(--ink); margin-bottom: 28px; line-height: 1.15; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 11px; font-family: 'Spectral', serif; font-size: 13px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+
+main { padding: 80px 80px 120px; max-width: 880px; }
+
+.hero { margin-bottom: 60px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(42px, 6vw, 72px); line-height: 0.98; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 620px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 600px; flex-wrap: wrap; }
+
+.where { background: rgba(42, 93, 98, 0.06); border-left: 4px solid var(--teal); padding: 20px 26px; margin: 0 0 56px; font-size: 16px; color: var(--ink-soft); }
+.where-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--teal); font-weight: 700; margin-bottom: 8px; }
+.where p { margin-bottom: 10px; }
+.where p:last-child { margin-bottom: 0; }
+.where strong { color: var(--ink); }
+
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 36px 0 36px 30px; border-left: 4px solid var(--terracotta); margin: 30px 0 72px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -28px; font-size: 92px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+
+section.chapter { margin-bottom: 88px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.05; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter h4 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 18px; margin: 28px 0 10px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 14px 0 22px 32px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter ul li, .chapter ol li { margin-bottom: 8px; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; border-radius: 3px; }
+pre code { background: transparent; border: none; color: inherit; padding: 0; }
+
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 15px; }
+table th, table td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+table th { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--terracotta); font-weight: 700; text-transform: uppercase; border-bottom: 2px solid var(--ink); }
+table tbody tr:hover { background: rgba(248, 230, 207, 0.25); }
+table code { font-size: 0.9em; }
+
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15px; color: var(--ink); line-height: 1.6; }
+.correction strong { color: var(--terracotta); }
+.correction p { color: var(--ink); font-size: 15px; margin-bottom: 10px; line-height: 1.6; }
+.correction p:last-child { margin-bottom: 0; }
+
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 28px; margin: 32px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--ochre); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 16px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 20px 24px; margin: 26px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+
+figure.diagram { margin: 32px 0; padding: 0; }
+figure.diagram svg { width: 100%; height: auto; display: block; background: var(--paper); border: 1px solid var(--line); }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); margin-top: 10px; line-height: 1.55; }
+
+figure.infographic { margin: 40px -40px 40px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg { width: 100%; height: auto; display: block; }
+figure.infographic figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); padding: 16px 32px; background: var(--paper-2); border-top: 1px solid var(--line); }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+
+.glossary { margin-top: 72px; padding-top: 44px; border-top: 2px solid var(--ink); }
+.glossary h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 32px; margin-bottom: 24px; }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 16px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+
+footer { margin-top: 90px; padding-top: 30px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 42px; }
+  .thesis { font-size: 22px; padding-left: 20px; }
+  .chapter h2 { font-size: 30px; }
+}
+
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">ANN · SESSION 05</div>
+    <div class="toc-title">Building your first neural network in Keras</div>
+    <ol>
+      <li><a href="#s1">Why MSE fails for classification</a></li>
+      <li><a href="#s2">Softmax vs Sigmoid</a></li>
+      <li><a href="#s3">Categorical vs Sparse CE</a></li>
+      <li><a href="#s4">Dropout, in practice</a></li>
+      <li><a href="#s5">The Keras pipeline</a></li>
+      <li><a href="#s6">MNIST &amp; preprocessing</a></li>
+      <li><a href="#s7">Train / val / test split</a></li>
+      <li><a href="#svg">Visual summary</a></li>
+      <li><a href="#s8">Compile choices</a></li>
+      <li><a href="#s9">Fit / evaluate / predict</a></li>
+      <li><a href="#s10">Saving and loading</a></li>
+      <li><a href="#s11">Overfitting demo</a></li>
+      <li><a href="#s12">Hyperparameter tuning</a></li>
+      <li><a href="#s13">Bridge to fine-tuning</a></li>
+      <li><a href="#s14">Interview cheat-sheet</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      165 MIN<br>
+      2 SPEAKERS<br>
+      2026-05-20
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">ANN · SESSION 05 · STUDY NOTES · HANDS-ON</div>
+      <h1>Building your first neural network <span class="accent">in Keras.</span></h1>
+      <p class="hero-sub">MNIST end-to-end. Cross-entropy and softmax for classification, dropout for overfitting, Keras Tuner for architecture search.</p>
+      <div class="hero-meta">
+        <span>SOFTMAX + CROSS-ENTROPY</span>
+        <span>MNIST · 28×28 → 10 CLASSES</span>
+        <span>KERAS TUNER</span>
+      </div>
+    </header>
+
+    <div class="where">
+      <div class="where-label">WHERE WE ARE</div>
+      <p>Earlier sessions in the ANN track were theory — the perceptron, activations, the loss surface, gradient descent, backprop, epochs/batches, vanishing gradient. Today we put it all together in code. We build a real digit-classifier on MNIST, evaluate it, save it, load it, watch it overfit, fix the overfit with dropout, and finally let Keras Tuner search for a better architecture.</p>
+      <p>Today's session also fills in one piece of theory that didn't fit earlier: the <strong>classification loss function</strong>. ReLU is for hidden layers, softmax is for the output, and the loss that makes the whole thing trainable is <strong>cross-entropy</strong>, not MSE. That's the first half of this lesson; the second half is end-to-end Keras code.</p>
+    </div>
+
+    <div class="thesis">
+      A working neural network in Keras is just <em>four declarations away</em> — load data, build architecture, compile, fit. The same gradient-descent loop from earlier sessions is hidden inside <code>model.fit()</code>. The classification-specific pieces are <em>softmax</em> on the output and <em>cross-entropy</em> as the loss. Everything else is API ergonomics around the same training loop.
+    </div>
+
+    <!-- ============ §01 ============ -->
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">§ 01 — LOSS FUNCTION</div>
+      <h2>Why MSE fails for classification</h2>
+
+      <p>For regression (predict a number), mean squared error is the canonical loss:</p>
+
+<pre><code>MSE = (1/N) · Σ (ŷᵢ − yᵢ)²</code></pre>
+
+      <p>For classification the prediction isn't a single number — it's a probability distribution over classes. For three classes (rainy / sunny / windy), the actual <code>y</code> is one-hot:</p>
+
+<pre><code>actual:     [1, 0, 0]    ← it was rainy
+prediction: [0.7, 0.2, 0.1]  ← model assigns 70% probability to rainy</code></pre>
+
+      <p>You <em>can</em> compute MSE on this. The problem is: <strong>MSE doesn't penalise wrong predictions strongly enough</strong> to drive fast learning.</p>
+
+      <h3>The worked example that makes this concrete</h3>
+
+      <p>The lecturer ran two cases.</p>
+
+      <p><strong>Case 1 — good prediction:</strong> <code>actual = [1, 0, 0]</code>, <code>prediction = [0.7, 0.2, 0.1]</code></p>
+
+<pre><code>MSE          = ((1−0.7)² + (0−0.2)² + (0−0.1)²) / 3
+             = (0.09 + 0.04 + 0.01) / 3
+             ≈ 0.046       (call it 0.04)
+
+Cross-Entropy = -log(0.7) = 0.357     (call it 0.35)</code></pre>
+
+      <p><strong>Case 2 — bad prediction:</strong> <code>actual = [1, 0, 0]</code>, <code>prediction = [0.1, 0.3, 0.6]</code> — the model predicted class 3 with high confidence; the truth is class 1.</p>
+
+<pre><code>MSE          = ((1−0.1)² + (0−0.3)² + (0−0.6)²) / 3
+             = (0.81 + 0.09 + 0.36) / 3
+             = 0.42
+
+Cross-Entropy = -log(0.1) = 2.303     (call it 2.30)</code></pre>
+
+      <p>Look at the absolute scale, not just the ratio:</p>
+
+      <table>
+        <thead><tr><th>Loss</th><th>Good prediction</th><th>Bad prediction</th><th>Ratio</th></tr></thead>
+        <tbody>
+          <tr><td><strong>MSE</strong></td><td>0.04</td><td>0.42</td><td>10×</td></tr>
+          <tr><td><strong>Cross-Entropy</strong></td><td>0.35</td><td>2.30</td><td>6.5×</td></tr>
+        </tbody>
+      </table>
+
+      <p>MSE on a catastrophically wrong prediction is just 0.42 — still a small number. The optimiser sees a small loss and a small gradient, and nudges the weights gently. Training is slow. Cross-entropy on the same wrong prediction is 2.30 — much bigger. The gradient is correspondingly bigger. The optimiser corrects fast.</p>
+
+      <div class="correction">
+        <strong>Correction — the <em>real</em> reason MSE fails for classification is gradient magnitude, not penalty size.</strong>
+        <p>The lecturer framed it as "MSE doesn't penalise enough." That's the surface symptom. The mechanism is the <strong>gradient</strong>: when softmax is combined with cross-entropy, the gradient of the loss with respect to the pre-softmax logits simplifies to <code>(ŷ − y)</code> — large when wrong, small when right. MSE+softmax gradients are <em>bounded</em> (because softmax outputs are bounded in [0,1]), so confidently-wrong predictions get small gradients and never get corrected. This is why every modern classification model uses softmax + cross-entropy, not softmax + MSE. (Bishop, <em>Pattern Recognition and Machine Learning</em>, §4.3; Goodfellow et al., <em>Deep Learning</em>, §6.2.)</p>
+      </div>
+
+      <h3>The cross-entropy formula, properly</h3>
+
+      <p>The lecturer wrote <code>-Σ yᵢ log(yᵢ)</code> on the board. That's the <strong>entropy</strong> of the prediction distribution, not cross-entropy.</p>
+
+      <p><strong>Real cross-entropy:</strong></p>
+
+<pre><code>CE = -Σᵢ y_actual_i · log(y_pred_i)</code></pre>
+
+      <p>For one-hot actuals (only one class has y=1, the rest have y=0), this simplifies to:</p>
+
+<pre><code>CE = -log(y_pred[correct_class])</code></pre>
+
+      <p>That's what the lecturer actually <em>computed</em> numerically. The transcript formula was wrong; the numbers were right.</p>
+
+      <div class="correction">
+        <strong>Correction — the lecturer's transcribed formula was incorrect.</strong>
+        <p>What she wrote (<code>-Σ yᵢ log(yᵢ)</code> with only the predictions) computes the <em>self-information</em> of the prediction distribution — useful in information theory but not the classification loss. Cross-entropy requires the actual labels too: <code>-Σ y_actual · log(y_pred)</code>. Read her <em>computed numbers</em> as authoritative and the formula on the board as a slip.</p>
+      </div>
+    </section>
+
+    <!-- ============ §02 ============ -->
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">§ 02 — OUTPUT ACTIVATION</div>
+      <h2>Softmax vs Sigmoid on the output layer</h2>
+
+      <p>Both squash numbers into a (0, 1) range, but they do different things at the output of a classifier:</p>
+
+      <table>
+        <thead><tr><th></th><th>Sigmoid</th><th>Softmax</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Formula</strong></td><td><code>σ(z) = 1 / (1 + e⁻ᶻ)</code></td><td><code>e^zᵢ / Σⱼ e^zⱼ</code></td></tr>
+          <tr><td><strong>Range</strong></td><td>each output in (0, 1)</td><td>each output in (0, 1)</td></tr>
+          <tr><td><strong>Sum constraint</strong></td><td>none — outputs independent</td><td>sums to exactly 1</td></tr>
+          <tr><td><strong>Use</strong></td><td>binary classification (one neuron)</td><td>multi-class classification (K neurons)</td></tr>
+        </tbody>
+      </table>
+
+      <p>The lecturer's example with 3 weather classes:</p>
+
+<pre><code>Sigmoid:  [0.7, 0.4, 0.3]   ← sum = 1.4 (not a probability distribution)
+Softmax:  [0.5, 0.3, 0.2]   ← sum = 1.0 (a probability distribution)</code></pre>
+
+      <p>Both let you pick the predicted class by <code>argmax</code>. But only softmax produces numbers you can interpret as probabilities — and softmax pairs cleanly with cross-entropy to give the simple gradient <code>(ŷ − y)</code> mentioned in §01.</p>
+
+      <div class="correction">
+        <strong>Correction — softmax confidence isn't true confidence.</strong>
+        <p>A natural temptation is to read softmax outputs as confidence: 0.95 means the model is 95% sure. <strong>Modern deep networks are poorly calibrated</strong> — softmax probabilities don't reliably map to true probabilities (Guo, Pleiss, Sun, Weinberger 2017, "On Calibration of Modern Neural Networks"). A network can confidently output 0.95 for something it should only be 0.70 sure about. Production systems use <strong>temperature scaling</strong> or <strong>Platt scaling</strong> on top of softmax to calibrate. Useful slogan: "raw softmax = probably wrong magnitude, right ranking."</p>
+      </div>
+
+      <h3>Filtering by confidence</h3>
+      <p>The lecturer made one nice point worth keeping: when the softmax output is <code>[0.4, 0.3, 0.3]</code>, the model is barely choosing — argmax still picks class 1, but the confidence is thin. In production this is the row you flag for human review:</p>
+
+<pre><code>predictions = model.predict(X_test)              # shape (N, num_classes)
+confidence = predictions.max(axis=1)             # shape (N,)
+predicted_class = predictions.argmax(axis=1)
+low_confidence = confidence &lt; 0.6                # boolean mask</code></pre>
+
+      <p>Calibration caveat above still applies — <code>confidence &lt; 0.6</code> is a useful heuristic, not a ground truth.</p>
+    </section>
+
+    <!-- ============ §03 ============ -->
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">§ 03 — LABEL FORMAT</div>
+      <h2>Categorical vs Sparse Categorical Cross-Entropy</h2>
+
+      <p>The two TensorFlow loss functions look different but compute the same thing.</p>
+
+      <table>
+        <thead><tr><th>Loss function</th><th>Label format</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><code>CategoricalCrossentropy</code></td><td>One-hot encoded</td><td><code>y = [0, 0, 1, 0, 0, 0, 0, 0, 0, 0]</code> for class 2</td></tr>
+          <tr><td><code>SparseCategoricalCrossentropy</code></td><td>Integer</td><td><code>y = 2</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>Both compute <code>-log(y_pred[correct_class])</code>. The only difference is whether you pre-convert your integer labels to one-hot encoding, or let the loss function look up the correct class by index.</p>
+
+      <div class="correction">
+        <strong>Correction — these aren't "mathematically different."</strong>
+        <p>The transcript framed sparse vs categorical as if they were different losses. They produce the same gradient, the same training behaviour, the same numerical loss. Pick <strong>sparse</strong> if your labels are integers (MNIST: 0, 1, 2, …, 9); pick <strong>categorical</strong> if you've already one-hot-encoded them. Saves you a <code>keras.utils.to_categorical(y)</code> call.</p>
+      </div>
+
+      <p>In the MNIST code we'll write below, the labels come as integers (0-9), so we use <code>sparse_categorical_crossentropy</code>.</p>
+    </section>
+
+    <!-- ============ §04 ============ -->
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">§ 04 — REGULARISATION</div>
+      <h2>Dropout, in practice</h2>
+
+      <p>Dropout was introduced in ANN-Session 2 as a regulariser. Today we see it in code, and watch it <em>actually fix</em> an overfit model.</p>
+
+      <p>The mechanism, briefly: during training, randomly set a fraction <code>p</code> of neurons' outputs to 0 each step. The remaining neurons take up the slack. Forces the network to learn redundant, robust representations rather than depending on any single neuron's exact behaviour.</p>
+
+      <p>In Keras you just add a <code>Dropout(rate)</code> layer after the layer you want to regularise:</p>
+
+<pre><code>model = Sequential([
+    Flatten(input_shape=(28, 28)),
+    Dense(512, activation='relu'),
+    Dropout(0.5),                 # ← drop 50% of the 512 neurons each step
+    Dense(512, activation='relu'),
+    Dropout(0.5),
+    Dense(10, activation='softmax'),
+])</code></pre>
+
+      <div class="correction">
+        <strong>Correction — 0.5 is on the high side for early layers.</strong>
+        <p>The lecturer used <code>Dropout(0.5)</code> on every hidden layer. Modern practice: <strong>0.2-0.3 in early layers, 0.3-0.5 in later layers, no dropout on the output layer</strong>. The original Srivastava et al. 2014 paper used 0.5 because it was empirically optimal on the small networks of that era. Bigger modern networks use lower rates; batch normalisation has also reduced reliance on dropout overall. Start at 0.2-0.3 and increase if you see overfitting.</p>
+      </div>
+
+      <h3>The K-pattern: what overfitting looks like</h3>
+
+      <p>When you plot <strong>training loss</strong> and <strong>validation loss</strong> against epoch number, you want to see them moving in lockstep, both going down. When you see them diverge — training keeps dropping while validation rises — that's the <strong>K-pattern</strong>, and it means your model is <strong>overfitting</strong>: memorising the training data, failing on new data.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two side-by-side loss curves showing a good model (parallel decreasing curves) and an overfitted model (K-pattern with diverging curves).">
+          <g font-family="JetBrains Mono, monospace">
+            <text x="200" y="24" text-anchor="middle" fill="#2a5d62" font-size="12" font-weight="700">GOOD MODEL — PARALLEL</text>
+            <text x="600" y="24" text-anchor="middle" fill="#b8472e" font-size="12" font-weight="700">OVERFITTED — K-PATTERN</text>
+
+            <line x1="40"  y1="240" x2="360" y2="240" stroke="#8b7d65" stroke-width="1"/>
+            <line x1="40"  y1="50"  x2="40"  y2="240" stroke="#8b7d65" stroke-width="1"/>
+            <text x="20"   y="50"  text-anchor="middle" fill="#8b7d65" font-size="10">loss</text>
+            <text x="360"  y="258" text-anchor="middle" fill="#8b7d65" font-size="10">epoch</text>
+            <path d="M 50 70 Q 150 130, 350 200" fill="none" stroke="#1f1a14" stroke-width="2"/>
+            <path d="M 50 85 Q 150 145, 350 215" fill="none" stroke="#b8472e" stroke-width="2"/>
+            <text x="240" y="195" fill="#1f1a14" font-size="10">training</text>
+            <text x="240" y="240" fill="#b8472e" font-size="10">validation</text>
+
+            <line x1="440" y1="240" x2="760" y2="240" stroke="#8b7d65" stroke-width="1"/>
+            <line x1="440" y1="50"  x2="440" y2="240" stroke="#8b7d65" stroke-width="1"/>
+            <text x="420"  y="50"  text-anchor="middle" fill="#8b7d65" font-size="10">loss</text>
+            <text x="760"  y="258" text-anchor="middle" fill="#8b7d65" font-size="10">epoch</text>
+            <path d="M 450 80 Q 550 150, 750 220" fill="none" stroke="#1f1a14" stroke-width="2"/>
+            <path d="M 450 100 Q 550 160, 600 140 Q 680 110, 750 75" fill="none" stroke="#b8472e" stroke-width="2"/>
+            <text x="650" y="220" fill="#1f1a14" font-size="10">training (still dropping)</text>
+            <text x="640" y="80"  fill="#b8472e" font-size="10">validation (rising!)</text>
+          </g>
+        </svg>
+        <figcaption>Always plot training and validation loss together. Parallel decreasing = healthy. Diverging (K-pattern) = overfitting; add dropout or reduce capacity.</figcaption>
+      </figure>
+
+      <p>The lecturer demonstrated this live. Two architectures, same data:</p>
+
+      <table>
+        <thead><tr><th>Architecture</th><th>Training accuracy</th><th>Validation accuracy</th><th>Overfitted?</th></tr></thead>
+        <tbody>
+          <tr><td><code>Dense(128) → Dense(128) → Dense(10)</code></td><td>~99%</td><td>~97%</td><td>No — close enough</td></tr>
+          <tr><td><code>Dense(512) → Dense(512) → Dense(10)</code></td><td>99%</td><td>stuck at ~96%</td><td>Yes — K-pattern</td></tr>
+          <tr><td><code>Dense(512) → Dropout(0.5) → Dense(512) → Dropout(0.5) → Dense(10)</code></td><td>~98%</td><td>~97%</td><td>No — fixed by dropout</td></tr>
+        </tbody>
+      </table>
+
+      <p>The lesson: bigger isn't always better. Going from 128 to 512 added capacity, but the capacity went into memorising training quirks rather than learning general patterns. Dropout reined it back in.</p>
+    </section>
+
+    <!-- ============ §05 ============ -->
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">§ 05 — THE RECIPE</div>
+      <h2>The Keras training pipeline</h2>
+
+      <p>The end-to-end recipe for any classification project in Keras is <strong>seven steps</strong>. Memorise this.</p>
+
+<pre><code># Step 1 — load the data
+(X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
+
+# Step 2 — normalize (scale pixel values from 0-255 to 0-1)
+X_train = tf.keras.utils.normalize(X_train, axis=1)
+X_test  = tf.keras.utils.normalize(X_test,  axis=1)
+
+# Step 3 — build the architecture
+model = tf.keras.Sequential([
+    tf.keras.layers.Flatten(input_shape=(28, 28)),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(10,  activation='softmax'),
+])
+
+# Step 4 — compile (declare optimizer + loss + metrics)
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy'],
+)
+
+# Step 5 — fit (this is where gradient descent actually runs)
+history = model.fit(
+    X_train, y_train,
+    epochs=10,
+    validation_data=(X_test, y_test),
+)
+
+# Step 6 — evaluate on held-out data
+test_loss, test_acc = model.evaluate(X_test, y_test)
+
+# Step 7 — predict + post-process
+probs       = model.predict(X_test)              # shape (N, 10) — probability per class
+predictions = probs.argmax(axis=1)               # shape (N,)   — winning class per row</code></pre>
+
+      <p>Read it from the top. Each line is doing one specific thing.</p>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA/SPRING BRIDGE</div>
+        <p><strong>Sequential ≈ a fluent builder.</strong> <code>Sequential([layer1, layer2, layer3])</code> is the same shape as <code>SpringApplicationBuilder.sources(A.class).sources(B.class).run()</code> or Spring's <code>HttpSecurity</code> DSL. Stack steps in order, each one transforms the output of the previous. The compilation step <code>model.compile(optimizer=..., loss=...)</code> is the analogue of a <code>@Configuration</code> class — declare the runtime behaviour declaratively, then call <code>fit()</code> as the run method.</p>
+      </div>
+    </section>
+
+    <!-- ============ §06 ============ -->
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">§ 06 — DATA</div>
+      <h2>MNIST and its preprocessing</h2>
+
+      <p>MNIST is the classical "Hello, World!" of image classification. 60,000 training images and 10,000 test images of handwritten digits 0-9. Each image is <strong>28 × 28 grayscale pixels</strong> with values 0-255.</p>
+
+      <h3>Inspecting the raw data</h3>
+<pre><code>print(X_train.shape)   # (60000, 28, 28)
+print(X_train[0])      # 28×28 array of pixel values (0-255)
+print(y_train[0])      # 5  ← the label</code></pre>
+
+      <p>The first 28×28 array is just a grid of brightness values. You can plot it with matplotlib:</p>
+
+<pre><code>import matplotlib.pyplot as plt
+plt.imshow(X_train[0], cmap='gray')
+plt.show()             # ← a fuzzy "5"</code></pre>
+
+      <div class="correction">
+        <strong>Correction — 28 × 28 = 784, not 712.</strong>
+        <p>The transcript repeatedly says "712 nodes in the input layer." That's wrong. After flattening a 28×28 image, you have 784 input nodes. (28 × 28 = 784; 712 isn't even a perfect square.) For 64×64 images you'd have 4,096 input nodes (correct in the transcript).</p>
+      </div>
+
+      <h3>Why we normalize</h3>
+      <p>Pixel values range from 0 (black) to 255 (white). Feeding raw 0-255 values into a network is mathematically fine but practically slow:</p>
+      <ul>
+        <li><strong>Convergence is slower.</strong> Larger inputs produce larger initial activations and gradients, which can destabilise early training.</li>
+        <li><strong>Different features have different scales.</strong> When you have multiple features at different scales, the loss surface is elongated and gradient descent zig-zags. Normalising puts everything on a level playing field.</li>
+      </ul>
+      <p>Apply the <em>same</em> normalisation to test data that you applied to training. The model has only seen scaled data; feeding it raw data at inference time breaks predictions.</p>
+
+      <h3>Why we need Flatten</h3>
+      <p>A <code>Dense</code> (fully-connected) layer expects 1D input vectors. MNIST images are 2D arrays of shape (28, 28). The <code>Flatten</code> layer reshapes (28, 28) → (784,). After flattening, each input neuron corresponds to one pixel position.</p>
+
+      <div class="correction">
+        <strong>Correction — "ANN can't take 2D data" is too strong.</strong>
+        <p>The lecturer said "the input layer always takes 1D data." That's specifically true for <code>Dense</code> layers. <strong>Convolutional layers</strong> (<code>Conv2D</code>) take 2D input directly and are exactly the right tool for image data. The MNIST exercise uses <code>Dense</code> for pedagogical simplicity, but in real image work you'd use a CNN, which preserves the 2D spatial structure. Flatten is a workaround that throws away the spatial structure of the image — fine for MNIST, suboptimal for hard image tasks.</p>
+      </div>
+    </section>
+
+    <!-- ============ §07 ============ -->
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">§ 07 — DATA SPLIT</div>
+      <h2>Train / Validation / Test split</h2>
+
+      <p>The lecturer described a <strong>60/40</strong> split (60% training, 40% testing) with the training portion further split into training+validation. That's outdated for deep learning.</p>
+
+      <h3>Modern proportions</h3>
+      <table>
+        <thead><tr><th>Era / Field</th><th>Typical split</th></tr></thead>
+        <tbody>
+          <tr><td>Classical statistics, small datasets</td><td>70 / 30 (train / test)</td></tr>
+          <tr><td>Classical ML, moderate datasets</td><td>60 / 20 / 20 or 70 / 15 / 15</td></tr>
+          <tr><td><strong>Deep learning, large datasets</strong></td><td><strong>80 / 10 / 10 or 98 / 1 / 1 for huge data</strong></td></tr>
+        </tbody>
+      </table>
+
+      <div class="correction">
+        <strong>Correction — 60/40 wastes training data.</strong>
+        <p>With MNIST's 70k images, a 60/40 split gives 42k training + 28k test. A 90/10 split gives 63k training + 7k test — <em>50% more training data, equally rigorous test</em>. More training data is almost always more valuable than a bigger test set once the test set is "big enough" (typically 5k+ examples). Use 80/10/10 as the default unless the dataset is small.</p>
+      </div>
+
+      <h3>Why we need a separate validation set</h3>
+      <p>Three datasets, three jobs:</p>
+      <ul>
+        <li><strong>Training set</strong> — the data the model fits on. Loss flows through here and updates weights.</li>
+        <li><strong>Validation set</strong> — used during training to tune hyperparameters and choose when to stop.</li>
+        <li><strong>Test set</strong> — used <strong>only once</strong>, at the very end, to estimate how the chosen model will perform on truly unseen data.</li>
+      </ul>
+
+      <div class="correction">
+        <strong>Correction — using the test set to choose architectures leaks information.</strong>
+        <p>The lecturer used <code>X_test, y_test</code> in <code>validation_data=</code> during model.fit, then called <code>model.evaluate(X_test, y_test)</code> as the final score. This is a methodological problem: every architectural choice (128 vs 512 neurons, dropout 0.2 vs 0.5) was made by looking at performance on the same data we then claim is the "unseen test" performance. The numbers reported are <strong>optimistically biased</strong>. The fix: split into <strong>train / val / test</strong> at the start. Use validation for all tuning. Touch test only once, at the very end.</p>
+<pre><code>from sklearn.model_selection import train_test_split
+
+# First split off a held-out test set
+X_train_full, X_test, y_train_full, y_test = train_test_split(
+    X, y, test_size=0.10, random_state=42
+)
+# Then split the remaining into train + val
+X_train, X_val, y_train, y_val = train_test_split(
+    X_train_full, y_train_full, test_size=0.10, random_state=42
+)
+# Now use validation_data=(X_val, y_val) in model.fit, NOT X_test</code></pre>
+      </div>
+    </section>
+
+    <!-- ============ infographic ============ -->
+    <figure class="infographic" id="svg">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-labelledby="ig5aTitle ig5aDesc">
+        <title id="ig5aTitle">ANN-Session 5 — Building your first neural network in Keras</title>
+        <desc id="ig5aDesc">Visual summary: the 7-step Keras pipeline, cross-entropy vs MSE worked example, overfitting K-pattern, and key corrections.</desc>
+
+        <defs>
+          <style>
+            .display { font-family: 'Fraunces', 'Iowan Old Style', Georgia, serif; font-style: italic; font-weight: 700; }
+            .display-r { font-family: 'Fraunces', serif; font-weight: 700; }
+            .body { font-family: 'Spectral', Georgia, serif; }
+            .mono { font-family: 'JetBrains Mono', 'Menlo', monospace; }
+          </style>
+          <marker id="ig5aArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/>
+          </marker>
+        </defs>
+
+        <rect width="1200" height="1500" fill="#f5efe6"/>
+
+        <!-- header -->
+        <text x="60" y="80" class="mono" fill="#b8472e" font-size="13" letter-spacing="6" font-weight="700">ANN · SESSION 05 · VISUAL SUMMARY · KERAS HANDS-ON</text>
+        <text x="60" y="160" class="display" fill="#1f1a14" font-size="58">Building your first network</text>
+        <text x="60" y="218" class="display" fill="#b8472e" font-size="58">in Keras.</text>
+        <line x1="60" y1="252" x2="1140" y2="252" stroke="#1f1a14" stroke-width="2"/>
+        <text x="60" y="285" class="body" fill="#4a4239" font-size="18" font-style="italic">Seven steps. Same gradient-descent loop. Cross-entropy + softmax = classification.</text>
+
+        <!-- The 7-step pipeline -->
+        <g transform="translate(60, 340)">
+          <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§05 · THE 7-STEP KERAS RECIPE</text>
+
+          <g transform="translate(0, 30)">
+            <rect x="0" y="0" width="150" height="80" fill="#2a5d62"/>
+            <text x="75" y="20" class="mono" fill="#f5efe6" font-size="11" font-weight="700" text-anchor="middle">STEP 1</text>
+            <text x="75" y="40" class="display-r" fill="#f5efe6" font-size="14" text-anchor="middle">Load</text>
+            <text x="75" y="62" class="mono" fill="#f5efe6" font-size="9" text-anchor="middle">mnist.load_data()</text>
+
+            <rect x="155" y="0" width="150" height="80" fill="#5ba0a8"/>
+            <text x="230" y="20" class="mono" fill="#1f1a14" font-size="11" font-weight="700" text-anchor="middle">STEP 2</text>
+            <text x="230" y="40" class="display-r" fill="#1f1a14" font-size="14" text-anchor="middle">Normalize</text>
+            <text x="230" y="62" class="mono" fill="#1f1a14" font-size="9" text-anchor="middle">utils.normalize()</text>
+
+            <rect x="310" y="0" width="150" height="80" fill="#c89b3c"/>
+            <text x="385" y="20" class="mono" fill="#1f1a14" font-size="11" font-weight="700" text-anchor="middle">STEP 3</text>
+            <text x="385" y="40" class="display-r" fill="#1f1a14" font-size="14" text-anchor="middle">Build</text>
+            <text x="385" y="62" class="mono" fill="#1f1a14" font-size="9" text-anchor="middle">Sequential([...])</text>
+
+            <rect x="465" y="0" width="150" height="80" fill="#d96d4a"/>
+            <text x="540" y="20" class="mono" fill="#f5efe6" font-size="11" font-weight="700" text-anchor="middle">STEP 4</text>
+            <text x="540" y="40" class="display-r" fill="#f5efe6" font-size="14" text-anchor="middle">Compile</text>
+            <text x="540" y="62" class="mono" fill="#f5efe6" font-size="9" text-anchor="middle">optimizer + loss</text>
+
+            <rect x="620" y="0" width="150" height="80" fill="#b8472e"/>
+            <text x="695" y="20" class="mono" fill="#f5efe6" font-size="11" font-weight="700" text-anchor="middle">STEP 5</text>
+            <text x="695" y="40" class="display-r" fill="#f5efe6" font-size="14" text-anchor="middle">Fit</text>
+            <text x="695" y="62" class="mono" fill="#f5efe6" font-size="9" text-anchor="middle">model.fit(...)</text>
+
+            <rect x="775" y="0" width="150" height="80" fill="#1f1a14"/>
+            <text x="850" y="20" class="mono" fill="#c89b3c" font-size="11" font-weight="700" text-anchor="middle">STEP 6</text>
+            <text x="850" y="40" class="display-r" fill="#f5efe6" font-size="14" text-anchor="middle">Evaluate</text>
+            <text x="850" y="62" class="mono" fill="#f5efe6" font-size="9" text-anchor="middle">model.evaluate()</text>
+
+            <rect x="930" y="0" width="150" height="80" fill="#6db33f"/>
+            <text x="1005" y="20" class="mono" fill="#1f1a14" font-size="11" font-weight="700" text-anchor="middle">STEP 7</text>
+            <text x="1005" y="40" class="display-r" fill="#1f1a14" font-size="14" text-anchor="middle">Predict</text>
+            <text x="1005" y="62" class="mono" fill="#1f1a14" font-size="9" text-anchor="middle">.predict().argmax()</text>
+          </g>
+
+          <text x="540" y="130" class="body" fill="#4a4239" font-size="14" font-style="italic" text-anchor="middle">The same recipe scales from MNIST to fine-tuning Llama.</text>
+        </g>
+
+        <!-- Cross-entropy vs MSE -->
+        <g transform="translate(60, 540)">
+          <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§01 · WHY MSE FAILS — WORKED EXAMPLE</text>
+
+          <rect x="0" y="20" width="1080" height="200" fill="#ede5d6" stroke="#d4c9b5"/>
+          <line x1="280" y1="20" x2="280" y2="220" stroke="#d4c9b5"/>
+          <line x1="680" y1="20" x2="680" y2="220" stroke="#d4c9b5"/>
+          <line x1="0" y1="80" x2="1080" y2="80" stroke="#d4c9b5"/>
+
+          <text x="20" y="50" class="display-r" fill="#1f1a14" font-size="16">CASE</text>
+          <text x="20" y="68" class="mono" fill="#8b7d65" font-size="11">actual = [1, 0, 0]</text>
+
+          <text x="300" y="50" class="mono" fill="#2a5d62" font-size="12" font-weight="700">GOOD PREDICTION</text>
+          <text x="300" y="68" class="mono" fill="#1f1a14" font-size="12">prediction = [0.7, 0.2, 0.1]</text>
+
+          <text x="700" y="50" class="mono" fill="#b8472e" font-size="12" font-weight="700">BAD PREDICTION</text>
+          <text x="700" y="68" class="mono" fill="#1f1a14" font-size="12">prediction = [0.1, 0.3, 0.6]</text>
+
+          <text x="20" y="120" class="display-r" fill="#1f1a14" font-size="14">MSE</text>
+          <text x="20" y="142" class="mono" fill="#8b7d65" font-size="10">Σ(ŷ−y)² / N</text>
+
+          <text x="300" y="120" class="mono" fill="#1f1a14" font-size="24" font-weight="700">0.04</text>
+          <text x="300" y="148" class="mono" fill="#8b7d65" font-size="10">small loss → small gradient → slow learning</text>
+
+          <text x="700" y="120" class="mono" fill="#b8472e" font-size="24" font-weight="700">0.42</text>
+          <text x="700" y="148" class="mono" fill="#8b7d65" font-size="10">still small for a confidently-wrong prediction!</text>
+
+          <text x="20" y="180" class="display-r" fill="#1f1a14" font-size="14">CROSS-ENTROPY</text>
+          <text x="20" y="200" class="mono" fill="#8b7d65" font-size="10">-log(y_pred[correct])</text>
+
+          <text x="300" y="180" class="mono" fill="#1f1a14" font-size="24" font-weight="700">0.35</text>
+          <text x="300" y="208" class="mono" fill="#8b7d65" font-size="10">-log(0.7)</text>
+
+          <text x="700" y="180" class="mono" fill="#b8472e" font-size="24" font-weight="700">2.30</text>
+          <text x="700" y="208" class="mono" fill="#8b7d65" font-size="10">-log(0.1) — 6× the MSE penalty, fast correction</text>
+        </g>
+
+        <!-- Overfitting K-pattern -->
+        <g transform="translate(60, 800)">
+          <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§11 · OVERFITTING DEMO — THE K-PATTERN</text>
+
+          <rect x="0" y="20" width="520" height="240" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="20" y="44" class="mono" fill="#2a5d62" font-size="12" font-weight="700">GOOD — PARALLEL CURVES</text>
+          <line x1="50" y1="220" x2="490" y2="220" stroke="#8b7d65" stroke-width="1"/>
+          <line x1="50" y1="80"  x2="50"  y2="220" stroke="#8b7d65" stroke-width="1"/>
+          <text x="20" y="90" class="mono" fill="#8b7d65" font-size="9">loss</text>
+          <text x="490" y="238" class="mono" fill="#8b7d65" font-size="9" text-anchor="end">epoch</text>
+          <path d="M 60 100 Q 200 150, 480 200" fill="none" stroke="#1f1a14" stroke-width="2"/>
+          <path d="M 60 115 Q 200 165, 480 213" fill="none" stroke="#5ba0a8" stroke-width="2"/>
+          <text x="430" y="190" class="mono" fill="#1f1a14" font-size="10">training</text>
+          <text x="430" y="232" class="mono" fill="#5ba0a8" font-size="10">validation</text>
+
+          <rect x="560" y="20" width="520" height="240" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="580" y="44" class="mono" fill="#b8472e" font-size="12" font-weight="700">BAD — K-PATTERN, OVERFIT</text>
+          <line x1="610" y1="220" x2="1050" y2="220" stroke="#8b7d65" stroke-width="1"/>
+          <line x1="610" y1="80"  x2="610"  y2="220" stroke="#8b7d65" stroke-width="1"/>
+          <text x="580" y="90" class="mono" fill="#8b7d65" font-size="9">loss</text>
+          <text x="1050" y="238" class="mono" fill="#8b7d65" font-size="9" text-anchor="end">epoch</text>
+          <path d="M 620 110 Q 760 170, 1040 215" fill="none" stroke="#1f1a14" stroke-width="2"/>
+          <path d="M 620 130 Q 760 175, 850 155 Q 950 115, 1040 90" fill="none" stroke="#b8472e" stroke-width="2"/>
+          <text x="990" y="208" class="mono" fill="#1f1a14" font-size="10">training ↓</text>
+          <text x="970" y="100" class="mono" fill="#b8472e" font-size="10">validation ↑</text>
+
+          <text x="540" y="290" class="body" fill="#4a4239" font-size="14" font-style="italic" text-anchor="middle">FIX: add Dropout(0.2-0.5) after each hidden layer, or reduce model capacity.</text>
+        </g>
+
+        <!-- Five corrections strip -->
+        <g transform="translate(60, 1180)">
+          <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">FIVE CORRECTIONS YOU SHOULD CARRY</text>
+          <rect x="0" y="14" width="1080" height="230" fill="#f8e6cf" stroke="#b8472e" stroke-dasharray="4 3"/>
+
+          <g transform="translate(20, 38)">
+            <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" font-weight="700">1.</text>
+            <text x="22" y="0" class="mono" fill="#1f1a14" font-size="12">MSE fails for classification because of gradient magnitude, not "penalty size." softmax+CE gives clean gradients.</text>
+
+            <text x="0" y="32" class="mono" fill="#b8472e" font-size="11" font-weight="700">2.</text>
+            <text x="22" y="32" class="mono" fill="#1f1a14" font-size="12">Cross-entropy = -Σ y_actual · log(y_pred). Lecturer's "-Σ yᵢ log(yᵢ)" is entropy, not cross-entropy.</text>
+
+            <text x="0" y="64" class="mono" fill="#b8472e" font-size="11" font-weight="700">3.</text>
+            <text x="22" y="64" class="mono" fill="#1f1a14" font-size="12">Categorical and Sparse Categorical CE compute the same loss. Difference is label format (one-hot vs integer).</text>
+
+            <text x="0" y="96" class="mono" fill="#b8472e" font-size="11" font-weight="700">4.</text>
+            <text x="22" y="96" class="mono" fill="#1f1a14" font-size="12">Use 80/10/10 train/val/test for deep learning — not 60/40. And NEVER touch test until the very end.</text>
+
+            <text x="0" y="128" class="mono" fill="#b8472e" font-size="11" font-weight="700">5.</text>
+            <text x="22" y="128" class="mono" fill="#1f1a14" font-size="12">28 × 28 = 784, not 712. Use Dropout(0.2-0.3) in early layers, 0.5 only when needed.</text>
+
+            <text x="0" y="172" class="mono" fill="#8b7d65" font-size="10" font-style="italic">+ Sequential is for linear TOPOLOGY (no branching), not "linear problems."</text>
+            <text x="0" y="190" class="mono" fill="#8b7d65" font-size="10" font-style="italic">+ Softmax probabilities are NOT calibrated confidences (Guo et al. 2017).</text>
+            <text x="0" y="208" class="mono" fill="#8b7d65" font-size="10" font-style="italic">+ Random search ≥ grid search empirically (Bergstra &amp; Bengio 2012). Use Hyperband for slow trials.</text>
+          </g>
+        </g>
+
+        <!-- footer -->
+        <text x="60" y="1480" class="mono" fill="#8b7d65" font-size="10" letter-spacing="2">ANN-SESSION 05 · 2026-05-20 · SASMITA COURSE</text>
+        <text x="1140" y="1480" class="mono" fill="#8b7d65" font-size="10" letter-spacing="2" text-anchor="end">SAME LOOP → FINE-TUNING LLMs</text>
+      </svg>
+      <figcaption>The Keras recipe, the cross-entropy vs MSE numbers, the K-pattern, and the corrections — on one page.</figcaption>
+    </figure>
+
+    <!-- ============ §08 ============ -->
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">§ 08 — COMPILE CHOICES</div>
+      <h2>Compile: optimizer, loss, metrics</h2>
+
+      <p>Three choices to make at compile time.</p>
+
+      <h3>Optimizer</h3>
+      <p>The lecturer used <code>Adam</code>. That's the modern default for most tasks. Brief survey:</p>
+      <table>
+        <thead><tr><th>Optimizer</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SGD</strong></td><td>Vanilla gradient descent. Slow convergence, predictable.</td></tr>
+          <tr><td><strong>SGD + momentum</strong></td><td>Smoother trajectory. Still common in computer vision.</td></tr>
+          <tr><td><strong>Adam</strong></td><td>Adaptive per-parameter learning rates + momentum. The "just works" default.</td></tr>
+          <tr><td><strong>AdamW</strong></td><td>Adam with decoupled weight decay. Default for transformer training.</td></tr>
+          <tr><td><strong>RMSProp</strong></td><td>Predecessor to Adam; rarely used now.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="correction">
+        <strong>Correction — "Adam is always best" oversimplifies.</strong>
+        <p>Adam is the safest default but not strictly best. <strong>AdamW</strong> (Loshchilov &amp; Hutter 2017) outperforms Adam on transformer-like models. <strong>SGD with momentum + a learning rate schedule</strong> still beats Adam on some computer-vision tasks (ResNet training on ImageNet). Start with Adam; if you need to squeeze more performance, try AdamW or SGD+momentum+cosine-LR-schedule.</p>
+      </div>
+
+      <h3>Loss</h3>
+      <table>
+        <thead><tr><th>Task</th><th>Output activation</th><th>Loss</th></tr></thead>
+        <tbody>
+          <tr><td>Binary classification (1 output)</td><td>sigmoid</td><td><code>binary_crossentropy</code></td></tr>
+          <tr><td>Multi-class, one-hot labels</td><td>softmax</td><td><code>categorical_crossentropy</code></td></tr>
+          <tr><td>Multi-class, integer labels</td><td>softmax</td><td><code>sparse_categorical_crossentropy</code></td></tr>
+          <tr><td>Regression</td><td>none (identity)</td><td><code>mse</code> or <code>mae</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Metrics</h3>
+      <p><code>metrics=['accuracy']</code> is right for balanced classification problems. If your classes are imbalanced (99% non-fraud, 1% fraud), accuracy is misleading — a "predict non-fraud every time" model scores 99% but is useless. For imbalanced problems use <code>precision</code>, <code>recall</code>, <code>f1</code>, <code>roc_auc</code>, or <code>pr_auc</code>. Metrics don't affect training; they're just for your dashboard.</p>
+    </section>
+
+    <!-- ============ §09 ============ -->
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">§ 09 — THREE METHODS</div>
+      <h2>Fit, evaluate, predict — what each one does</h2>
+
+      <h3><code>model.fit(X_train, y_train, ...)</code></h3>
+      <p>This is where <strong>gradient descent actually runs</strong>. Internally, for each epoch, for each batch:</p>
+      <ol>
+        <li>Forward pass: compute predictions for the batch.</li>
+        <li>Compute loss using your chosen loss function.</li>
+        <li>Backpropagate to get gradients.</li>
+        <li>Update weights with the chosen optimizer.</li>
+      </ol>
+      <p>You get back a <code>History</code> object that stores per-epoch metrics — use this to plot training curves and detect overfitting.</p>
+
+      <h3><code>model.evaluate(X_test, y_test)</code></h3>
+      <p>Runs a forward pass on the test data, computes the loss and metrics, returns them. Doesn't update weights. <strong>Use this for the single final-score measurement</strong> after all tuning is done.</p>
+
+      <h3><code>model.predict(X)</code></h3>
+      <p>Runs a forward pass on <code>X</code> and returns the <strong>raw probability vector</strong> for each row. No labels needed (this is what inference looks like — you don't know the answer yet). Convert to class labels with <code>argmax</code>:</p>
+
+<pre><code>probs = model.predict(X_new)              # shape (N, 10)
+predictions = probs.argmax(axis=1)        # shape (N,) — the predicted class per row</code></pre>
+
+      <div class="callout">
+        <div class="callout-label">WHY argmax NOT max</div>
+        <p><code>max</code> returns the <em>value</em> of the highest probability. <code>argmax</code> returns the <em>index</em> of the highest probability — which, because we wired the output layer so neuron <code>i</code> corresponds to class <code>i</code>, is also the predicted class label.</p>
+      </div>
+    </section>
+
+    <!-- ============ §10 ============ -->
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">§ 10 — PERSISTENCE</div>
+      <h2>Saving and loading</h2>
+
+      <p>A trained model is too valuable to throw away. Save it:</p>
+<pre><code>model.save('mnist_classifier.keras')        # modern Keras format</code></pre>
+
+      <p>Load it back later:</p>
+<pre><code>from tensorflow.keras.models import load_model
+loaded = load_model('mnist_classifier.keras')
+loaded.predict(X_new)</code></pre>
+
+      <div class="correction">
+        <strong>Correction — use <code>.keras</code>, not <code>.h5</code>.</strong>
+        <p>The lecturer used the older <code>.h5</code> (HDF5) format. As of Keras 3 (2024), the recommended format is <code>.keras</code> — a zip archive containing the architecture, weights, and training config. It's faster to save/load, more portable, and supports newer features. <code>.h5</code> still works for backwards compatibility but is being phased out.</p>
+      </div>
+
+      <p>What gets saved: the architecture, the trained weights (W and b for every connection), the optimizer state (so you can resume training), the loss and metrics configuration. The file is self-contained — you can hand it to another Python process and it works.</p>
+    </section>
+
+    <!-- ============ §11 ============ -->
+    <section class="chapter" id="s11">
+      <div class="chapter-marker">§ 11 — OVERFITTING LIVE</div>
+      <h2>The overfitting demo, step by step</h2>
+
+      <p>This is the most pedagogically important moment in the session.</p>
+
+      <h3>Step 1 — train the small model</h3>
+<pre><code>model = Sequential([
+    Flatten(input_shape=(28, 28)),
+    Dense(128, activation='relu'),
+    Dense(128, activation='relu'),
+    Dense(10,  activation='softmax'),
+])
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+history = model.fit(X_train, y_train, epochs=10, validation_data=(X_val, y_val))</code></pre>
+      <p>Result: training accuracy ~99%, validation accuracy ~97%. Training and validation loss curves are roughly parallel and both decreasing. Healthy.</p>
+
+      <h3>Step 2 — make the model bigger (and worse)</h3>
+<pre><code># Same code but Dense(512) instead of Dense(128) in both hidden layers
+model = Sequential([
+    Flatten(input_shape=(28, 28)),
+    Dense(512, activation='relu'),       # ← 512 instead of 128
+    Dense(512, activation='relu'),       # ← 512 instead of 128
+    Dense(10,  activation='softmax'),
+])</code></pre>
+      <p>Result: training accuracy keeps climbing to ~99%, but validation accuracy stalls and starts dropping. Validation loss curve goes <strong>up</strong> while training loss continues <strong>down</strong>. Classic K-pattern.</p>
+
+      <p>What happened: the bigger network has 4× more parameters in each hidden layer. It has enough capacity to memorise quirks specific to the training images rather than learning the general "this is what a 7 looks like." Memorising training quirks hurts new-data performance.</p>
+
+      <h3>Step 3 — add dropout</h3>
+<pre><code>model = Sequential([
+    Flatten(input_shape=(28, 28)),
+    Dense(512, activation='relu'),
+    Dropout(0.5),                        # ← new
+    Dense(512, activation='relu'),
+    Dropout(0.5),                        # ← new
+    Dense(10,  activation='softmax'),
+])</code></pre>
+      <p>Result: training accuracy goes back to ~98% (lower than before because we deliberately disabled half the network on each step), but validation accuracy recovers to ~97% and the K-pattern disappears. Curves are parallel again.</p>
+
+      <h3>What we learned</h3>
+      <ul>
+        <li><strong>Bigger model ≠ better.</strong> Adding capacity beyond what the problem needs causes overfitting.</li>
+        <li><strong>Dropout pays for the cost of having extra capacity.</strong> It prevents the model from over-specialising on training quirks.</li>
+        <li><strong>You can only tell if there's a problem by plotting training vs validation curves over epochs.</strong> Single final accuracy numbers don't reveal overfitting.</li>
+        <li><strong>The right architecture is found empirically.</strong> Which is exactly what hyperparameter tuning automates.</li>
+      </ul>
+    </section>
+
+    <!-- ============ §12 ============ -->
+    <section class="chapter" id="s12">
+      <div class="chapter-marker">§ 12 — AUTOMATION</div>
+      <h2>Hyperparameter tuning with Keras Tuner</h2>
+
+      <p>The lecturer demoed <code>keras_tuner.RandomSearch</code> over architecture choices. The skeleton:</p>
+
+<pre><code>import keras_tuner as kt
+
+def build_model(hp):
+    model = Sequential()
+    model.add(Flatten(input_shape=(28, 28)))
+    model.add(Dense(
+        units=hp.Int('units1', min_value=64, max_value=256, step=32),
+        activation='relu',
+    ))
+    model.add(Dense(
+        units=hp.Int('units2', min_value=64, max_value=256, step=32),
+        activation='relu',
+    ))
+    model.add(Dense(10, activation='softmax'))
+    model.compile(
+        optimizer=Adam(hp.Choice('lr', [1e-2, 1e-3, 1e-4])),
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy'],
+    )
+    return model
+
+tuner = kt.RandomSearch(
+    build_model,
+    objective='val_accuracy',
+    max_trials=5,
+    executions_per_trial=2,
+    directory='kt_dir',
+)
+tuner.search(X_train, y_train, epochs=10, validation_data=(X_val, y_val))
+best_model = tuner.get_best_models(1)[0]</code></pre>
+
+      <p>What this does: define a <em>search space</em> (units1 ∈ {64, 96, …, 256}, units2 ∈ same set, lr ∈ {1e-2, 1e-3, 1e-4}). Randomly pick 5 combinations from the search space, train each one twice, keep the best by validation accuracy.</p>
+
+      <h3>Random search vs grid search</h3>
+
+      <div class="correction">
+        <strong>Correction — random search is <em>better</em> than grid search, not worse.</strong>
+        <p>The lecturer framed random search as "may miss the best." Empirically, random search is strictly better than grid search for hyperparameter tuning when you don't know in advance which parameters matter most (Bergstra &amp; Bengio 2012, "Random Search for Hyper-Parameter Optimization"). The reason: grid search wastes compute on parameter dimensions that don't matter much, while random search distributes its budget more efficiently across the dimensions that do.</p>
+      </div>
+
+      <p>Modern practice goes further:</p>
+      <table>
+        <thead><tr><th>Strategy</th><th>What it does</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Grid search</strong></td><td>Try every combination in a grid</td><td>Rare — wastes budget</td></tr>
+          <tr><td><strong>Random search</strong></td><td>Sample randomly from the search space</td><td>Reasonable default</td></tr>
+          <tr><td><strong>Bayesian optimization</strong></td><td>Build a model of the loss surface; sample promising regions</td><td>Best for expensive trials</td></tr>
+          <tr><td><strong>Hyperband</strong></td><td>Stop bad trials early; spend more on promising ones</td><td>When trials are slow</td></tr>
+        </tbody>
+      </table>
+
+      <p>Keras Tuner supports <code>RandomSearch</code>, <code>BayesianOptimization</code>, and <code>Hyperband</code>. <strong>Default to Hyperband</strong> if your trials take more than a few minutes; otherwise Bayesian. Random is fine for quick exploration.</p>
+    </section>
+
+    <!-- ============ §13 ============ -->
+    <section class="chapter" id="s13">
+      <div class="chapter-marker">§ 13 — BRIDGE</div>
+      <h2>Bridge back to GenAI / fine-tuning</h2>
+
+      <p>The lecturer kept tying back to fine-tuning. The connection: <strong>everything you just learned applies directly when you fine-tune a pre-trained LLM</strong>.</p>
+
+      <table>
+        <thead><tr><th>Step</th><th>Building MNIST from scratch</th><th>Fine-tuning a pre-trained LLM</th></tr></thead>
+        <tbody>
+          <tr><td>1. Load data</td><td><code>mnist.load_data()</code></td><td>Your domain-specific text</td></tr>
+          <tr><td>2. Preprocess</td><td>normalize, flatten</td><td>tokenize with the model's tokenizer</td></tr>
+          <tr><td>3. Build architecture</td><td><code>Sequential(...)</code></td><td>Load pre-trained weights via HuggingFace</td></tr>
+          <tr><td>4. Compile</td><td>optimizer + loss + metrics</td><td>optimizer + loss (often the same cross-entropy)</td></tr>
+          <tr><td>5. Fit</td><td><code>model.fit(...)</code></td><td><code>trainer.train()</code> — same gradient descent, often LoRA-adapted</td></tr>
+          <tr><td>6. Evaluate</td><td><code>model.evaluate(...)</code></td><td>held-out domain test set</td></tr>
+          <tr><td>7. Predict</td><td><code>model.predict(...)</code> + argmax</td><td>call the LLM, decode tokens</td></tr>
+        </tbody>
+      </table>
+
+      <p>The training loop is identical. Steps 3 and 7 swap "build from scratch" for "adapt pre-trained," but the rest is the same machinery. This is why the lecturer spent two months on classical deep learning before introducing LLMs — to give you the muscle memory that makes fine-tuning legible.</p>
+    </section>
+
+    <!-- ============ §14 ============ -->
+    <section class="chapter" id="s14">
+      <div class="chapter-marker">§ 14 — TL;DR</div>
+      <h2>Interview cheat-sheet</h2>
+
+      <div class="callout">
+        <div class="callout-label">30-SECOND ANSWER</div>
+        <p><em>"For classification I use softmax on the output layer and cross-entropy as the loss — MSE has a gradient that's too small for confidently-wrong predictions to recover. If labels are one-hot I use categorical cross-entropy; if they're integers I use sparse categorical cross-entropy — same math, different label format. The Keras workflow is seven steps: load, normalize, build with Sequential + Dense + Flatten + Dropout, compile with Adam + cross-entropy + accuracy, fit with validation_data, evaluate once at the end, predict + argmax. I watch for the K-pattern in training-vs-validation loss curves to catch overfitting; dropout fixes it. I split train/val/test 80/10/10, never touch test until the very end, and use Keras Tuner with random search or Hyperband to find architectures rather than guessing."</em></p>
+      </div>
+    </section>
+
+    <!-- ============ glossary ============ -->
+    <section class="glossary" id="glossary">
+      <h2>Glossary</h2>
+      <dl>
+        <dt>Adam</dt><dd>Adaptive Moment Estimation. Default optimizer in modern deep learning. Combines momentum and per-parameter learning-rate adaptation.</dd>
+        <dt>Argmax</dt><dd>Returns the index of the maximum value in an array. Used to convert softmax probabilities to predicted class labels.</dd>
+        <dt>Categorical cross-entropy</dt><dd>Cross-entropy loss when labels are one-hot encoded.</dd>
+        <dt>Cross-entropy</dt><dd><code>CE = -Σ y_actual · log(y_pred)</code>. The standard loss for classification. Pairs cleanly with softmax to give simple gradients.</dd>
+        <dt>Dropout</dt><dd>A regularisation technique that randomly zeros a fraction of neuron outputs during training. Reduces overfitting.</dd>
+        <dt>Early stopping</dt><dd>A training callback that halts training when validation loss stops improving. Use <code>keras.callbacks.EarlyStopping(patience=N)</code>.</dd>
+        <dt>Epoch</dt><dd>One complete pass through the training data.</dd>
+        <dt>Flatten</dt><dd>A Keras layer that reshapes multi-dimensional input (like a 28×28 image) into a 1D vector (784 elements).</dd>
+        <dt>Hyperband</dt><dd>A hyperparameter tuning algorithm that stops bad trials early to allocate budget to promising ones.</dd>
+        <dt>Hyperparameter</dt><dd>A training-process setting you choose, not the network learns.</dd>
+        <dt>K-pattern</dt><dd>The diverging shape of training vs validation loss curves when a model overfits.</dd>
+        <dt>Keras Sequential</dt><dd>A linear-topology model API: <code>Sequential([layer1, layer2, layer3])</code>. For branching topology, use the Functional API instead.</dd>
+        <dt>Keras Tuner</dt><dd>A library for automated hyperparameter search. Supports RandomSearch, BayesianOptimization, Hyperband.</dd>
+        <dt>MNIST</dt><dd>The classical hand-written digit dataset. 70k 28×28 grayscale images of digits 0-9.</dd>
+        <dt>Normalize</dt><dd>Scale input features to a consistent range (typically 0-1 or with mean 0 and std 1). Required for fast and stable training.</dd>
+        <dt>Overfitting</dt><dd>When a model learns the training data so well it stops generalising. Symptoms: training loss drops, validation loss rises.</dd>
+        <dt>Random Search</dt><dd>A hyperparameter tuning strategy that samples randomly from the search space. Better than grid search in most cases.</dd>
+        <dt>Softmax</dt><dd>Output activation for multi-class classification. Outputs sum to 1, can be interpreted (with caveats) as class probabilities.</dd>
+        <dt>Sparse categorical cross-entropy</dt><dd>Cross-entropy loss when labels are integers. Computationally identical to categorical cross-entropy with one-hot labels.</dd>
+        <dt>Validation set</dt><dd>Data held out from training, used to tune hyperparameters and decide when to stop training.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <span>ANN-SESSION 05 · 165 MIN · 2026-05-20</span>
+      <span>STUDY NOTES · SASMITA COURSE</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

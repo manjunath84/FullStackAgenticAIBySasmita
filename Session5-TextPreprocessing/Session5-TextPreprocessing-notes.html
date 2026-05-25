@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 5 — Cleaning text before it can be a number</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 22px; color: var(--ink); margin-bottom: 28px; line-height: 1.15; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 12px; font-family: 'Spectral', serif; font-size: 13px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+
+main { padding: 80px 80px 120px; max-width: 880px; }
+
+.hero { margin-bottom: 60px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(40px, 6vw, 70px); line-height: 0.98; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 620px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 560px; flex-wrap: wrap; }
+
+.where { background: rgba(42, 93, 98, 0.06); border-left: 4px solid var(--teal); padding: 20px 26px; margin: 0 0 56px; font-size: 16px; color: var(--ink-soft); }
+.where-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--teal); font-weight: 700; margin-bottom: 8px; }
+.where p { margin-bottom: 10px; }
+.where p:last-child { margin-bottom: 0; }
+.where strong { color: var(--ink); }
+
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--ink); padding: 36px 0 36px 30px; border-left: 4px solid var(--terracotta); margin: 30px 0 72px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -28px; font-size: 92px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+
+section.chapter { margin-bottom: 88px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 38px; line-height: 1.05; margin-bottom: 24px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 22px; margin: 36px 0 14px; color: var(--ink); }
+.chapter h4 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 18px; margin: 28px 0 10px; color: var(--ink); }
+.chapter p { margin-bottom: 18px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 14px 0 22px 32px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter ul li, .chapter ol li { margin-bottom: 8px; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; border-radius: 3px; }
+pre code { background: transparent; border: none; color: inherit; padding: 0; }
+
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 15px; }
+table th, table td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+table th { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--terracotta); font-weight: 700; text-transform: uppercase; border-bottom: 2px solid var(--ink); }
+table tbody tr:hover { background: rgba(248, 230, 207, 0.25); }
+table code { font-size: 0.9em; }
+
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15px; color: var(--ink); line-height: 1.6; }
+.correction strong { color: var(--terracotta); }
+.correction p { color: var(--ink); font-size: 15px; margin-bottom: 10px; line-height: 1.6; }
+.correction p:last-child { margin-bottom: 0; }
+
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 24px 28px; margin: 32px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--ochre); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 16px; margin-bottom: 10px; }
+.callout p:last-child { margin-bottom: 0; }
+
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 20px 24px; margin: 26px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.bridge code { background: rgba(109, 179, 63, 0.12); border-color: rgba(109, 179, 63, 0.3); }
+
+figure.diagram { margin: 32px 0; padding: 0; }
+figure.diagram svg { width: 100%; height: auto; display: block; background: var(--paper); border: 1px solid var(--line); }
+figure.diagram figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); margin-top: 10px; line-height: 1.55; }
+
+figure.infographic { margin: 40px -40px 40px; padding: 0; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic svg { width: 100%; height: auto; display: block; }
+figure.infographic figcaption { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); padding: 16px 32px; background: var(--paper-2); border-top: 1px solid var(--line); }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+
+.glossary { margin-top: 72px; padding-top: 44px; border-top: 2px solid var(--ink); }
+.glossary h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 32px; margin-bottom: 24px; }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 16px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+
+footer { margin-top: 90px; padding-top: 30px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 40px; }
+  .thesis { font-size: 22px; padding-left: 20px; }
+  .chapter h2 { font-size: 30px; }
+}
+
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 05</div>
+    <div class="toc-title">Cleaning text before it can be a number</div>
+    <ol>
+      <li><a href="#s1">Why text needs preprocessing</a></li>
+      <li><a href="#s2">AI project lifecycle</a></li>
+      <li><a href="#s3">What "embedding" means</a></li>
+      <li><a href="#s4">Python NLP ecosystem</a></li>
+      <li><a href="#s5">Feature engineering for text</a></li>
+      <li><a href="#s6">The classical 4-step pipeline</a></li>
+      <li><a href="#s7">Vocabulary vs corpus</a></li>
+      <li><a href="#svg">Visual summary</a></li>
+      <li><a href="#s8">Classical vs modern LLM</a></li>
+      <li><a href="#s9">Python walkthrough</a></li>
+      <li><a href="#s10">For Session 6</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      48.5 MIN<br>
+      3 SPEAKERS<br>
+      2026-05-19
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 05 · STUDY NOTES · NLP PREREQUISITES</div>
+      <h1>Cleaning text before it can <span class="accent">be a number.</span></h1>
+      <p class="hero-sub">Lowercase, tokenize, stem or lemmatize, drop stopwords — the classical pipeline that prepares text for embedding. Plus what modern LLMs do instead.</p>
+      <div class="hero-meta">
+        <span>PREREQUISITE FOR S6+S7</span>
+        <span>NLTK / SPACY</span>
+        <span>4-STEP PIPELINE</span>
+      </div>
+    </header>
+
+    <div class="where">
+      <div class="where-label">WHERE WE ARE</div>
+      <p>Sessions 3-4 covered the training loop on numerical data: a perceptron with weights, a loss, gradient descent. That whole machinery assumes the input is <strong>already a number</strong>. For images this is easy — every pixel is a number — but text is just text, and a math model can't multiply "the phone is good" by a weight matrix.</p>
+      <p>This session is the <strong>plumbing</strong> that turns raw text into something a model can train on. We don't build a model. We don't even produce numbers yet (that's Session 6, embedding). What we do is clean the text — lowercase, tokenize, lemmatize, drop stopwords — so that <em>when</em> we convert to numbers in the next session, we're not multiplying redundant or noisy inputs.</p>
+      <p><em>Next session</em> (Session 6): embedding. Take the cleaned text from today and turn each token into a vector of numbers. After that we're set up for the Transformer encoder (Session 7+).</p>
+    </div>
+
+    <div class="thesis">
+      Classical NLP preprocessing — <em>lowercase, tokenize, stem/lemmatize, remove stopwords</em> — exists to <em>shrink the feature space</em> before a model trains on it. Modern Transformer LLMs <em>skip most of this</em> because subword tokenizers handle the same problems differently. We're learning the classical pipeline because it's still relevant for traditional ML, interviews, and as background for the Transformer encoder.
+    </div>
+
+    <!-- ============ §01 ============ -->
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">§ 01 — THE GAP</div>
+      <h2>Why text needs preprocessing</h2>
+
+      <p>Every algorithm we've seen so far computes on numbers. The perceptron multiplies weights by inputs (numbers); gradient descent takes derivatives of a loss (a number); even the activation functions (ReLU, sigmoid, softmax) all map numbers to numbers. There is no point in the training loop where a string of letters could appear.</p>
+
+      <p>Two kinds of data fit naturally:</p>
+      <ul>
+        <li><strong>Structured data</strong> — rows and columns of numbers (a CSV of house prices, a database table). Already numeric.</li>
+        <li><strong>Images</strong> — each pixel is a triple of integers (R, G, B values in 0–255). Already numeric.</li>
+      </ul>
+      <p>Text is the odd one out:</p>
+      <ul>
+        <li><strong>Unstructured data</strong> — paragraphs, sentences, comments, transcripts. <em>Not</em> numeric.</li>
+      </ul>
+
+      <p>So we need a process to convert text into numbers before any model can touch it. That process has two halves:</p>
+      <ol>
+        <li><strong>Preprocessing (this session)</strong> — clean up the text so we're not converting redundant or meaningless pieces.</li>
+        <li><strong>Embedding (Session 6)</strong> — actually turn each cleaned piece into a numeric vector.</li>
+      </ol>
+    </section>
+
+    <!-- ============ §02 ============ -->
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">§ 02 — THE BIG PICTURE</div>
+      <h2>The AI project lifecycle</h2>
+
+      <p>The lecturer revisited the standard data-science project flow. Four phases:</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 800 130" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lifecycle diagram with four boxes: Data prep, Model build, Validation, Deploy, with arrows between them and an iterate loop from validation back to data prep.">
+          <defs>
+            <marker id="lcArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/>
+            </marker>
+          </defs>
+          <g font-family="JetBrains Mono, monospace">
+            <rect x="20" y="25" width="160" height="50" fill="#2a5d62"/>
+            <text x="100" y="48" text-anchor="middle" fill="#f5efe6" font-size="13" font-weight="700">DATA PREP</text>
+            <text x="100" y="65" text-anchor="middle" fill="#f5efe6" font-size="10">cleaning</text>
+            <line x1="180" y1="50" x2="220" y2="50" stroke="#1f1a14" stroke-width="2" marker-end="url(#lcArrow)"/>
+
+            <rect x="220" y="25" width="160" height="50" fill="#c89b3c"/>
+            <text x="300" y="48" text-anchor="middle" fill="#1f1a14" font-size="13" font-weight="700">MODEL BUILD</text>
+            <text x="300" y="65" text-anchor="middle" fill="#1f1a14" font-size="10">training</text>
+            <line x1="380" y1="50" x2="420" y2="50" stroke="#1f1a14" stroke-width="2" marker-end="url(#lcArrow)"/>
+
+            <rect x="420" y="25" width="160" height="50" fill="#b8472e"/>
+            <text x="500" y="48" text-anchor="middle" fill="#f5efe6" font-size="13" font-weight="700">VALIDATION</text>
+            <text x="500" y="65" text-anchor="middle" fill="#f5efe6" font-size="10">test data</text>
+            <line x1="580" y1="50" x2="620" y2="50" stroke="#1f1a14" stroke-width="2" marker-end="url(#lcArrow)"/>
+
+            <rect x="620" y="25" width="160" height="50" fill="#6db33f"/>
+            <text x="700" y="48" text-anchor="middle" fill="#1f1a14" font-size="13" font-weight="700">DEPLOY</text>
+            <text x="700" y="65" text-anchor="middle" fill="#1f1a14" font-size="10">production</text>
+
+            <path d="M 500 80 Q 500 110, 350 110 Q 100 110, 100 80" fill="none" stroke="#b8472e" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#lcArrow)"/>
+            <text x="350" y="125" text-anchor="middle" fill="#b8472e" font-size="11" font-style="italic">iterate if not good enough</text>
+          </g>
+        </svg>
+        <figcaption>The standard project flow. Today we're entirely inside the first box.</figcaption>
+      </figure>
+
+      <p><strong>Important nuance — "pre-trained" means three of these phases are already done for you.</strong> When you call OpenAI's API or load Llama from Hugging Face, somebody else already collected the data, prepared it, built the model, and validated it. You're just deploying / using. That's why the lecturer's whole agentic-AI course doesn't dwell on classical preprocessing — for the apps you'll build, the model is a finished product.</p>
+
+      <p>But you need to know how the sausage is made for two reasons:</p>
+      <ul>
+        <li><strong>Fine-tuning.</strong> If you ever retrain a model on your own data, you'll need to clean it. That clean process is what's below.</li>
+        <li><strong>Interviews.</strong> Every NLP/ML interview asks about tokenization, stopwords, stemming vs lemmatization. Don't lose easy points.</li>
+      </ul>
+    </section>
+
+    <!-- ============ §03 ============ -->
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">§ 03 — DESTINATION</div>
+      <h2>What "embedding" means (preview)</h2>
+
+      <p><strong>Embedding</strong> = converting text into numbers. Specifically: a function <code>embed: text → vector_of_floats</code> that preserves <em>meaning</em> — words with similar meanings get similar vectors.</p>
+
+      <p>The history, very briefly:</p>
+      <ul>
+        <li><strong>2010s early</strong> — count-vectorizer (just count word frequencies), TF-IDF (frequency weighted by rarity). Fast but no notion of meaning.</li>
+        <li><strong>2013</strong> — <strong>Word2Vec</strong> (Mikolov et al.). First widely-used embedding that captured semantic similarity. "king" and "queen" end up near each other in vector space.</li>
+        <li><strong>2014</strong> — <strong>GloVe</strong> (Pennington et al.). Similar idea, different training objective.</li>
+        <li><strong>2018</strong> — <strong>BERT</strong> (Devlin et al.). First Transformer-based embedding; same word gets different vectors in different contexts.</li>
+        <li><strong>2019+</strong> — every modern LLM (GPT, Llama, Claude) has its own embedding layer as the first step.</li>
+      </ul>
+
+      <p>We'll cover Word2Vec in Session 6 to understand the foundational ideas, then jump to the Transformer encoder in Session 7. The lecturer summarised: <strong>"The entire encoder block of Transformer is embedding only."</strong> Useful slogan — the encoder's job is to produce a final, context-aware embedding of the input that the decoder can then work with.</p>
+
+      <div class="correction">
+        <strong>Correction — "Word2Vec was the only algorithm in 2018-19."</strong>
+        <p>Word2Vec was published in <strong>2013</strong> and was widely used through 2016-17. By 2018, BERT had been published and was already displacing Word2Vec for serious NLP work. The "only algorithm" framing is a decade off. Word2Vec is taught because it's <em>foundational</em> — it's the cleanest illustration of how a learned vector can carry meaning — but it's not the state of the art and hasn't been for years.</p>
+      </div>
+    </section>
+
+    <!-- ============ §04 ============ -->
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">§ 04 — TOOLBOX</div>
+      <h2>The Python NLP ecosystem</h2>
+
+      <p>Useful map of the libraries the lecturer named, plus what each is actually for:</p>
+
+      <table>
+        <thead><tr><th>Library</th><th>Category</th><th>Use it for</th></tr></thead>
+        <tbody>
+          <tr><td><strong>NLTK</strong></td><td>Classical NLP</td><td>Teaching, research, simple preprocessing pipelines. Oldest of the three; lots of built-in datasets and algorithms.</td></tr>
+          <tr><td><strong>Gensim</strong></td><td>Classical NLP</td><td>Topic modeling (LDA), original Word2Vec implementation. Still relevant for unsupervised text analysis.</td></tr>
+          <tr><td><strong>spaCy</strong></td><td>Classical NLP</td><td><strong>Production-grade</strong> pipelines: tokenization, POS tagging, NER, lemmatization. Fast, batteries-included.</td></tr>
+          <tr><td><strong>scikit-learn</strong></td><td>Classical ML</td><td>Linear regression, logistic regression, decision trees. Also count-vectorizer and TF-IDF live here.</td></tr>
+          <tr><td><strong>TensorFlow / Keras</strong></td><td>Deep learning</td><td>Build and train neural networks. Keras is the high-level wrapper.</td></tr>
+          <tr><td><strong>PyTorch</strong></td><td>Deep learning</td><td>Same role as TF/Keras. Currently dominant in research; HuggingFace's <code>transformers</code> is PyTorch-first.</td></tr>
+          <tr><td><strong>Pandas</strong></td><td>Data analysis</td><td>Tabular data manipulation (<code>DataFrame</code>). Indispensable for the data-prep phase.</td></tr>
+          <tr><td><strong>NumPy</strong></td><td>Data analysis</td><td>Numerical backbone. Almost every other library is built on NumPy arrays.</td></tr>
+          <tr><td><strong>Matplotlib / Seaborn / Plotly</strong></td><td>Visualization</td><td>Charts and dashboards. Matplotlib is foundational; Seaborn is a nicer wrapper; Plotly is interactive.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="correction">
+        <strong>Correction — NLTK is no longer the production default.</strong>
+        <p>The lecturer demonstrated everything with NLTK, which is appropriate for teaching, but in 2025-26 production code, <strong>spaCy</strong> is the standard for classical NLP preprocessing pipelines. It's 5–10× faster than NLTK, ships with pre-trained models for tokenization/POS/NER in 60+ languages, and is built for serving inside web apps. If you're writing real preprocessing code, reach for spaCy first.</p>
+      </div>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA/SPRING BRIDGE</div>
+        <p><strong>Library ecosystem ≈ Spring's modules.</strong> NLTK / Gensim / spaCy is the NLP analogue of <code>spring-batch</code> vs <code>spring-cloud-stream</code> vs <code>spring-data-jpa</code> — same broad category (Spring framework / Python NLP), each module specialised. Use the one that fits the job; don't try to do everything with one.</p>
+      </div>
+    </section>
+
+    <!-- ============ §05 ============ -->
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">§ 05 — WHY CLEAN</div>
+      <h2>Feature engineering for text</h2>
+
+      <p>The lecturer's working example:</p>
+
+      <div class="callout">
+        <div class="callout-label">WORKED EXAMPLE</div>
+        <p><strong>Input:</strong> <em>"the phone is good"</em></p>
+        <p><strong>Task:</strong> classify sentiment (positive / negative)</p>
+      </div>
+
+      <p>Are all four words equally informative? Obviously not. <strong>"good"</strong> carries almost all the signal; <strong>"the"</strong>, <strong>"is"</strong> are functional words that appear in millions of sentences, positive or negative.</p>
+
+      <p><strong>Feature engineering</strong> for text means: identify and keep the words that carry signal; identify and drop the ones that don't. This isn't just aesthetics — it's mathematically load-bearing:</p>
+
+      <ul>
+        <li><strong>Fewer features → faster training.</strong> Each unique word becomes a column (or a dimension) in the model's input space. Dropping noise shrinks the search space.</li>
+        <li><strong>Less noise → better generalisation.</strong> A model trained on "good" vs "bad" as the signal will outperform one that also has to learn "the doesn't matter," because the latter has more chances to overfit.</li>
+        <li><strong>Cheaper to serve.</strong> Smaller vocabularies → smaller embedding tables → less memory and faster inference.</li>
+      </ul>
+
+      <div class="correction">
+        <strong>Correction — feature engineering is much less important for Transformer LLMs.</strong>
+        <p>Modern models like GPT-4 or Llama 3 do almost no feature engineering — they take raw text, run it through a subword tokenizer, and let the network learn what matters. The four-step pipeline below is essential for the classical era (logistic regression + TF-IDF) and still useful for some traditional NLP tasks, but you shouldn't apply it before feeding text to a modern LLM. We'll see the LLM pipeline in Session 7+.</p>
+      </div>
+    </section>
+
+    <!-- ============ §06 ============ -->
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">§ 06 — THE PIPELINE</div>
+      <h2>The classical 4-step pipeline</h2>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline transformation diagram showing raw text becoming progressively cleaner through 4 steps.">
+          <defs>
+            <marker id="ppArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/>
+            </marker>
+          </defs>
+          <g font-family="JetBrains Mono, monospace">
+            <!-- Raw text -->
+            <rect x="30" y="20" width="740" height="40" fill="#1f1a14"/>
+            <text x="50" y="38" fill="#c89b3c" font-size="10" font-weight="700">INPUT</text>
+            <text x="50" y="52" fill="#f5efe6" font-size="13">"The quick brown foxes ARE jumping over the lazy dogs!"</text>
+
+            <!-- Arrow + step label -->
+            <line x1="400" y1="62" x2="400" y2="84" stroke="#b8472e" stroke-width="2" marker-end="url(#ppArrow)"/>
+            <text x="410" y="78" fill="#b8472e" font-size="11" font-style="italic">step 1 · lowercase</text>
+
+            <rect x="30" y="86" width="740" height="40" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="50" y="104" fill="#8b7d65" font-size="10" font-weight="700">AFTER LOWERCASE</text>
+            <text x="50" y="118" fill="#1f1a14" font-size="13">"the quick brown foxes are jumping over the lazy dogs!"</text>
+
+            <line x1="400" y1="128" x2="400" y2="150" stroke="#b8472e" stroke-width="2" marker-end="url(#ppArrow)"/>
+            <text x="410" y="144" fill="#b8472e" font-size="11" font-style="italic">step 2 · tokenize (word level)</text>
+
+            <rect x="30" y="152" width="740" height="40" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="50" y="170" fill="#8b7d65" font-size="10" font-weight="700">AFTER TOKENIZE</text>
+            <text x="50" y="184" fill="#1f1a14" font-size="12">["the", "quick", "brown", "foxes", "are", "jumping", "over", "the", "lazy", "dogs", "!"]</text>
+
+            <line x1="400" y1="194" x2="400" y2="216" stroke="#b8472e" stroke-width="2" marker-end="url(#ppArrow)"/>
+            <text x="410" y="210" fill="#b8472e" font-size="11" font-style="italic">step 3 · lemmatize (or stem)</text>
+
+            <rect x="30" y="218" width="740" height="40" fill="#ede5d6" stroke="#d4c9b5"/>
+            <text x="50" y="236" fill="#8b7d65" font-size="10" font-weight="700">AFTER LEMMATIZE</text>
+            <text x="50" y="250" fill="#1f1a14" font-size="12">["the", "quick", "brown", "fox", "be", "jump", "over", "the", "lazy", "dog", "!"]</text>
+
+            <line x1="400" y1="260" x2="400" y2="282" stroke="#b8472e" stroke-width="2" marker-end="url(#ppArrow)"/>
+            <text x="410" y="276" fill="#b8472e" font-size="11" font-style="italic">step 4 · drop stopwords + punctuation</text>
+
+            <rect x="30" y="284" width="740" height="50" fill="#f8e6cf" stroke="#b8472e"/>
+            <text x="50" y="304" fill="#b8472e" font-size="10" font-weight="700">CLEANED OUTPUT (feeds into Session 6 embedding)</text>
+            <text x="50" y="322" fill="#1f1a14" font-size="13" font-weight="700">["quick", "brown", "fox", "jump", "lazy", "dog"]</text>
+
+            <text x="50" y="362" fill="#8b7d65" font-size="11" font-style="italic">11 raw tokens → 6 clean tokens. ~45% feature-space reduction.</text>
+          </g>
+        </svg>
+        <figcaption>The four steps in order, showing what happens to a single example sentence.</figcaption>
+      </figure>
+
+      <h3>Step 1 — Lowercase</h3>
+      <p><code>text.lower()</code>. One line of Python.</p>
+      <p><strong>Why:</strong> the model treats "Phone" and "phone" as two different words unless you collapse them. A vocabulary that distinguishes them by capitalisation alone is bloated for no reason.</p>
+
+      <div class="correction">
+        <strong>Correction — lowercasing destroys named-entity signal.</strong>
+        <p>"Apple" the company and "apple" the fruit are genuinely different words. "Polish" (a nationality, capital P) and "polish" (a verb, lowercase) are different. Lowercasing throws this signal away. For sentiment analysis on consumer reviews it doesn't matter much; for NER, translation, or any task that depends on entities, it's harmful. <strong>BERT</strong> ships in two variants — <code>bert-base-uncased</code> (lowercased) and <code>bert-base-cased</code> (preserves case) — precisely because the right choice depends on the task. Don't lowercase by reflex.</p>
+      </div>
+
+      <h3>Step 2 — Tokenization</h3>
+      <p>Split the text into <strong>tokens</strong> — the smallest units the model will treat as atomic.</p>
+      <p><strong>Word-level tokenization</strong> (the lecturer's default): split on whitespace + punctuation. "the quick brown fox" → <code>["the", "quick", "brown", "fox"]</code>.</p>
+      <p><strong>Sentence-level tokenization</strong>: split on sentence boundaries. "Hello world. Goodbye world." → <code>["Hello world.", "Goodbye world."]</code>.</p>
+      <p>NLTK gives you both via <code>word_tokenize</code> and <code>sent_tokenize</code>. The right level depends on what your model needs.</p>
+
+      <h4>What is a "token," precisely?</h4>
+      <p>A <strong>token</strong> is a logical atomic unit. Word and sentence are two coarse-grained choices. Modern LLMs use a finer unit called a <strong>subword token</strong>:</p>
+<pre><code>"preprocessing" → ["pre", "process", "##ing"]   (BERT WordPiece tokenizer)
+"unbelievable"  → ["un", "bel", "iev", "able"]  (a BPE tokenizer)</code></pre>
+
+      <p>Why subwords? Three reasons:</p>
+      <ol>
+        <li><strong>Bounded vocabulary.</strong> English has millions of distinct words (especially counting names, typos, hashtags); a subword vocabulary of 32K-50K pieces covers all of them.</li>
+        <li><strong>Handles unknown words.</strong> "covfefe" isn't in any word vocabulary. With subword tokenization it becomes some sequence of letter-pieces.</li>
+        <li><strong>Captures morphology.</strong> "running" and "ran" share root tokens, so the model gets a hint they're related.</li>
+      </ol>
+
+      <p>The three dominant subword algorithms are <strong>BPE</strong> (Byte Pair Encoding, Sennrich et al. 2016 — used by GPT-2/3/4), <strong>WordPiece</strong> (Devlin et al. 2018 — used by BERT), and <strong>SentencePiece</strong> (Kudo &amp; Richardson 2018 — used by Llama, Gemma, T5).</p>
+
+      <div class="correction">
+        <strong>Correction — "tokens per minute" billing isn't about word-tokens.</strong>
+        <p>When OpenAI bills you for "1 million tokens per request," they mean the model's <strong>subword tokens</strong>, computed by the model's specific tokenizer. English text averages roughly <strong>1.3 GPT-tokens per word</strong>, but it varies — code and non-English languages tokenize to more tokens per character. You can compute exact counts with OpenAI's <code>tiktoken</code> library before sending the request, which is good practice when costs matter.</p>
+      </div>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA/SPRING BRIDGE</div>
+        <p><strong>Tokenization ≈ a Lexer.</strong> If you've written a parser with ANTLR, or dug into how <code>javac</code> processes source code, the first phase is the lexer: turn a flat character stream into a stream of structured tokens (identifiers, keywords, operators). NLP tokenization is the same idea — the units are words instead of programming-language keywords, but the role is identical: hand the next phase (parser, or in our case, the model) a clean stream of atoms.</p>
+      </div>
+
+      <h3>Step 3 — Stemming OR Lemmatization</h3>
+      <p>Both do the same job: reduce inflected forms of a word to a single root form, so the model sees "run", "runs", "running", "ran" as the same underlying concept.</p>
+      <p>You pick one. Not both.</p>
+
+      <h4>Stemming (the fast, dumb one)</h4>
+      <p><strong>Stemming</strong> strips suffixes by rule. The most common algorithm is <strong>Porter Stemmer</strong> (Porter 1980), which applies a sequence of suffix-rewriting rules:</p>
+<pre><code>"running" → "run"     (strip -ing)
+"foxes"   → "fox"     (strip -es)
+"happily" → "happili" (strip -y, replace with -i — can produce non-words)
+"lazy"    → "lazi"    (same rule)</code></pre>
+
+      <p>The lecturer demonstrated Porter Stemmer producing "lazi" from "lazy". That's the trade-off — sometimes the "stem" isn't a real word. It doesn't matter for the model (which treats "lazi" as just another token), but it makes debugging output less readable.</p>
+      <p><strong>Speed:</strong> very fast. Pure string manipulation, no lookups.</p>
+
+      <h4>Lemmatization (the slow, smart one)</h4>
+      <p><strong>Lemmatization</strong> uses a dictionary to look up the canonical "lemma" of a word, optionally informed by the word's part of speech.</p>
+<pre><code>"running" (verb) → "run"
+"better"  (adj.) → "good"        (← stemming can't do this; dictionary entry)
+"was"     (verb) → "be"
+"foxes"   (noun) → "fox"
+"lazy"    (adj.) → "lazy"        (← already a lemma; not mutilated)</code></pre>
+
+      <p>NLTK provides this via the <strong>WordNet Lemmatizer</strong>. WordNet (Princeton, 1985–) is a large lexical database of English; the lemmatizer just looks each word up.</p>
+      <p><strong>Speed:</strong> much slower than stemming — dictionary lookups and POS-tagging overhead.</p>
+
+      <h4>When to use which</h4>
+      <table>
+        <thead><tr><th>Use case</th><th>Pick</th></tr></thead>
+        <tbody>
+          <tr><td>Massive corpus, classification task, accuracy isn't critical</td><td><strong>Stemming</strong> (Porter / Snowball). Speed wins.</td></tr>
+          <tr><td>Smaller corpus, chatbot / QA / customer-facing task, output read by humans</td><td><strong>Lemmatization</strong>. Accuracy and real-word output win.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="correction">
+        <strong>Correction — the lemmatizer doesn't do NER.</strong>
+        <p>The transcript mentioned that WordNet Lemmatizer "does NER, named entity recognition." It doesn't. The lemmatizer uses POS tags (part-of-speech: noun, verb, adjective, adverb) to disambiguate the right lemma ("better" as an adverb → "well"; as an adjective → "good"). <strong>NER</strong> is a separate task — finding people, places, organisations — handled by different tools (spaCy's <code>ner</code> pipeline, HuggingFace's <code>dslim/bert-base-NER</code>, etc.). The lecturer conflated POS tagging with NER; they're related (both label tokens with metadata) but distinct.</p>
+      </div>
+
+      <div class="correction">
+        <strong>Correction — "the math model will understand" frames the right thing the wrong way.</strong>
+        <p>When the lecturer said "lazy → lazi is fine, model will understand," she's correct <em>in context</em> — the model just sees "lazi" as another token ID and doesn't care that it's not a real word. But beginners hearing this often interpret it as "the model has some understanding of English." It doesn't. It has learned statistical regularities over token IDs. "lazi" works only because it's <em>consistently</em> used as the stem for both "lazy" and "lazier" — the consistency is what the model exploits, not the linguistic meaning.</p>
+      </div>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA/SPRING BRIDGE</div>
+        <p><strong>Stemming vs lemmatization ≈ regex strip vs ElasticSearch analyzer.</strong> Porter Stemmer is like a sequence of <code>String.replaceAll(suffix, "")</code> calls — fast, ruthless, occasionally garbles input. WordNet Lemmatizer is like an ElasticSearch analyzer with a synonym mapping plus part-of-speech context — slower but produces canonical forms a human would recognise.</p>
+      </div>
+
+      <h3>Step 4 — Stopword removal</h3>
+      <p><strong>Stopwords</strong> are the high-frequency, low-information words in a language: "the", "is", "are", "a", "and", "of", "to", "in", … In English they're a closed set of about 150 words.</p>
+
+<pre><code>from nltk.corpus import stopwords
+stop = set(stopwords.words("english"))
+clean = [tok for tok in tokens if tok not in stop]</code></pre>
+
+      <p><strong>Why:</strong> they appear in every sentence, positive or negative, so they carry essentially no signal for tasks like sentiment classification. Drop them, the vocabulary shrinks, the signal-to-noise ratio improves.</p>
+
+      <div class="correction">
+        <strong>Correction — stopwords can carry signal for some tasks.</strong>
+        <p>In sentiment classification you can drop them safely. In <em>negation handling</em> you cannot — "the phone is <strong>not</strong> good" reverses sentiment, and "not" is sometimes treated as a stopword. Check your stopword list before applying it to a task that depends on negation, modal verbs, or grammatical structure. Modern Transformer models don't drop stopwords at all — they let the attention mechanism learn which words to pay attention to per context.</p>
+      </div>
+
+      <div class="bridge">
+        <div class="bridge-label">JAVA/SPRING BRIDGE</div>
+        <p><strong>Stopword removal ≈ a deny-list <code>Filter</code> in a Spring <code>FilterChain</code>.</strong> Same shape: a list of patterns; anything matching gets dropped before downstream processing sees it.</p>
+      </div>
+    </section>
+
+    <!-- ============ §07 ============ -->
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">§ 07 — TERMINOLOGY</div>
+      <h2>Vocabulary vs corpus</h2>
+
+      <p>The lecturer used "corpus" to mean "the set of unique words left after cleaning." That's not the standard usage. Quick disambiguation:</p>
+
+      <table>
+        <thead><tr><th>Term</th><th>Standard NLP meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Corpus</strong></td><td>The whole collection of documents / text you're working with. <em>"My corpus is 10,000 Reddit comments."</em></td></tr>
+          <tr><td><strong>Vocabulary</strong></td><td>The set of unique tokens that appear in your corpus. <em>"My vocabulary has 8,200 unique tokens after preprocessing."</em></td></tr>
+          <tr><td><strong>Token</strong></td><td>A single occurrence of a unit (word or subword) in the text. <em>"This document has 540 tokens."</em></td></tr>
+          <tr><td><strong>Type</strong></td><td>A unique token; another word for vocabulary entry. <em>"540 tokens but only 230 types."</em></td></tr>
+        </tbody>
+      </table>
+
+      <p>So if she said "my corpus is 20,000 words," she meant "my vocabulary is 20,000 words" by standard NLP usage. The corpus would be the document collection that <em>contains</em> those 20,000 unique words. Both senses are intelligible in context, but interview-precise usage matters.</p>
+    </section>
+
+    <!-- ============ infographic ============ -->
+    <figure class="infographic" id="svg">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-labelledby="ig5Title ig5Desc">
+        <title id="ig5Title">Session 5 — Cleaning text before it can be a number</title>
+        <desc id="ig5Desc">Visual summary: the 4-step classical NLP preprocessing pipeline, contrasted with what modern LLMs do, plus key corrections.</desc>
+
+        <defs>
+          <style>
+            .display { font-family: 'Fraunces', 'Iowan Old Style', Georgia, serif; font-style: italic; font-weight: 700; }
+            .display-r { font-family: 'Fraunces', serif; font-weight: 700; }
+            .body { font-family: 'Spectral', Georgia, serif; }
+            .mono { font-family: 'JetBrains Mono', 'Menlo', monospace; }
+          </style>
+          <marker id="ig5Arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/>
+          </marker>
+          <marker id="ig5ArrowTerra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/>
+          </marker>
+        </defs>
+
+        <rect width="1200" height="1500" fill="#f5efe6"/>
+
+        <!-- Header -->
+        <text x="60" y="80" class="mono" fill="#b8472e" font-size="13" letter-spacing="6" font-weight="700">SESSION 05 · VISUAL SUMMARY · NLP PREREQUISITES</text>
+        <text x="60" y="160" class="display" fill="#1f1a14" font-size="58">Cleaning text before it can</text>
+        <text x="60" y="218" class="display" fill="#b8472e" font-size="58">be a number.</text>
+        <line x1="60" y1="252" x2="1140" y2="252" stroke="#1f1a14" stroke-width="2"/>
+        <text x="60" y="285" class="body" fill="#4a4239" font-size="18" font-style="italic">Lowercase → tokenize → stem/lemmatize → drop stopwords. Then feed the result to embedding (Session 6).</text>
+
+        <!-- Pipeline section -->
+        <text x="60" y="340" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§06 · THE CLASSICAL 4-STEP PIPELINE</text>
+
+        <g transform="translate(60, 360)">
+          <!-- Step 1 -->
+          <rect x="0" y="0" width="1080" height="48" fill="#1f1a14"/>
+          <text x="20" y="22" class="mono" fill="#c89b3c" font-size="11" font-weight="700">RAW INPUT</text>
+          <text x="20" y="40" class="mono" fill="#f5efe6" font-size="14">"The quick brown foxes ARE jumping over the lazy dogs!"</text>
+
+          <line x1="540" y1="48" x2="540" y2="68" stroke="#b8472e" stroke-width="2" marker-end="url(#ig5ArrowTerra)"/>
+          <text x="554" y="64" class="mono" fill="#b8472e" font-size="12" font-style="italic">STEP 1 · LOWERCASE</text>
+
+          <rect x="0" y="68" width="1080" height="48" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="20" y="90" class="mono" fill="#8b7d65" font-size="11" font-weight="700">↓ AFTER LOWERCASE</text>
+          <text x="20" y="108" class="mono" fill="#1f1a14" font-size="14">"the quick brown foxes are jumping over the lazy dogs!"</text>
+
+          <line x1="540" y1="116" x2="540" y2="136" stroke="#b8472e" stroke-width="2" marker-end="url(#ig5ArrowTerra)"/>
+          <text x="554" y="132" class="mono" fill="#b8472e" font-size="12" font-style="italic">STEP 2 · TOKENIZE (word level)</text>
+
+          <rect x="0" y="136" width="1080" height="48" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="20" y="158" class="mono" fill="#8b7d65" font-size="11" font-weight="700">↓ AFTER TOKENIZE (11 tokens)</text>
+          <text x="20" y="176" class="mono" fill="#1f1a14" font-size="12">["the", "quick", "brown", "foxes", "are", "jumping", "over", "the", "lazy", "dogs", "!"]</text>
+
+          <line x1="540" y1="184" x2="540" y2="204" stroke="#b8472e" stroke-width="2" marker-end="url(#ig5ArrowTerra)"/>
+          <text x="554" y="200" class="mono" fill="#b8472e" font-size="12" font-style="italic">STEP 3 · LEMMATIZE</text>
+
+          <rect x="0" y="204" width="1080" height="48" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="20" y="226" class="mono" fill="#8b7d65" font-size="11" font-weight="700">↓ AFTER LEMMATIZE</text>
+          <text x="20" y="244" class="mono" fill="#1f1a14" font-size="12">["the", "quick", "brown", "fox", "be", "jump", "over", "the", "lazy", "dog", "!"]</text>
+
+          <line x1="540" y1="252" x2="540" y2="272" stroke="#b8472e" stroke-width="2" marker-end="url(#ig5ArrowTerra)"/>
+          <text x="554" y="268" class="mono" fill="#b8472e" font-size="12" font-style="italic">STEP 4 · DROP STOPWORDS</text>
+
+          <rect x="0" y="272" width="1080" height="56" fill="#f8e6cf" stroke="#b8472e" stroke-width="2"/>
+          <text x="20" y="294" class="mono" fill="#b8472e" font-size="11" font-weight="700">↓ CLEANED OUTPUT — feeds Session 6 embedding (6 tokens, ~45% shrink)</text>
+          <text x="20" y="316" class="mono" fill="#1f1a14" font-size="16" font-weight="700">["quick", "brown", "fox", "jump", "lazy", "dog"]</text>
+        </g>
+
+        <!-- Classical vs Modern comparison -->
+        <g transform="translate(60, 760)">
+          <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§08 · CLASSICAL NLP  VS  MODERN LLM</text>
+
+          <rect x="0" y="20" width="1080" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+
+          <!-- column header -->
+          <line x1="380" y1="20" x2="380" y2="240" stroke="#d4c9b5"/>
+          <line x1="730" y1="20" x2="730" y2="240" stroke="#d4c9b5"/>
+          <line x1="0" y1="56" x2="1080" y2="56" stroke="#d4c9b5"/>
+
+          <text x="20" y="44" class="mono" fill="#1f1a14" font-size="12" font-weight="700">STEP</text>
+          <text x="400" y="44" class="mono" fill="#2a5d62" font-size="12" font-weight="700">CLASSICAL NLP (this session)</text>
+          <text x="750" y="44" class="mono" fill="#b8472e" font-size="12" font-weight="700">MODERN LLM (Session 7+)</text>
+
+          <text x="20" y="84" class="mono" fill="#1f1a14" font-size="13">Lowercase</text>
+          <text x="400" y="84" class="mono" fill="#4a4239" font-size="13">yes, almost always</text>
+          <text x="750" y="84" class="mono" fill="#4a4239" font-size="13">usually no (cased models exist)</text>
+
+          <text x="20" y="116" class="mono" fill="#1f1a14" font-size="13">Tokenize</text>
+          <text x="400" y="116" class="mono" fill="#4a4239" font-size="13">word-level (split on space)</text>
+          <text x="750" y="116" class="mono" fill="#4a4239" font-size="13">subword (BPE / WordPiece /</text>
+          <text x="750" y="132" class="mono" fill="#4a4239" font-size="13">SentencePiece)</text>
+
+          <text x="20" y="160" class="mono" fill="#1f1a14" font-size="13">Stem / Lemmatize</text>
+          <text x="400" y="160" class="mono" fill="#4a4239" font-size="13">one of the two, almost always</text>
+          <text x="750" y="160" class="mono" fill="#4a4239" font-size="13">no</text>
+
+          <text x="20" y="192" class="mono" fill="#1f1a14" font-size="13">Stopword removal</text>
+          <text x="400" y="192" class="mono" fill="#4a4239" font-size="13">yes, almost always</text>
+          <text x="750" y="192" class="mono" fill="#4a4239" font-size="13">no</text>
+
+          <text x="20" y="224" class="mono" fill="#1f1a14" font-size="13" font-style="italic">replaces all this with…</text>
+          <text x="400" y="224" class="mono" fill="#8b7d65" font-size="13" font-style="italic">— this IS the pipeline</text>
+          <text x="750" y="224" class="mono" fill="#b8472e" font-size="13" font-style="italic">subword tokenizer + attention</text>
+        </g>
+
+        <!-- Stemming vs Lemmatization -->
+        <g transform="translate(60, 1040)">
+          <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§06.3 · STEMMING VS LEMMATIZATION</text>
+
+          <rect x="0" y="20" width="520" height="180" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="20" y="44" class="mono" fill="#c89b3c" font-size="11" font-weight="700">STEMMING (Porter, 1980)</text>
+          <text x="20" y="64" class="body" fill="#4a4239" font-size="13" font-style="italic">rule-based suffix strip · fast · may produce non-words</text>
+          <text x="20" y="92" class="mono" fill="#1f1a14" font-size="12">"running"  →  "run"</text>
+          <text x="20" y="110" class="mono" fill="#1f1a14" font-size="12">"foxes"    →  "fox"</text>
+          <text x="20" y="128" class="mono" fill="#1f1a14" font-size="12">"happily"  →  "happili"</text>
+          <text x="20" y="146" class="mono" fill="#1f1a14" font-size="12">"lazy"     →  "lazi"      ← not a real word</text>
+          <text x="20" y="178" class="mono" fill="#8b7d65" font-size="11">use when: large corpus, speed matters</text>
+
+          <rect x="560" y="20" width="520" height="180" fill="#ede5d6" stroke="#d4c9b5"/>
+          <text x="580" y="44" class="mono" fill="#2a5d62" font-size="11" font-weight="700">LEMMATIZATION (WordNet)</text>
+          <text x="580" y="64" class="body" fill="#4a4239" font-size="13" font-style="italic">dictionary lookup + POS tag · slow · real-word output</text>
+          <text x="580" y="92" class="mono" fill="#1f1a14" font-size="12">"running"  →  "run"</text>
+          <text x="580" y="110" class="mono" fill="#1f1a14" font-size="12">"better"   →  "good"      ← stemming can't do this</text>
+          <text x="580" y="128" class="mono" fill="#1f1a14" font-size="12">"was"      →  "be"</text>
+          <text x="580" y="146" class="mono" fill="#1f1a14" font-size="12">"lazy"     →  "lazy"      ← preserved</text>
+          <text x="580" y="178" class="mono" fill="#8b7d65" font-size="11">use when: small corpus, output read by humans</text>
+        </g>
+
+        <!-- Five corrections strip -->
+        <g transform="translate(60, 1280)">
+          <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">FIVE CORRECTIONS YOU SHOULD CARRY</text>
+          <rect x="0" y="14" width="1080" height="170" fill="#f8e6cf" stroke="#b8472e" stroke-dasharray="4 3"/>
+
+          <g transform="translate(20, 38)">
+            <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" font-weight="700">1.</text>
+            <text x="22" y="0" class="mono" fill="#1f1a14" font-size="12">Modern LLMs skip almost this entire pipeline. Subword tokenizer + attention does the work.</text>
+
+            <text x="0" y="28" class="mono" fill="#b8472e" font-size="11" font-weight="700">2.</text>
+            <text x="22" y="28" class="mono" fill="#1f1a14" font-size="12">Don't lowercase by reflex — "Apple" the company is not "apple" the fruit. Use bert-base-cased when entities matter.</text>
+
+            <text x="0" y="56" class="mono" fill="#b8472e" font-size="11" font-weight="700">3.</text>
+            <text x="22" y="56" class="mono" fill="#1f1a14" font-size="12">Word2Vec was 2013, not 2018. BERT (2018) and GPT-2 (2019) had displaced it by then.</text>
+
+            <text x="0" y="84" class="mono" fill="#b8472e" font-size="11" font-weight="700">4.</text>
+            <text x="22" y="84" class="mono" fill="#1f1a14" font-size="12">The lemmatizer doesn't do NER. POS tagging informs lemmatization; NER is a separate task with different tools.</text>
+
+            <text x="0" y="112" class="mono" fill="#b8472e" font-size="11" font-weight="700">5.</text>
+            <text x="22" y="112" class="mono" fill="#1f1a14" font-size="12">"Corpus" = collection of documents.  "Vocabulary" = unique tokens.  Use the right one in interviews.</text>
+          </g>
+        </g>
+
+        <!-- footer -->
+        <text x="60" y="1480" class="mono" fill="#8b7d65" font-size="10" letter-spacing="2">SESSION 05 · 2026-05-19 · SASMITA COURSE</text>
+        <text x="1140" y="1480" class="mono" fill="#8b7d65" font-size="10" letter-spacing="2" text-anchor="end">NEXT → SESSION 06 · EMBEDDING</text>
+      </svg>
+      <figcaption>The pipeline, the comparison with modern LLMs, and the five corrections — on one page.</figcaption>
+    </figure>
+
+    <!-- ============ §08 ============ -->
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">§ 08 — THE BIGGER PICTURE</div>
+      <h2>What modern LLMs actually do</h2>
+
+      <p>Here's the side-by-side that explains why the lecturer's GenAI/Agentic-AI course doesn't dwell on this pipeline:</p>
+
+      <table>
+        <thead><tr><th>Step</th><th>Classical NLP</th><th>Modern LLM</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Lowercase</strong></td><td>Yes, almost always</td><td>Usually no (cased models preserve case)</td></tr>
+          <tr><td><strong>Tokenize</strong></td><td>Word-level (split on space)</td><td>Subword (BPE / WordPiece / SentencePiece)</td></tr>
+          <tr><td><strong>Stem / Lemmatize</strong></td><td>One of the two, almost always</td><td>No</td></tr>
+          <tr><td><strong>Stopword removal</strong></td><td>Yes, almost always</td><td>No</td></tr>
+          <tr><td><strong>What replaces all this?</strong></td><td><em>n/a — this is the pipeline</em></td><td>Subword tokenizer + the attention mechanism</td></tr>
+        </tbody>
+      </table>
+
+      <p>The shift happened around 2017 (the Transformer paper) and was complete by 2019 (BERT, GPT-2). Modern LLMs use subword tokenization on raw text and let the network learn which tokens matter. The "feature engineering" of dropping stopwords or normalising case is implicit in what the attention layers learn.</p>
+
+      <p>Why are we still teaching it then? Three reasons:</p>
+      <ol>
+        <li><strong>Traditional NLP is still used.</strong> Sentiment classifiers built on TF-IDF + logistic regression are fast, interpretable, and good enough for many production tasks. They need this pipeline.</li>
+        <li><strong>Fine-tuning a domain model.</strong> If you're fine-tuning a smaller model on your own domain data, you may still want to do some cleaning (de-duplication, removing boilerplate) — not the four steps above, but the spirit of "remove redundancy before training."</li>
+        <li><strong>Interviews.</strong> "Explain stemming vs lemmatization" is a near-guaranteed question.</li>
+      </ol>
+
+      <p>For everything else — building agents on top of pre-trained LLMs, calling APIs, RAG pipelines — feed the model raw text and let it do its own tokenization.</p>
+    </section>
+
+    <!-- ============ §09 ============ -->
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">§ 09 — CODE</div>
+      <h2>Putting it together: one Python walkthrough</h2>
+
+      <p>The lecturer's full NLTK pipeline as it appears in code, annotated:</p>
+
+<pre><code>import nltk
+from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk.corpus import stopwords
+
+text = "The quick brown foxes ARE jumping over the lazy dogs!"
+
+# Step 1: lowercase
+text = text.lower()
+# → "the quick brown foxes are jumping over the lazy dogs!"
+
+# Step 2: tokenize (word-level)
+tokens = word_tokenize(text)
+# → ["the", "quick", "brown", "foxes", "are", "jumping",
+#    "over", "the", "lazy", "dogs", "!"]
+
+# Step 3a: stem (pick one of 3a OR 3b — fast and dumb)
+stemmer = PorterStemmer()
+stemmed = [stemmer.stem(t) for t in tokens]
+# → ["the", "quick", "brown", "fox", "are", "jump",
+#    "over", "the", "lazi", "dog", "!"]
+
+# Step 3b: lemmatize (pick one of 3a OR 3b — slow and smart)
+lemmatizer = WordNetLemmatizer()
+lemmas = [lemmatizer.lemmatize(t) for t in tokens]
+# → ["the", "quick", "brown", "fox", "are", "jumping",
+#    "over", "the", "lazy", "dog", "!"]
+# Note: "jumping" stayed because lemmatize defaults to noun POS;
+# pass pos="v" to lemmatise verbs properly.
+
+# Step 4: remove stopwords + punctuation
+stop = set(stopwords.words("english"))
+final = [t for t in lemmas if t not in stop and t.isalpha()]
+# → ["quick", "brown", "fox", "jumping", "lazy", "dog"]</code></pre>
+
+      <p>Six clean tokens out the other side. Those are the units that go into Session 6's embedding step.</p>
+    </section>
+
+    <!-- ============ §10 ============ -->
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">§ NEXT — SESSION 06</div>
+      <h2>For Session 6</h2>
+
+      <p>Tomorrow's topic is <strong>embedding</strong> — taking each cleaned token and turning it into a vector of floats that captures meaning.</p>
+
+      <p>The plan the lecturer outlined:</p>
+      <ol>
+        <li><strong>CountVectorizer</strong> — the dumbest possible embedding: each token becomes a column, value is the count of how often it appears. Sparse, no notion of meaning.</li>
+        <li><strong>Word2Vec</strong> (Mikolov 2013) — a learned dense embedding. Similar words end up with similar vectors. This is where "king − man + woman ≈ queen" comes from.</li>
+        <li><strong>Transformer encoder embeddings</strong> — context-aware. "bank" in "river bank" and "bank" in "investment bank" get different vectors. Session 7 covers this from the encoder angle; we'll meet it again from the embedding angle.</li>
+      </ol>
+
+      <p>What to remember from today, going into Session 6:</p>
+      <ul>
+        <li>The preprocessing pipeline produces a sequence of <strong>cleaned tokens</strong>, not numbers yet.</li>
+        <li>Embedding is the step that converts tokens → vectors.</li>
+        <li>The full pipeline for a classical NLP project is: <strong>preprocess → embed → train → validate → deploy.</strong></li>
+        <li>Modern LLMs collapse "preprocess + embed" into "subword tokenize + learned embedding layer," all inside the model.</li>
+      </ul>
+
+      <div class="callout">
+        <div class="callout-label">INTERVIEW-READY SUMMARY</div>
+        <p><em>"Classical NLP preprocessing has four steps: lowercase, tokenize, stem or lemmatize, drop stopwords. The point is feature-space reduction before training a traditional model like TF-IDF + logistic regression. Modern Transformer LLMs skip most of this — they use subword tokenization (BPE for GPT, WordPiece for BERT, SentencePiece for Llama) on raw text and let the network learn what matters. Stemming is fast and rule-based (Porter); lemmatization is slow and dictionary-based (WordNet). NLTK is the teaching library; spaCy is the production library."</em></p>
+      </div>
+    </section>
+
+    <!-- ============ glossary ============ -->
+    <section class="glossary" id="glossary">
+      <h2>Glossary</h2>
+      <dl>
+        <dt>BPE (Byte Pair Encoding)</dt><dd>Subword tokenization algorithm used by GPT-2/3/4. Iteratively merges most-frequent character pairs to build a vocabulary of ~50K subwords.</dd>
+        <dt>Corpus</dt><dd>A collection of documents or text used for analysis or training. <em>Not</em> the same as vocabulary.</dd>
+        <dt>Embedding</dt><dd>A function mapping text (or a token) to a vector of floats, ideally preserving meaning.</dd>
+        <dt>Feature engineering</dt><dd>The practice of selecting and transforming the input variables a model sees, to improve its performance.</dd>
+        <dt>Lemma</dt><dd>The canonical dictionary form of a word. "Run" is the lemma of "running", "ran", "runs".</dd>
+        <dt>Lemmatization</dt><dd>Reducing a word to its lemma using a dictionary + POS context.</dd>
+        <dt>NER (Named Entity Recognition)</dt><dd>Identifying named entities (people, places, organisations, dates) in text. <em>Separate</em> from POS tagging and from lemmatization.</dd>
+        <dt>NLTK / Gensim / spaCy</dt><dd>The three main Python classical-NLP libraries. NLTK = teaching, Gensim = topic modeling, spaCy = production.</dd>
+        <dt>POS (Part of Speech)</dt><dd>A grammatical category: noun, verb, adjective, adverb, etc. Used as input to lemmatization for disambiguation.</dd>
+        <dt>Porter Stemmer</dt><dd>A widely-used suffix-stripping stemming algorithm (Porter 1980).</dd>
+        <dt>Pre-trained model</dt><dd>A model someone else trained, that you download and use (possibly fine-tune) instead of training from scratch.</dd>
+        <dt>SentencePiece</dt><dd>Subword tokenization library used by Llama, Gemma, T5. Treats input as raw bytes, handles any language.</dd>
+        <dt>Stemming</dt><dd>Reducing a word to a "stem" by stripping suffixes. Fast, may produce non-words.</dd>
+        <dt>Stopword</dt><dd>A high-frequency, low-information word like "the", "is", "and". Often removed in classical NLP preprocessing.</dd>
+        <dt>Subword tokenization</dt><dd>Tokenization at a finer granularity than words. "preprocessing" → ["pre", "process", "##ing"]. Used by all modern LLMs.</dd>
+        <dt>TF-IDF (Term Frequency – Inverse Document Frequency)</dt><dd>A classical text-representation scheme that weights words by frequency in the document divided by frequency across all documents.</dd>
+        <dt>Token</dt><dd>A single unit produced by tokenization. Can be a word, subword, or character.</dd>
+        <dt>Tokenization</dt><dd>Splitting text into tokens.</dd>
+        <dt>Type</dt><dd>A unique token (a vocabulary entry). "The cat sat on the mat" has 6 tokens but 5 types ("the" appears twice).</dd>
+        <dt>Vocabulary</dt><dd>The set of unique tokens (types) used by a model or in a corpus.</dd>
+        <dt>Word2Vec</dt><dd>A foundational learned embedding (Mikolov 2013). First widely-used method to capture semantic similarity between words.</dd>
+        <dt>WordPiece</dt><dd>Subword tokenization algorithm used by BERT. Similar to BPE.</dd>
+        <dt>WordNet</dt><dd>A large lexical database of English (Princeton, 1985–). Used by NLTK's lemmatizer for dictionary lookups.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <span>SESSION 05 · 48.5 MIN · 2026-05-19</span>
+      <span>STUDY NOTES · SASMITA COURSE</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 11 — LangChain: The Unifying Layer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ede5d6;
+  --ink: #1f1a14;
+  --ink-soft: #4a4239;
+  --ink-mute: #8b7d65;
+  --terracotta: #b8472e;
+  --terracotta-light: #d96d4a;
+  --teal: #2a5d62;
+  --teal-light: #5ba0a8;
+  --ochre: #c89b3c;
+  --line: #d4c9b5;
+  --highlight: #f8e6cf;
+  --spring: #6db33f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(31,26,20,0.025) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(31,26,20,0.02) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 45% 50%, rgba(31,26,20,0.015) 0.4px, transparent 0.4px);
+  background-size: 100px 100px, 100px 100px, 100px 100px;
+  color: var(--ink);
+  font-family: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1400px; margin: 0 auto; gap: 0; }
+aside.toc {
+  padding: 80px 24px 40px 40px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+.toc-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.toc-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 28px; line-height: 1.1; }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li { counter-increment: toc; margin-bottom: 14px; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.3; }
+.toc ol li::before { content: counter(toc, decimal-leading-zero); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-right: 10px; }
+.toc ol li a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease, padding-left 0.2s ease; }
+.toc ol li a:hover { color: var(--terracotta); padding-left: 4px; }
+.toc-divider { margin: 28px 0 18px; border: none; border-top: 1px solid var(--line); }
+.toc-foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; line-height: 1.6; }
+.rev-badge { display: inline-block; margin-top: 8px; padding: 3px 8px; background: var(--terracotta); color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; }
+main { padding: 80px 80px 120px; max-width: 880px; }
+.hero { margin-bottom: 80px; position: relative; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 6px; color: var(--terracotta); font-weight: 700; margin-bottom: 20px; }
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: clamp(48px, 7vw, 84px); line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 32px; }
+.hero h1 .accent { color: var(--terracotta); display: block; }
+.hero-sub { font-size: 22px; font-style: italic; color: var(--ink-soft); line-height: 1.4; max-width: 600px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-mute); padding-top: 24px; border-top: 2px solid var(--ink); max-width: 580px; }
+.thesis { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.45; color: var(--ink); padding: 40px 0 40px 32px; border-left: 4px solid var(--terracotta); margin: 60px 0 80px; position: relative; }
+.thesis::before { content: '"'; position: absolute; left: -8px; top: -30px; font-size: 100px; color: var(--terracotta); opacity: 0.25; font-family: 'Fraunces', serif; }
+.thesis em { color: var(--terracotta); font-weight: 600; font-style: italic; }
+section.chapter { margin-bottom: 96px; position: relative; }
+.chapter-marker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--terracotta); font-weight: 700; margin-bottom: 14px; }
+.chapter h2 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 42px; line-height: 1.05; margin-bottom: 28px; letter-spacing: -0.01em; }
+.chapter h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 24px; margin: 40px 0 16px; color: var(--ink); }
+.chapter p { margin-bottom: 20px; color: var(--ink-soft); font-size: 17px; line-height: 1.75; }
+.chapter p b, .chapter p strong { color: var(--ink); font-weight: 600; }
+.chapter ul, .chapter ol { margin: 16px 0 24px 24px; color: var(--ink-soft); }
+.chapter ul li, .chapter ol li { margin-bottom: 10px; font-size: 17px; line-height: 1.7; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--highlight); padding: 2px 7px; border-radius: 3px; color: var(--ink); border: 1px solid rgba(200, 155, 60, 0.3); }
+pre { background: var(--ink); color: var(--paper); padding: 22px 26px; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.6; overflow-x: auto; border-left: 4px solid var(--ochre); }
+pre code { background: transparent; border: none; color: var(--paper); padding: 0; }
+.bridge { background: rgba(109, 179, 63, 0.07); border: 1px solid rgba(109, 179, 63, 0.35); border-left: 4px solid var(--spring); padding: 22px 26px; margin: 28px 0; }
+.bridge-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--spring); font-weight: 700; margin-bottom: 8px; }
+.bridge p { font-size: 16px; color: var(--ink); margin-bottom: 0; line-height: 1.6; }
+.correction { background: rgba(184, 71, 46, 0.06); border: 1px dashed var(--terracotta); padding: 18px 22px; margin: 24px 0; font-size: 15.5px; color: var(--ink); line-height: 1.65; }
+.correction strong { color: var(--terracotta); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; }
+.callout { background: var(--highlight); border: 1px solid rgba(200, 155, 60, 0.4); padding: 28px 32px; margin: 36px 0; }
+.callout-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+.callout p { color: var(--ink); font-size: 17px; margin-bottom: 12px; }
+.callout p:last-child { margin-bottom: 0; }
+.equation { background: var(--ink); color: var(--paper); padding: 26px 28px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 17px; margin: 32px 0; letter-spacing: 0.5px; line-height: 1.9; }
+.equation .l1 { color: var(--teal-light); }
+.equation .l2 { color: var(--ochre); }
+.equation .small { font-size: 12px; color: var(--ink-mute); display: block; margin-top: 14px; letter-spacing: 1px; }
+table.tbl { width: 100%; border-collapse: collapse; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+table.tbl th, table.tbl td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.tbl th { background: var(--paper-2); font-weight: 700; color: var(--ink); letter-spacing: 1px; font-size: 11px; text-transform: uppercase; }
+table.tbl td { color: var(--ink-soft); }
+table.tbl tr:hover td { background: rgba(248, 230, 207, 0.3); }
+figure.infographic { margin: 40px -40px 40px; box-shadow: 0 20px 60px rgba(31, 26, 20, 0.12), 0 4px 12px rgba(31, 26, 20, 0.08); border: 1px solid var(--line); overflow: hidden; background: var(--paper); }
+figure.infographic img, figure.infographic svg { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) { figure.infographic { margin: 32px -24px; } }
+.glossary { margin-top: 80px; padding-top: 48px; border-top: 2px solid var(--ink); }
+.glossary dt { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 17px; color: var(--terracotta); margin-top: 18px; }
+.glossary dd { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+footer { margin-top: 100px; padding-top: 32px; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-mute); display: flex; justify-content: space-between; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 32px 24px; }
+  main { padding: 40px 24px; }
+  .hero h1 { font-size: 48px; }
+  .thesis { font-size: 22px; padding-left: 20px; }
+  .chapter h2 { font-size: 32px; }
+}
+@media print {
+  aside.toc { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  body { font-size: 11pt; }
+  .chapter { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a id="back-to-index" href="../index.html" style="
+  position: fixed; top: 12px; left: 14px;
+  z-index: 1000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: #f5efe6;
+  border: 1px solid #d4c9b5;
+  border-radius: 4px;
+  color: #b8472e;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(31,26,20,0.08), 0 2px 8px rgba(31,26,20,0.04);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+" onmouseover="this.style.background='#ede5d6';this.style.color='#2a5d62';this.style.borderColor='#2a5d62';"
+   onmouseout="this.style.background='#f5efe6';this.style.color='#b8472e';this.style.borderColor='#d4c9b5';"
+>← Course index</a>
+
+
+<div class="shell">
+
+  <aside class="toc">
+    <div class="toc-label">SESSION 11</div>
+    <div class="toc-title">LangChain:<br>The Unifying Layer</div>
+    <ol>
+      <li><a href="#s0">Python runway</a></li>
+      <li><a href="#s1">The portability problem</a></li>
+      <li><a href="#s2">The ecosystem</a></li>
+      <li><a href="#s3">Modules at a glance</a></li>
+      <li><a href="#s4">The chat model API</a></li>
+      <li><a href="#s5">System / Human / AI messages</a></li>
+      <li><a href="#s6">Model parameters</a></li>
+      <li><a href="#s7">Temperature &amp; determinism</a></li>
+      <li><a href="#s8">.env and key hygiene</a></li>
+      <li><a href="#s9">The end-to-end shape</a></li>
+      <li><a href="#s10">Interview summary</a></li>
+      <li><a href="#s11">Where we go next</a></li>
+      <li><a href="#svg">Visual reference</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+    <hr class="toc-divider">
+    <div class="toc-foot">
+      63 MIN<br>
+      5 SPEAKERS<br>
+      2026-05-18
+      <div class="rev-badge">REV v1</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="eyebrow">SESSION 11 · LANGCHAIN</div>
+      <h1>The Unifying<br><span class="accent">Layer.</span></h1>
+      <p class="hero-sub">One interface across OpenAI, Anthropic, Google, Hugging Face, Groq. Change one string. Swap the model.</p>
+      <div class="hero-meta">
+        <span>63 MIN</span>
+        <span>LANGCHAIN + LANGGRAPH + LANGFUSE</span>
+        <span>init_chat_model · .invoke()</span>
+      </div>
+    </header>
+
+    <div class="thesis">
+      Every provider has its own SDK with its own shape. LangChain is the <em>unifying abstraction</em>: import <code>init_chat_model</code>, name the model you want, call <code>.invoke()</code>. The same Python code runs against OpenAI, Anthropic, Gemini, Hugging Face, Groq. Swap providers by changing a string — not by rewriting your application.
+    </div>
+
+    <div class="correction" style="margin-bottom: 60px;">
+      <strong>TWO FIXES TO FLAG UP FRONT</strong><br>
+      (1) The student's "<em>most probability word from that <strong>sigmoid</strong> output</em>" — the LLM head is <strong>softmax</strong>, not sigmoid. Sigmoid is per-element and doesn't normalize across the vocabulary; softmax does. (2) <em>"LLM can never be deterministic"</em> — overstated. With <code>T = 0</code> (greedy decoding) and identical inputs on a single machine, the output <strong>is</strong> mathematically deterministic. The non-determinism in practice comes from sampling (<code>T &gt; 0</code>) and provider-side serving (batching + GPU float non-associativity) — not from the architecture being intrinsically probabilistic.
+    </div>
+
+    <section class="chapter" id="s0">
+      <div class="chapter-marker">CHAPTER 00 · PREREQS</div>
+      <h2>The Python runway</h2>
+      <p>If you've never run Python before, here's the minimum to get to "I just called an LLM":</p>
+      <pre><code># 1. Install Python 3.11+ (check with: python3 --version)
+# 2. Create a virtual environment in the project folder
+python3 -m venv .venv
+source .venv/bin/activate          # on macOS/Linux
+# .venv\Scripts\activate           # on Windows
+
+# 3. Install the LangChain packages you need
+pip install langchain langchain-openai python-dotenv
+
+# 4. Create a .env file with your API key
+echo "OPENAI_API_KEY=sk-..." &gt; .env
+
+# 5. Run a script
+python my_script.py</code></pre>
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>That's the Python equivalent of <code>mvn install</code> + <code>mvn exec:java</code>. A virtual environment (<code>venv</code>) is like a per-project classpath — keeps dependencies isolated from the system Python. Everything below assumes you're inside an activated venv.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s1">
+      <div class="chapter-marker">CHAPTER 01</div>
+      <h2>The portability problem</h2>
+      <p>Each provider has its own API and its own SDK:</p>
+      <ul>
+        <li>OpenAI — <code>openai.chat.completions.create(model="gpt-4o", messages=[...])</code></li>
+        <li>Anthropic — <code>client.messages.create(model="claude-3-5-sonnet-latest", messages=[...], max_tokens=...)</code>. Note <code>max_tokens</code> is <strong>required</strong>, not optional.</li>
+        <li>Google Gemini — <code>genai.GenerativeModel("gemini-2.0-flash").generate_content(...)</code> — different shape entirely.</li>
+        <li>Hugging Face Inference API — yet another shape, with <code>pipeline()</code> or <code>InferenceClient</code>.</li>
+      </ul>
+      <p>If your app is written against OpenAI and you decide to try Claude, the calls aren't drop-in. You re-learn the SDK, change call sites, re-test prompts because each provider's idiosyncrasies surface differently. Multiply that by every model you want to evaluate and you've built a maintenance problem before shipping a feature.</p>
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>This is exactly the problem <code>DataSource</code> + <code>JdbcTemplate</code> solved for databases: one driver per vendor; one common interface for application code. Change the JDBC URL, swap the driver, the application doesn't notice. LangChain is the same idea for LLM providers.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s2">
+      <div class="chapter-marker">CHAPTER 02</div>
+      <h2>The ecosystem — four products, one stack</h2>
+      <table class="tbl">
+        <thead><tr><th>Product</th><th>Purpose</th><th>Open source?</th></tr></thead>
+        <tbody>
+          <tr><td><strong>LangChain</strong></td><td>Build: model wrappers, prompts, messages, tools, memory, output parsers. Linear chains.</td><td>Yes (MIT).</td></tr>
+          <tr><td><strong>LangGraph</strong></td><td>Orchestrate: stateful, graph-based workflows. Loops, branches, multi-agent systems.</td><td>Yes (MIT).</td></tr>
+          <tr><td><strong>LangSmith</strong></td><td>Observe + evaluate: tracing, prompt versioning, eval datasets, replay.</td><td>No — closed-source SaaS (free tier exists).</td></tr>
+          <tr><td><strong>LangFuse</strong></td><td>Same observability/eval feature set as LangSmith.</td><td>Yes — open source + self-host + managed cloud.</td></tr>
+        </tbody>
+      </table>
+      <div class="correction">
+        <strong>CORRECTION — LANGSMITH AND LANGFUSE AREN'T "EXACTLY SAME"</strong><br>
+        The lecturer's pairing — <em>"LangSmith and LangFuse, they are mostly same"</em> — is half right. The <strong>feature set</strong> overlaps heavily (traces, evals, prompt management, datasets). The <strong>deployment model and ownership</strong> differ: LangSmith is LangChain's closed-source SaaS; LangFuse is independent, MIT-licensed, and self-hostable. If observability is the only axis, treat them as interchangeable. If you care about vendor lock-in, self-hosting, or pricing model, they're meaningfully different.
+      </div>
+      <div class="callout">
+        <div class="callout-label">PINNING DOWN "LANGCHAIN VS LANGGRAPH"</div>
+        <p>The lecturer framed it as <em>"LangChain is for single agent; LangGraph is for multi-agent."</em> The cleaner distinction is: <strong>LangChain provides components and simple linear chains</strong>; <strong>LangGraph is for stateful workflows with explicit graph-based control flow</strong> — which can be single-agent with branches/loops or multi-agent. Many real apps use LangGraph for single-agent loops because they need cycles (retry, reflect, tool-use) that linear chains can't express.</p>
+      </div>
+      <h3>What about "Deep Agents"?</h3>
+      <p>The lecturer mentioned a newer component called <strong>Deep Agents</strong>. This is real: LangChain released <code>deepagents</code> (<a href="https://github.com/langchain-ai/deepagents" style="color: var(--terracotta);">github.com/langchain-ai/deepagents</a>) — a thin, opinionated library on top of LangGraph that bundles four patterns observed in production agents: a planning prompt, sub-agents, file-system-style state, and tool-use templates. We'll get to it after RAG.</p>
+    </section>
+
+    <section class="chapter" id="s3">
+      <div class="chapter-marker">CHAPTER 03</div>
+      <h2>The modules at a glance</h2>
+      <p>Inside the LangChain core, the modules you actually use day-to-day:</p>
+      <ul>
+        <li><strong>Chat models</strong> — provider-agnostic LLM wrappers (<code>ChatOpenAI</code>, <code>ChatAnthropic</code>, <code>ChatGoogleGenerativeAI</code>, …). All expose <code>.invoke()</code>, <code>.stream()</code>, <code>.batch()</code>.</li>
+        <li><strong>Messages</strong> — <code>SystemMessage</code>, <code>HumanMessage</code>, <code>AIMessage</code>, <code>ToolMessage</code>. Structured roles in the conversation.</li>
+        <li><strong>Prompts</strong> — <code>PromptTemplate</code>, <code>ChatPromptTemplate</code>. Parameterized, versionable prompts.</li>
+        <li><strong>Tools</strong> — functions the model can call. Covered in the agent class.</li>
+        <li><strong>Memory</strong> — conversation state across turns. Covered when we build the chatbot.</li>
+        <li><strong>Streaming</strong> — token-by-token output for responsive UIs.</li>
+        <li><strong>Structured output</strong> — force the model to return JSON or a typed object instead of free text.</li>
+      </ul>
+      <p>This session covers <strong>chat models</strong> and <strong>messages</strong>. The rest follows in subsequent sessions.</p>
+    </section>
+
+    <section class="chapter" id="s4">
+      <div class="chapter-marker">CHAPTER 04</div>
+      <h2>The chat model API</h2>
+      <p>The unifying entry point in current LangChain is <code>init_chat_model</code>. One function, one syntax:</p>
+      <pre><code>from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(
+    "openai:gpt-4o-mini",   # provider:model
+    temperature=0.7,
+    max_tokens=1000,
+)
+response = llm.invoke("What is LangChain?")
+print(response.content)</code></pre>
+      <p>Want to switch to Anthropic? Change the string:</p>
+      <pre><code>llm = init_chat_model("anthropic:claude-3-5-haiku-latest", temperature=0.7, max_tokens=1000)</code></pre>
+      <p>Want Gemini?</p>
+      <pre><code>llm = init_chat_model("google_genai:gemini-2.0-flash", temperature=0.7)</code></pre>
+      <p>The provider-specific classes still exist and are still used (especially when you need a provider-specific feature):</p>
+      <pre><code>from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=1000)</code></pre>
+      <p>Both styles call <code>.invoke(...)</code> the same way downstream. <strong>Rule of thumb: start with <code>init_chat_model</code> for application code; reach for the provider class only when you need a provider-specific feature</strong> (e.g., Anthropic's prompt caching, OpenAI's structured-outputs schema). The lecturer's demo used the provider-specific classes, which is the more common pattern in older tutorials and still works.</p>
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>The chat-model abstraction is <code>JdbcTemplate</code> over <code>DataSource</code>. You configure once (<code>init_chat_model("openai:gpt-4o-mini")</code>), then your code calls <code>.invoke()</code>. Swap providers by changing the configuration string — your service-layer code doesn't change.</p>
+      </div>
+      <h3>The required Python packages</h3>
+      <p>Each provider lives in its own integration package so you don't pull in dependencies you don't need:</p>
+      <pre><code>pip install langchain langchain-openai langchain-anthropic langchain-google-genai \
+            langchain-huggingface langchain-groq langchain-mistralai langchain-cohere</code></pre>
+      <p><code>langchain</code> itself is the core (chat-model abstraction, messages, prompts, runnables). Each <code>langchain-&lt;provider&gt;</code> adds the wrapper for that vendor.</p>
+      <h3>The version-churn warning the lecturer raised — it's real</h3>
+      <p>LangChain has had <strong>breaking changes</strong> more than once. The most recent big one was the split of <code>langchain</code> into <code>langchain-core</code>, <code>langchain</code> (orchestration), <code>langchain-community</code> (third-party integrations), and provider-specific packages like <code>langchain-openai</code>. Code from 2023 will often not run on 2025 LangChain without imports being updated. <strong>Pin your versions</strong> in <code>requirements.txt</code> or <code>pyproject.toml</code>, and budget time for upgrades.</p>
+    </section>
+
+    <section class="chapter" id="s5">
+      <div class="chapter-marker">CHAPTER 05</div>
+      <h2>Messages: System, Human, AI</h2>
+      <p>Modern chat models are trained on <strong>role-tagged</strong> conversations. LangChain mirrors that with three message classes:</p>
+      <pre><code>from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
+messages = [
+    SystemMessage(content="You are a helpful assistant. Keep answers short."),
+    HumanMessage(content="What is LangChain?"),
+]
+response = llm.invoke(messages)   # response is an AIMessage
+print(response.content)</code></pre>
+      <ul>
+        <li><strong><code>SystemMessage</code></strong> — your <em>instructions</em> to the model. Persona, format constraints, style. Sent at the top of every turn. The lecturer's example: <em>"You are a math professor expert in calculus."</em></li>
+        <li><strong><code>HumanMessage</code></strong> — what the user asked. The actual question/prompt.</li>
+        <li><strong><code>AIMessage</code></strong> — what the model replied. You don't construct these for the first turn; you receive them from <code>.invoke()</code>. In multi-turn conversations you keep them in the message list so the model has context.</li>
+      </ul>
+      <p>There's a fourth, <code>ToolMessage</code>, that carries the result of a tool call — relevant when we cover agents.</p>
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE · PARTIAL</div>
+        <p>Think of <code>SystemMessage</code> as configuration injected at startup (<code>@Value</code>-style or <code>application.properties</code>), while <code>HumanMessage</code> and <code>AIMessage</code> are per-request DTOs. The bridge breaks in one important place: the system message isn't applied once at construction; it's re-sent with every call, because chat-model APIs are <strong>stateless</strong>. The model has no memory between <code>.invoke()</code> calls unless you put the prior messages back in the list yourself.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s6">
+      <div class="chapter-marker">CHAPTER 06</div>
+      <h2>Model parameters: temperature, max_tokens, max_retries</h2>
+      <p>The three you'll see most often:</p>
+      <table class="tbl">
+        <thead><tr><th>Parameter</th><th>What it does</th><th>Typical range</th></tr></thead>
+        <tbody>
+          <tr><td><code>temperature</code></td><td>Sampling sharpness. Divides logits by <code>T</code> before softmax. <code>0</code> ≈ greedy; <code>1</code> standard; <code>&gt;1</code> flatter.</td><td><code>0.0</code> – <code>2.0</code></td></tr>
+          <tr><td><code>max_tokens</code></td><td>Cap on the <strong>number of output tokens</strong> the model can generate.</td><td>provider-dependent; commonly 1–8K or higher</td></tr>
+          <tr><td><code>max_retries</code></td><td>How many times the LangChain client retries on transient errors before giving up.</td><td>small integers (2–6)</td></tr>
+        </tbody>
+      </table>
+      <div class="correction">
+        <strong>CORRECTION — MAX_TOKENS IS NOT THE CONTEXT WINDOW</strong><br>
+        The lecturer said <em>"2 million is the limit, right? So it can generate very, very lengthy answers."</em> That conflates two different parameters. <strong>Context window</strong> is the total token capacity the model can attend to (input + output combined) — for Gemini 1.5 Pro this is indeed 2M. <strong><code>max_tokens</code></strong> is the per-call cap on the <strong>output portion</strong> alone. You set <code>max_tokens=1000</code> to say "don't generate more than 1000 tokens of response." Different parameters with different meanings.
+      </div>
+    </section>
+
+    <section class="chapter" id="s7">
+      <div class="chapter-marker">CHAPTER 07</div>
+      <h2>Temperature, and why "LLMs aren't deterministic" needs nuance</h2>
+      <p>This is where the lecturer made the strongest claim — <em>"LLM can never be deterministic. Let me repeat: LLM cannot be deterministic."</em> — and where the substance needs pinning down.</p>
+      <h3>What temperature actually does</h3>
+      <p>Recall from Session 10: the final layer of the decoder produces a vector of <strong>logits</strong> — one real number per token in the vocabulary (≈30,000–200,000 tokens depending on the model). To turn that into a probability distribution, the model applies <strong>softmax</strong>:</p>
+      <div class="equation">
+        <span class="l1">P(token_i) = exp(logit_i) / Σ_j exp(logit_j)</span>
+      </div>
+      <p>Temperature <code>T</code> is a divisor inserted <em>before</em> softmax:</p>
+      <div class="equation">
+        <span class="l2">P(token_i) = softmax(logit_i / T)</span>
+        <span class="small">T → 0 sharpens · T = 1 standard · T &gt; 1 flattens</span>
+      </div>
+      <p>That single division has three regimes:</p>
+      <ul>
+        <li><code>T → 0</code> — dividing by a tiny number blows the largest logit far beyond the rest. Softmax sends the top logit to ~1 and everything else to ~0. The model becomes effectively <strong>greedy</strong> — always picks the argmax.</li>
+        <li><code>T = 1</code> — no change. Standard softmax. The model samples according to its trained distribution.</li>
+        <li><code>T &gt; 1</code> — divides logits down, flattening the distribution. Low-probability tokens become competitive. Output becomes "more creative" but also more likely to drift or hallucinate.</li>
+      </ul>
+      <p>The lecturer's intuition — <em>"low temperature, it will always pick very high probability words; high temperature, it gets the option to select anything"</em> — is right. The mechanism is the one division above.</p>
+      <div class="correction">
+        <strong>CORRECTION — SOFTMAX, NOT SIGMOID</strong><br>
+        The student's answer that the lecturer accepted was <em>"it will pick the most probability word from that <strong>sigmoid</strong> output."</em> The output head of an LLM uses <strong>softmax</strong>, not sigmoid. Sigmoid is per-element and bounded to (0, 1); it doesn't normalize across the vocabulary so the probabilities sum to 1. Softmax does. The model's "next-token distribution" only makes sense because softmax normalizes.
+      </div>
+      <h3>Are LLMs deterministic or not?</h3>
+      <p>Three claims, separated:</p>
+      <ol>
+        <li><strong>The model itself is deterministic given identical inputs and identical sampling state.</strong> A forward pass through a Transformer is matrix algebra. Same weights + same input + same RNG seed → same logits, every time.</li>
+        <li><strong>Greedy decoding (<code>T = 0</code>, no sampling) on a single machine produces deterministic outputs.</strong> No randomness — just argmax over logits at each step.</li>
+        <li><strong>In practice, calls to hosted APIs are not deterministic</strong>, even at low temperature. Three reasons: (a) <code>T &gt; 0</code> means you're sampling from a distribution — by definition non-deterministic; (b) <strong>batching on the provider side</strong> changes which sequences run together, and floating-point matrix multiplications are not associative on GPU (in <code>float16</code>/<code>bfloat16</code>, <code>(a + b) + c</code> and <code>a + (b + c)</code> can differ in the last bits), so identical inputs in different batches can produce slightly different logits; (c) some providers don't pin RNG seeds or add small jitter intentionally.</li>
+      </ol>
+      <p>So the lecturer's claim is <strong>partly right and partly overstated</strong>. The right summary: <strong>treat hosted LLM outputs as non-deterministic by default for engineering purposes</strong>, but understand that the non-determinism comes from sampling + serving infrastructure, not from the architecture being intrinsically probabilistic. That distinction matters when you start writing evals — you'll want <code>temperature=0</code> and the <code>seed</code> parameter (OpenAI and a few others now accept one) to maximize reproducibility, even though you can't fully guarantee it on a hosted endpoint.</p>
+      <h3>Hallucination, briefly</h3>
+      <p>The lecturer's line — <em>"hallucination cannot be 0%. Even if it is 0 today, after 1 year, 2 years, we may get some hallucination"</em> — gives the wrong shape. Hallucination isn't a defect that drifts over time. It's <strong>intrinsic to autoregressive next-token sampling without grounded truth-checking</strong>: the model emits whatever distribution its weights produce; it has no built-in mechanism to verify a fact against the world. RAG, fine-tuning, tool-use, and verification layers reduce the rate; nothing currently eliminates it. The right mental model is "always present, often manageable" — not "going up and down by model release."</p>
+    </section>
+
+    <section class="chapter" id="s8">
+      <div class="chapter-marker">CHAPTER 08</div>
+      <h2>The .env file and key management</h2>
+      <p>API keys are credentials. The lecturer's analogy — <em>"it's like your credit card"</em> — is right. If someone gets your OpenAI key, they can run requests on your account and bill you.</p>
+      <p>The standard pattern in Python projects:</p>
+      <ol>
+        <li><strong>Store keys in a <code>.env</code> file</strong> at the project root:
+        <pre><code>OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_API_KEY=...
+HUGGINGFACEHUB_API_TOKEN=hf_...
+GROQ_API_KEY=...</code></pre>
+        </li>
+        <li><strong>Load it at startup</strong> with <code>python-dotenv</code>:
+        <pre><code>from dotenv import load_dotenv
+load_dotenv()   # reads .env into os.environ</code></pre>
+        </li>
+        <li><strong>Never commit <code>.env</code></strong> to git. Add <code>.env</code> to <code>.gitignore</code>. Add a <code>.env.example</code> with empty values so collaborators know what variables are needed.</li>
+        <li><strong>Read from <code>os.environ</code> in code</strong>, not from hardcoded strings. LangChain provider classes auto-pick up the standard env var names (<code>OPENAI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>, etc.) — you usually don't have to pass keys explicitly.</li>
+      </ol>
+      <div class="bridge">
+        <div class="bridge-label">JAVA / SPRING BRIDGE</div>
+        <p>This is <code>application.properties</code> + <code>@Value("${openai.api.key}")</code> + Spring profiles for environment overrides. Same pattern: externalize secrets, never commit them, load at startup. In Spring you'd often combine with Vault / AWS Secrets Manager / Azure Key Vault in production. The <code>.env</code> pattern is the dev-loop equivalent.</p>
+      </div>
+      <h3>Where to get the keys</h3>
+      <ul>
+        <li><strong>OpenAI</strong> — platform.openai.com → API keys → Create new secret key. <strong>Shown once; copy immediately.</strong></li>
+        <li><strong>Anthropic</strong> — console.anthropic.com → API keys → Create key. Same one-shot reveal.</li>
+        <li><strong>Google AI Studio</strong> — aistudio.google.com/apikey. Gemini has a free tier (the lecturer's "1,000 / 100,000 per day" figure was approximate and changes; check current quotas).</li>
+        <li><strong>Hugging Face</strong> — huggingface.co → Settings → Access Tokens. Free; required for most non-trivial use.</li>
+      </ul>
+      <div class="callout">
+        <div class="callout-label">COST CHECK</div>
+        <p>The lecturer's <em>"all projects under $5–$10"</em> claim is realistic for course-level usage. On <code>gpt-4o-mini</code> (currently $0.15 / 1M input tokens, $0.60 / 1M output tokens), a chat session costs fractions of a cent. Don't conflate this with production cost at scale — that's a different conversation.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="s9">
+      <div class="chapter-marker">CHAPTER 09</div>
+      <h2>The end-to-end shape</h2>
+      <p>Here's the entire "call an LLM through LangChain" pattern:</p>
+      <pre><code>import os
+from dotenv import load_dotenv
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage
+
+# 1. Load credentials from .env into os.environ
+load_dotenv()
+
+# 2. Pick a model. Change this string to swap providers.
+llm = init_chat_model("openai:gpt-4o-mini", temperature=0.7, max_tokens=500)
+
+# 3. Build the message list (roles)
+messages = [
+    SystemMessage(content="You are a concise technical writer."),
+    HumanMessage(content="Explain LangChain in two sentences."),
+]
+
+# 4. Invoke. Returns an AIMessage.
+response = llm.invoke(messages)
+
+# 5. Use the response
+print(response.content)</code></pre>
+      <p>To switch to Anthropic, change the model string in the <code>init_chat_model(...)</code> call to <code>"anthropic:claude-3-5-haiku-latest"</code>. To switch to Gemini, change it to <code>"google_genai:gemini-2.0-flash"</code>. Nothing else moves.</p>
+    </section>
+
+    <section class="chapter" id="s10">
+      <div class="chapter-marker">CHAPTER 10</div>
+      <h2>Interview-level summary</h2>
+      <p>Three questions you should be able to answer cleanly:</p>
+      <ol>
+        <li><strong>Why does LangChain exist?</strong> Provider SDKs are mutually incompatible. LangChain is a unifying abstraction so application code is provider-agnostic — swap models by changing a string, not the call site.</li>
+        <li><strong>What's the difference between LangChain and LangGraph?</strong> LangChain provides components (models, prompts, memory, tools) and simple linear chains. LangGraph builds on those for <strong>stateful, graph-based workflows</strong> — loops, branches, multi-agent systems. Single vs multi-agent is the rough cut; the deeper cut is "linear" vs "stateful graph with control flow."</li>
+        <li><strong>What is temperature, technically?</strong> A divisor on the logits before softmax: <code>P(token) = softmax(logits / T)</code>. Low <code>T</code> sharpens to argmax (effectively greedy); <code>T = 1</code> is standard sampling; <code>T &gt; 1</code> flattens the distribution, making low-probability tokens competitive.</li>
+      </ol>
+    </section>
+
+    <section class="chapter" id="s11">
+      <div class="chapter-marker">CHAPTER 11</div>
+      <h2>Where we go next</h2>
+      <p>Next session: <strong>prompt engineering</strong> — system vs human prompts, zero-shot / few-shot / chain-of-thought / ReAct — then we build a first chatbot end-to-end with LangChain. After that:</p>
+      <ul>
+        <li>A first <strong>RAG</strong> pipeline (retrieve relevant chunks, stuff into context, generate)</li>
+        <li><strong>LangGraph</strong> for agent loops</li>
+        <li><strong>Tools / function calling</strong> as a first-class LangChain feature</li>
+        <li><strong>LangFuse</strong> for observability of the resulting app</li>
+      </ul>
+      <p>The architectural arc (Sessions 7–10) ends here. From Session 11 forward, the course is building applications on top of pre-trained, hosted models — and LangChain is the connective tissue.</p>
+    </section>
+
+    <figure class="infographic" id="svg">
+      <img src="Session11-LangChain-infographic.svg" alt="Session 11 visual summary — portability problem, LangChain ecosystem, temperature curves, end-to-end code shape">
+    </figure>
+
+    <section class="glossary" id="glossary">
+      <h2 style="font-family: 'Fraunces', serif; font-style: italic; font-size: 36px; margin-bottom: 24px;">Glossary</h2>
+      <dl>
+        <dt>Chain</dt>
+        <dd>A LangChain composition of components (prompt + model + parser, etc.) wired together. The simplest form is linear: input → component → output.</dd>
+        <dt>Chat model</dt>
+        <dd>A LangChain wrapper around a provider's chat-completion API. Exposes <code>.invoke()</code>, <code>.stream()</code>, <code>.batch()</code>. Examples: <code>ChatOpenAI</code>, <code>ChatAnthropic</code>, <code>ChatGoogleGenerativeAI</code>.</dd>
+        <dt>Context window</dt>
+        <dd>The total token capacity a model can attend to in a single call (input prompt + previous turns + output). Different from <code>max_tokens</code>, which caps only the output.</dd>
+        <dt>init_chat_model</dt>
+        <dd>The unified factory in current LangChain: <code>init_chat_model("provider:model", ...)</code>. Returns a provider-appropriate chat model.</dd>
+        <dt>.invoke(messages)</dt>
+        <dd>The standard call into a LangChain runnable. Returns an <code>AIMessage</code> for chat models. Also <code>.stream()</code> (yields tokens) and <code>.batch()</code> (parallel calls).</dd>
+        <dt>LangChain</dt>
+        <dd>Open-source Python/TS framework for building LLM applications. Provides provider-agnostic abstractions for models, prompts, messages, tools, memory, and output parsing.</dd>
+        <dt>LangFuse</dt>
+        <dd>Open-source observability and evaluation platform for LLM applications. Self-hostable or managed cloud. Feature overlap with LangSmith.</dd>
+        <dt>LangGraph</dt>
+        <dd>LangChain's library for stateful, graph-based workflows. Suitable for agent loops (single or multi), branching logic, and anything a linear chain can't express cleanly.</dd>
+        <dt>LangSmith</dt>
+        <dd>LangChain's closed-source SaaS for tracing, evaluation, and prompt management. Free tier exists; not self-hostable.</dd>
+        <dt>max_tokens</dt>
+        <dd>Per-call cap on the <strong>output</strong> length the model is allowed to generate. Not the same as the context window.</dd>
+        <dt>Message roles (system / human / AI / tool)</dt>
+        <dd>Structured turns in a chat conversation. System = instructions; Human = user input; AI = model output; Tool = tool-call result.</dd>
+        <dt>Sampling</dt>
+        <dd>At each generation step, drawing a token from the model's probability distribution (rather than always picking the argmax). Required for any <code>T &gt; 0</code>.</dd>
+        <dt>Softmax</dt>
+        <dd>The function that turns a vocabulary-sized logit vector into a probability distribution: <code>softmax(x_i) = exp(x_i) / Σ_j exp(x_j)</code>. The output head of every LLM.</dd>
+        <dt>Temperature</dt>
+        <dd>Sampling-time scalar <code>T</code> that divides logits before softmax. <code>T → 0</code> sharpens to argmax; <code>T = 1</code> is unchanged; <code>T &gt; 1</code> flattens the distribution.</dd>
+        <dt>.env file</dt>
+        <dd>Project-root file holding environment variables (typically secrets) loaded into <code>os.environ</code> at startup by <code>python-dotenv</code>. Never committed.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <span>SESSION 11 · 2026-05-18</span>
+      <span>LANGCHAIN DOCS · HINTON 2015 · OPENAI / ANTHROPIC API REFS</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>
