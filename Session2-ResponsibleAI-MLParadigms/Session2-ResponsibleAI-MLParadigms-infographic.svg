@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 2920" preserveAspectRatio="xMidYMid meet" font-family="Spectral, Georgia, serif">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5efe6"/>
+      <stop offset="1" stop-color="#ede5d6"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1100" height="2920" fill="url(#paper)"/>
+
+  
+  <g>
+    <rect x="0" y="0" width="1100" height="380" fill="#1f1a14"/>
+    <g opacity="0.15" stroke="#d96d4a" stroke-width="0.6" fill="none">
+      <circle cx="920" cy="180" r="3" fill="#d96d4a"/>
+      <circle cx="980" cy="140" r="3" fill="#d96d4a"/>
+      <circle cx="1030" cy="220" r="3" fill="#d96d4a"/>
+      <line x1="920" y1="180" x2="980" y2="140"/>
+      <line x1="920" y1="180" x2="1030" y2="220"/>
+      <line x1="980" y1="140" x2="1030" y2="220"/>
+    </g>
+    <text x="70" y="80" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="8" fill="#c89b3c" font-weight="600">SESSION 02 · STUDY NOTES · REV V1</text>
+    <text x="70" y="170" font-family="Fraunces, serif" font-style="italic" font-size="56" font-weight="700" fill="#f5efe6">Responsible AI</text>
+    <text x="70" y="225" font-family="Fraunces, serif" font-style="italic" font-size="40" font-weight="700" fill="#d96d4a">&amp; the three paradigms</text>
+    <text x="70" y="280" font-family="Fraunces, serif" font-style="italic" font-size="19" fill="#c5b9a0">Every prompt is also a potential injection. Every retrieved doc is also a payload.</text>
+    <text x="70" y="306" font-family="Fraunces, serif" font-style="italic" font-size="19" fill="#c5b9a0">Every plugin call is a privileged action triggered by natural language.</text>
+    <line x1="70" y1="340" x2="180" y2="340" stroke="#d96d4a" stroke-width="2"/>
+    <text x="70" y="362" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8b7d65">OWASP LLM TOP 10 v1.0 (Aug 2023)  +  v2.0 (Nov 2024) DIFF</text>
+  </g>
+
+  
+  <g transform="translate(0, 440)">
+    <text x="70" y="0" font-size="92" fill="#b8472e" opacity="0.28" font-family="Fraunces, serif">&#x201C;</text>
+    <foreignObject x="120" y="-40" width="900" height="170">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:23px; line-height:1.45; color:#1f1a14; font-style:italic; font-family:Fraunces, Georgia, serif;">
+        The same property that makes LLMs useful — they act on unstructured text — is what makes them attackable.
+        <span style="color:#b8472e; font-weight:600;">Securing</span> an LLM application requires a different mental model
+        than securing a Spring controller.
+      </div>
+    </foreignObject>
+  </g>
+
+  <text x="70" y="720" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 01 — OWASP TOP 10 v1.0, GROUPED BY PIPELINE STAGE</text>
+  <text x="70" y="764" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Where each threat lives</text>
+  <rect x="70" y="810" width="240" height="200" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="2"/>
+  <text x="86" y="834" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#b8472e">INPUT SIDE</text>
+  <text x="86" y="860" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">LLM01 — Prompt Injection</text>
+  <text x="86" y="882" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">LLM05 v2 — Improper Output Handling (was LLM02)</text>
+  <rect x="322" y="810" width="240" height="200" rx="4" fill="#fbf7ef" stroke="#c89b3c" stroke-width="2"/>
+  <text x="338" y="834" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">MODEL / TRAINING</text>
+  <text x="338" y="860" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">LLM03 — Training Data Poisoning</text>
+  <text x="338" y="882" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">LLM05 — Supply Chain Vulns</text>
+  <text x="338" y="904" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">LLM06 — Sensitive Info Disclosure</text>
+  <text x="338" y="926" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">LLM10 — Model Theft</text>
+  <rect x="574" y="810" width="240" height="200" rx="4" fill="#fbf7ef" stroke="#2a5d62" stroke-width="2"/>
+  <text x="590" y="834" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#2a5d62">ACTIONS / AGENT</text>
+  <text x="590" y="860" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">LLM07 — Insecure Plugin Design</text>
+  <text x="590" y="882" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">LLM08 — Excessive Agency</text>
+  <rect x="826" y="810" width="240" height="200" rx="4" fill="#fbf7ef" stroke="#6db33f" stroke-width="2"/>
+  <text x="842" y="834" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#6db33f">CONSUMPTION / TRUST</text>
+  <text x="842" y="860" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">LLM04 — Model Denial of Service</text>
+  <text x="842" y="882" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">LLM09 — Overreliance</text>
+  <text x="70" y="1100" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 02 — v1.0 (Aug 2023) → v2.0 (Nov 2024) DIFF</text>
+  <text x="70" y="1144" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">What changed in v2.0</text>
+  <text x="90" y="1190" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#b8472e">v1.0 (Aug 2023)</text>
+  <text x="1010" y="1190" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#2a5d62">v2.0 (Nov 2024)</text>
+  <line x1="90" y1="1198" x2="1010" y2="1198" stroke="#1f1a14" stroke-width="1"/>
+  <text x="90" y="1220" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM01 Prompt Injection</text>
+  <text x="532" y="1220" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#4a4239">→</text>
+  <text x="554" y="1220" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#4a4239">same</text>
+  <text x="1010" y="1220" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM01 Prompt Injection</text>
+  <text x="90" y="1244" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM02 Insecure Output Handling</text>
+  <text x="532" y="1244" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#b8472e">→</text>
+  <text x="554" y="1244" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#b8472e">renamed</text>
+  <text x="1010" y="1244" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM05 Improper Output Handling</text>
+  <text x="90" y="1268" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM03 Training Data Poisoning</text>
+  <text x="532" y="1268" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#b8472e">→</text>
+  <text x="554" y="1268" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#b8472e">renamed/up</text>
+  <text x="1010" y="1268" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM04 Data &amp; Model Poisoning</text>
+  <text x="90" y="1292" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM04 Model Denial of Service</text>
+  <text x="532" y="1292" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#b8472e">→</text>
+  <text x="554" y="1292" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#b8472e">renamed</text>
+  <text x="1010" y="1292" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM10 Unbounded Consumption</text>
+  <text x="90" y="1316" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM05 Supply Chain</text>
+  <text x="532" y="1316" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#d96d4a">→</text>
+  <text x="554" y="1316" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#d96d4a">moved up</text>
+  <text x="1010" y="1316" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM03 Supply Chain</text>
+  <text x="90" y="1340" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM06 Sensitive Info Disclosure</text>
+  <text x="532" y="1340" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#c89b3c">→</text>
+  <text x="554" y="1340" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#c89b3c">promoted</text>
+  <text x="1010" y="1340" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM02 Sensitive Info Disclosure</text>
+  <text x="90" y="1364" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM07 Insecure Plugin Design</text>
+  <text x="532" y="1364" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#8b7d65">→</text>
+  <text x="554" y="1364" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#8b7d65">merged</text>
+  <text x="1010" y="1364" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">(merged into LLM06)</text>
+  <text x="90" y="1388" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM08 Excessive Agency</text>
+  <text x="532" y="1388" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#d96d4a">→</text>
+  <text x="554" y="1388" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#d96d4a">moved up</text>
+  <text x="1010" y="1388" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM06 Excessive Agency</text>
+  <text x="90" y="1412" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM09 Overreliance</text>
+  <text x="532" y="1412" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#c89b3c">→</text>
+  <text x="554" y="1412" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#c89b3c">renamed</text>
+  <text x="1010" y="1412" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM09 Misinformation</text>
+  <text x="90" y="1436" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM10 Model Theft</text>
+  <text x="532" y="1436" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#8b7d65">→</text>
+  <text x="554" y="1436" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#8b7d65">downgraded</text>
+  <text x="1010" y="1436" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">(de-emphasised)</text>
+  <text x="90" y="1460" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">(new in v2)</text>
+  <text x="532" y="1460" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#6db33f">→</text>
+  <text x="554" y="1460" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#6db33f">NEW</text>
+  <text x="1010" y="1460" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM07 System Prompt Leakage</text>
+  <text x="90" y="1484" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">(new in v2)</text>
+  <text x="532" y="1484" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#6db33f">→</text>
+  <text x="554" y="1484" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" font-weight="700" fill="#6db33f">NEW</text>
+  <text x="1010" y="1484" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">LLM08 Vector &amp; Embedding Weaknesses</text>
+  
+  <text x="70" y="1580" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 03 — THE THREE (REALLY FIVE) ML PARADIGMS</text>
+  <text x="70" y="1624" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">The decision tree the lecturer collapses</text>
+
+  <g transform="translate(70, 1670)">
+    <!-- root -->
+    <rect x="380" y="0" width="200" height="56" rx="4" fill="#1f1a14"/>
+    <text x="480" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#c89b3c" font-weight="700">START</text>
+    <text x="480" y="42" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#f5efe6">Does data have labels?</text>
+
+    <!-- supervised branch -->
+    <line x1="430" y1="56" x2="190" y2="100" stroke="#1f1a14" stroke-width="1.5"/>
+    <text x="240" y="86" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#b8472e">yes</text>
+    <rect x="40" y="100" width="300" height="80" rx="4" fill="#2a5d62"/>
+    <text x="190" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#c5b9a0" font-weight="700">SUPERVISED</text>
+    <text x="190" y="146" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#f5efe6">learn f: X → Y</text>
+    <text x="190" y="166" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#5ba0a8">→ ANN, regression, classifiers</text>
+
+    <rect x="40" y="200" width="140" height="48" rx="3" fill="#fbf7ef" stroke="#2a5d62" stroke-width="1.5"/>
+    <text x="110" y="220" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="12" font-weight="700" fill="#2a5d62">regression</text>
+    <text x="110" y="238" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4a4239">y = real number</text>
+
+    <rect x="200" y="200" width="140" height="48" rx="3" fill="#fbf7ef" stroke="#2a5d62" stroke-width="1.5"/>
+    <text x="270" y="220" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="12" font-weight="700" fill="#2a5d62">classification</text>
+    <text x="270" y="238" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4a4239">y = class</text>
+
+    <!-- "no" branch — really four sub-paradigms -->
+    <line x1="530" y1="56" x2="770" y2="100" stroke="#1f1a14" stroke-width="1.5"/>
+    <text x="660" y="86" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#b8472e">no / partial</text>
+    <rect x="620" y="100" width="300" height="80" rx="4" fill="#b8472e"/>
+    <text x="770" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#f5e6cf" font-weight="700">NO / PARTIAL LABELS</text>
+    <text x="770" y="146" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="13" fill="#f5efe6">four real paradigms</text>
+    <text x="770" y="166" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#f5e6cf">(the lecturer collapses to one)</text>
+
+    <rect x="620" y="200" width="140" height="48" rx="3" fill="#fbf7ef" stroke="#c89b3c" stroke-width="1.5"/>
+    <text x="690" y="218" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="11" font-weight="700" fill="#c89b3c">unsupervised</text>
+    <text x="690" y="236" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#4a4239">K-means, PCA</text>
+
+    <rect x="780" y="200" width="140" height="48" rx="3" fill="#fbf7ef" stroke="#c89b3c" stroke-width="1.5"/>
+    <text x="850" y="218" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="11" font-weight="700" fill="#c89b3c">semi-supervised</text>
+    <text x="850" y="236" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#4a4239">pseudo-labelling</text>
+
+    <rect x="620" y="260" width="140" height="48" rx="3" fill="#fbf7ef" stroke="#c89b3c" stroke-width="1.5"/>
+    <text x="690" y="278" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="11" font-weight="700" fill="#c89b3c">self-supervised</text>
+    <text x="690" y="296" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#4a4239">GPT, BERT</text>
+
+    <rect x="780" y="260" width="140" height="48" rx="3" fill="#fbf7ef" stroke="#c89b3c" stroke-width="1.5"/>
+    <text x="850" y="278" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="11" font-weight="700" fill="#c89b3c">reinforcement</text>
+    <text x="850" y="296" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#4a4239">AlphaGo, RLHF</text>
+  </g>
+
+  
+  <text x="70" y="2110" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 04 — THREE INCIDENTS TO REMEMBER</text>
+  <text x="70" y="2154" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Each maps to an OWASP category</text>
+
+  <g transform="translate(70, 2200)">
+    <rect width="300" height="160" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.5"/>
+    <text x="20" y="30" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#b8472e" font-weight="700">LITELLM (CVE-2024-6587)</text>
+    <text x="20" y="58" font-family="Fraunces, serif" font-style="italic" font-size="15" fill="#1f1a14" font-weight="700">SQL injection in proxy</text>
+    <text x="20" y="80" font-family="Spectral, serif" font-size="12" fill="#4a4239">BerriAI&apos;s Python proxy.</text>
+    <text x="20" y="98" font-family="Spectral, serif" font-size="12" fill="#4a4239">Lecturer said “LightLLM”</text>
+    <text x="20" y="116" font-family="Spectral, serif" font-size="12" fill="#4a4239">— phonetic slip.</text>
+    <text x="20" y="146" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#b8472e">→ LLM05 v1 / LLM03 v2</text>
+  </g>
+
+  <g transform="translate(390, 2200)">
+    <rect width="300" height="160" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.5"/>
+    <text x="20" y="30" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#b8472e" font-weight="700">SAMSUNG (MAY 2023)</text>
+    <text x="20" y="58" font-family="Fraunces, serif" font-style="italic" font-size="15" fill="#1f1a14" font-weight="700">Source code leaked</text>
+    <text x="20" y="80" font-family="Spectral, serif" font-size="12" fill="#4a4239">Engineers pasted IP into</text>
+    <text x="20" y="98" font-family="Spectral, serif" font-size="12" fill="#4a4239">ChatGPT. Banned 2 May 2023.</text>
+    <text x="20" y="116" font-family="Spectral, serif" font-size="12" fill="#4a4239">Lecturer said 2024 (off by 1y).</text>
+    <text x="20" y="146" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#b8472e">→ LLM06 v1 / LLM02 v2</text>
+  </g>
+
+  <g transform="translate(710, 2200)">
+    <rect width="300" height="160" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.5"/>
+    <text x="20" y="30" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#b8472e" font-weight="700">DEEPSEEK GEO-FILTER</text>
+    <text x="20" y="58" font-family="Fraunces, serif" font-style="italic" font-size="15" fill="#1f1a14" font-weight="700">Refuses on Nagaland,</text>
+    <text x="20" y="78" font-family="Fraunces, serif" font-style="italic" font-size="15" fill="#1f1a14" font-weight="700">Taiwan, Tiananmen</text>
+    <text x="20" y="100" font-family="Spectral, serif" font-size="12" fill="#4a4239">Actually RLHF alignment,</text>
+    <text x="20" y="118" font-family="Spectral, serif" font-size="12" fill="#4a4239">not pre-training poisoning.</text>
+    <text x="20" y="146" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#b8472e">→ LLM03 v1 / LLM04 v2</text>
+  </g>
+
+  
+  <text x="70" y="2430" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 05 — WHAT TO CARRY FORWARD</text>
+  <text x="70" y="2474" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Two rules, three vocabularies, one forward link</text>
+
+  <g transform="translate(70, 2520)">
+    <rect width="960" height="280" rx="4" fill="#fbf7ef" stroke="#1f1a14" stroke-width="1.5"/>
+
+    <text x="30" y="38" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">TWO RULES</text>
+    <text x="30" y="64" font-family="Spectral, serif" font-size="14" fill="#4a4239">① <tspan font-weight="700" fill="#1f1a14">Every text input is also a control-flow input.</tspan> Prompt injection has no SQL-injection-style clean fix.</text>
+    <text x="30" y="86" font-family="Spectral, serif" font-size="14" fill="#4a4239">② <tspan font-weight="700" fill="#1f1a14">Default-deny on agent actions.</tspan> Excessive agency is what turns a model mistake into a real-world incident.</text>
+
+    <line x1="30" y1="108" x2="930" y2="108" stroke="#d4c9b5"/>
+
+    <text x="30" y="134" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">THREE VOCABULARIES (use them precisely)</text>
+    <text x="30" y="158" font-family="Spectral, serif" font-size="14" fill="#4a4239">③ <tspan font-weight="700" fill="#1f1a14">Self-supervised</tspan> ≠ semi-supervised. GPT pre-training derives its own labels from the data.</text>
+    <text x="30" y="180" font-family="Spectral, serif" font-size="14" fill="#4a4239">④ <tspan font-weight="700" fill="#1f1a14">RLHF</tspan> is reinforcement learning, not “semi-supervised.” It’s the alignment step after pre-training.</text>
+    <text x="30" y="202" font-family="Spectral, serif" font-size="14" fill="#4a4239">⑤ <tspan font-weight="700" fill="#1f1a14">Semi-supervised proper</tspan> = some labelled + many unlabelled, with a specific algorithm class.</text>
+
+    <line x1="30" y1="224" x2="930" y2="224" stroke="#d4c9b5"/>
+
+    <text x="30" y="248" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#2a5d62" font-weight="700">SHIPS TO →</text>
+    <text x="160" y="248" font-family="Spectral, serif" font-size="14" fill="#1f1a14"><tspan font-weight="700">Session 3</tspan> opens with “ANN is a supervised problem.” This session defined what that means.</text>
+  </g>
+
+  
+  <g transform="translate(0, 2830)">
+    <line x1="70" y1="0" x2="1030" y2="0" stroke="#1f1a14" stroke-width="1"/>
+    <text x="70" y="28" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8b7d65">SESSION 02 · STUDY NOTES · REV V1</text>
+    <text x="1030" y="28" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8b7d65">SASMITA COURSE · 2026-05-20</text>
+    <text x="550" y="60" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#4a4239">Source: OWASP Top 10 for LLM v1.0 (Aug 2023); v2.0 (Nov 2024) diff layered on top.</text>
+  </g>
+
+</svg>

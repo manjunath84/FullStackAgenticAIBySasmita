@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1700" width="1100" height="1700" font-family="'Spectral', Georgia, serif">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5efe6"/>
+      <stop offset="1" stop-color="#ede5d6"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f1a14"/>
+      <stop offset="1" stop-color="#3a312a"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/></marker>
+  </defs>
+  <rect width="1100" height="1700" fill="url(#paper)"/>
+
+  <!-- HERO -->
+  <g>
+    <rect x="0" y="0" width="1100" height="360" fill="url(#ink)"/>
+    <g opacity="0.18" stroke="#d96d4a" stroke-width="0.7" fill="none">
+      <circle cx="900" cy="200" r="3" fill="#d96d4a"/>
+      <circle cx="960" cy="130" r="3" fill="#d96d4a"/>
+      <circle cx="1020" cy="230" r="3" fill="#d96d4a"/>
+      <circle cx="880" cy="290" r="3" fill="#d96d4a"/>
+      <circle cx="990" cy="320" r="3" fill="#d96d4a"/>
+      <line x1="900" y1="200" x2="960" y2="130"/>
+      <line x1="900" y1="200" x2="1020" y2="230"/>
+      <line x1="900" y1="200" x2="880" y2="290"/>
+      <line x1="960" y1="130" x2="1020" y2="230"/>
+      <line x1="1020" y1="230" x2="990" y2="320"/>
+      <line x1="880" y1="290" x2="990" y2="320"/>
+    </g>
+    <text x="70" y="90" font-size="13" letter-spacing="8" fill="#c89b3c" font-weight="600" font-family="'JetBrains Mono', monospace">SESSION 22 · STUDY NOTES · REV V1</text>
+    <text x="70" y="170" font-size="52" font-weight="700" fill="#f5efe6" font-style="italic">Subgraphs in LangGraph,</text>
+    <text x="70" y="225" font-size="52" font-weight="700" fill="#d96d4a" font-style="italic">and a First Look at MCP</text>
+    <text x="70" y="280" font-size="19" fill="#c5b9a0" font-style="italic">Two compositional moves: plug a compiled graph into a parent,</text>
+    <text x="70" y="306" font-size="19" fill="#c5b9a0" font-style="italic">and pull tools out of every agent into a shared protocol.</text>
+    <line x1="70" y1="335" x2="200" y2="335" stroke="#d96d4a" stroke-width="2"/>
+  </g>
+
+  <!-- THESIS -->
+  <g transform="translate(0, 400)">
+    <text x="70" y="0" font-size="90" fill="#b8472e" opacity="0.3" font-family="serif">"</text>
+    <foreignObject x="120" y="-40" width="900" height="160">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:22px; line-height:1.45; color:#1f1a14; font-style:italic; font-family:Georgia, serif;">
+        A <span style="color:#b8472e; font-weight:600;">subgraph</span> is a compiled <code style="font-family:monospace; font-size:0.9em;">StateGraph</code> used as a node — the state schema is the only contract. <span style="color:#b8472e; font-weight:600;">MCP</span> is the same move one level up: pull tools out of every agent and put them behind a published protocol.
+      </div>
+    </foreignObject>
+  </g>
+
+  <!-- PART A -->
+  <g transform="translate(0, 600)">
+    <rect x="70" y="0" width="960" height="6" fill="#b8472e"/>
+    <text x="70" y="40" font-size="14" letter-spacing="6" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">PART A — SUBGRAPHS</text>
+    <text x="70" y="78" font-size="28" font-weight="700" fill="#1f1a14" font-style="italic">Two ways to plug in a compiled graph</text>
+
+    <!-- Pattern A -->
+    <rect x="70" y="110" width="460" height="280" rx="6" fill="#f8e6cf" stroke="#b8472e" stroke-width="2"/>
+    <text x="300" y="140" text-anchor="middle" font-size="13" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">PATTERN A — SHARED STATE</text>
+    <text x="300" y="166" text-anchor="middle" font-size="13" fill="#1f1a14" font-family="'JetBrains Mono', monospace">add_node("sub", compiled_subgraph)</text>
+    <rect x="100" y="200" width="80" height="40" fill="#f5efe6" stroke="#1f1a14"/>
+    <text x="140" y="225" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace">parent_1</text>
+    <rect x="220" y="200" width="160" height="40" fill="#d96d4a" stroke="#b8472e"/>
+    <text x="300" y="225" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace" fill="#1f1a14" font-weight="700">embedded_subgraph</text>
+    <rect x="420" y="200" width="80" height="40" fill="#f5efe6" stroke="#1f1a14"/>
+    <text x="460" y="225" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace">END</text>
+    <line x1="180" y1="220" x2="220" y2="220" stroke="#1f1a14" marker-end="url(#arrow)"/>
+    <line x1="380" y1="220" x2="420" y2="220" stroke="#1f1a14" marker-end="url(#arrow)"/>
+    <text x="300" y="280" text-anchor="middle" font-size="12" fill="#4a4239" font-style="italic">parent.foo ↔ sub.foo (same TypedDict)</text>
+    <text x="300" y="302" text-anchor="middle" font-size="12" fill="#4a4239" font-style="italic">no wrapper · no mapping</text>
+    <text x="300" y="358" text-anchor="middle" font-size="12" fill="#2a5d62" font-family="'JetBrains Mono', monospace">→ {'foo': 'subgraph says hi → parent: world'}</text>
+
+    <!-- Pattern B -->
+    <rect x="570" y="110" width="460" height="280" rx="6" fill="#f8e6cf" stroke="#b8472e" stroke-width="2"/>
+    <text x="800" y="140" text-anchor="middle" font-size="13" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">PATTERN B — DIFFERENT STATES</text>
+    <text x="800" y="166" text-anchor="middle" font-size="13" fill="#1f1a14" font-family="'JetBrains Mono', monospace">def bridge(state): sub.invoke({...})</text>
+    <rect x="600" y="200" width="170" height="80" fill="#f5efe6" stroke="#1f1a14"/>
+    <text x="685" y="225" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="700">call_sub (bridge)</text>
+    <text x="685" y="245" text-anchor="middle" font-size="9" fill="#2a5d62" font-style="italic">parent.foo → sub.bar</text>
+    <text x="685" y="262" text-anchor="middle" font-size="9" fill="#2a5d62" font-style="italic">invoke(sub_compiled)</text>
+    <rect x="820" y="200" width="170" height="80" fill="#d96d4a" stroke="#b8472e"/>
+    <text x="905" y="225" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="700" fill="#1f1a14">sub_compiled</text>
+    <text x="905" y="245" text-anchor="middle" font-size="9" fill="#1f1a14" font-style="italic">SubState{bar: str}</text>
+    <text x="905" y="262" text-anchor="middle" font-size="9" fill="#1f1a14" font-style="italic">isolated schema</text>
+    <line x1="770" y1="240" x2="820" y2="240" stroke="#2a5d62" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="800" y="305" text-anchor="middle" font-size="12" fill="#4a4239" font-style="italic">explicit input/output mapping at the boundary</text>
+    <text x="800" y="358" text-anchor="middle" font-size="12" fill="#2a5d62" font-family="'JetBrains Mono', monospace">→ {'foo': 'start-value [processed in subgraph]'}</text>
+
+    <!-- when to pick which -->
+    <text x="70" y="450" font-size="13" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace" letter-spacing="3">WHEN TO PICK WHICH</text>
+    <rect x="70" y="465" width="960" height="55" fill="#ede5d6" stroke="#d4c9b5"/>
+    <text x="90" y="495" font-size="12" fill="#1f1a14"><tspan font-weight="700" fill="#b8472e">A →</tspan> schemas match — reusable modules in the same domain</text>
+    <text x="90" y="513" font-size="12" fill="#1f1a14"><tspan font-weight="700" fill="#b8472e">B →</tspan> schemas differ — foreign component you don't want to bleed schema with (anti-corruption layer)</text>
+
+    <text x="70" y="565" font-size="13" fill="#c89b3c" font-weight="700" font-family="'JetBrains Mono', monospace" letter-spacing="3">FAILURE TELL</text>
+    <rect x="70" y="580" width="960" height="55" fill="rgba(200,155,60,0.08)" stroke="#c89b3c"/>
+    <text x="90" y="608" font-size="12" fill="#1f1a14">"I put the slow tool in a subgraph and it's still slow" — encapsulation is not concurrency.</text>
+    <text x="90" y="626" font-size="12" fill="#1f1a14">Parallelism in LangGraph comes from <tspan font-family="'JetBrains Mono', monospace">topology + ainvoke</tspan>, not from the subgraph wrapper.</text>
+  </g>
+
+  <!-- PART B -->
+  <g transform="translate(0, 1280)">
+    <rect x="70" y="0" width="960" height="6" fill="#b8472e"/>
+    <text x="70" y="40" font-size="14" letter-spacing="6" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">PART B — MCP</text>
+    <text x="70" y="78" font-size="28" font-weight="700" fill="#1f1a14" font-style="italic">From N×M cables to one published protocol</text>
+
+    <rect x="70" y="110" width="960" height="290" rx="6" fill="#ede5d6" stroke="#1f1a14"/>
+
+    <!-- Before -->
+    <text x="200" y="148" text-anchor="middle" font-size="11" letter-spacing="3" fill="#b8472e" font-family="'JetBrains Mono', monospace" font-weight="700">BEFORE — N×M cabling</text>
+    <g transform="translate(110, 175)" font-family="'JetBrains Mono', monospace">
+      <circle cx="40" cy="20"  r="18" fill="#f5efe6" stroke="#1f1a14"/><text x="40" y="25" text-anchor="middle" font-size="11">A1</text>
+      <circle cx="40" cy="80"  r="18" fill="#f5efe6" stroke="#1f1a14"/><text x="40" y="85" text-anchor="middle" font-size="11">A2</text>
+      <circle cx="40" cy="140" r="18" fill="#f5efe6" stroke="#1f1a14"/><text x="40" y="145" text-anchor="middle" font-size="11">A3</text>
+      <circle cx="200" cy="20"  r="18" fill="#d96d4a" stroke="#b8472e"/><text x="200" y="25" text-anchor="middle" font-size="11" fill="#1f1a14">T1</text>
+      <circle cx="200" cy="80"  r="18" fill="#d96d4a" stroke="#b8472e"/><text x="200" y="85" text-anchor="middle" font-size="11" fill="#1f1a14">T2</text>
+      <circle cx="200" cy="140" r="18" fill="#d96d4a" stroke="#b8472e"/><text x="200" y="145" text-anchor="middle" font-size="11" fill="#1f1a14">T3</text>
+      <g stroke="#8b7d65" stroke-width="0.8" fill="none">
+        <line x1="58" y1="20" x2="182" y2="20"/>
+        <line x1="58" y1="20" x2="182" y2="80"/>
+        <line x1="58" y1="20" x2="182" y2="140"/>
+        <line x1="58" y1="80" x2="182" y2="20"/>
+        <line x1="58" y1="80" x2="182" y2="80"/>
+        <line x1="58" y1="80" x2="182" y2="140"/>
+        <line x1="58" y1="140" x2="182" y2="20"/>
+        <line x1="58" y1="140" x2="182" y2="80"/>
+        <line x1="58" y1="140" x2="182" y2="140"/>
+      </g>
+    </g>
+    <text x="210" y="370" text-anchor="middle" font-size="11" fill="#8b7d65" font-style="italic">duplicated tool code in every agent</text>
+
+    <!-- Transition arrow -->
+    <line x1="430" y1="260" x2="540" y2="260" stroke="#1f1a14" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="485" y="250" text-anchor="middle" font-size="11" font-family="'JetBrains Mono', monospace" fill="#b8472e" font-weight="700">MCP</text>
+
+    <!-- After -->
+    <text x="800" y="148" text-anchor="middle" font-size="11" letter-spacing="3" fill="#b8472e" font-family="'JetBrains Mono', monospace" font-weight="700">AFTER — one server, many clients</text>
+    <g transform="translate(580, 175)" font-family="'JetBrains Mono', monospace">
+      <circle cx="40" cy="20"  r="18" fill="#f5efe6" stroke="#1f1a14"/><text x="40" y="25" text-anchor="middle" font-size="11">A1</text>
+      <circle cx="40" cy="80"  r="18" fill="#f5efe6" stroke="#1f1a14"/><text x="40" y="85" text-anchor="middle" font-size="11">A2</text>
+      <circle cx="40" cy="140" r="18" fill="#f5efe6" stroke="#1f1a14"/><text x="40" y="145" text-anchor="middle" font-size="11">A3</text>
+      <rect x="160" y="60" width="220" height="80" rx="4" fill="#d96d4a" stroke="#b8472e"/>
+      <text x="270" y="90" text-anchor="middle" font-size="12" font-weight="700" fill="#1f1a14">MCP SERVER</text>
+      <text x="270" y="110" text-anchor="middle" font-size="10" fill="#1f1a14">T1 · T2 · T3</text>
+      <text x="270" y="128" text-anchor="middle" font-size="9" fill="#1f1a14" font-style="italic">JSON-RPC 2.0 / stdio | HTTP</text>
+      <line x1="58" y1="20"  x2="158" y2="85" stroke="#2a5d62" stroke-width="1.5"/>
+      <line x1="58" y1="80"  x2="158" y2="100" stroke="#2a5d62" stroke-width="1.5"/>
+      <line x1="58" y1="140" x2="158" y2="115" stroke="#2a5d62" stroke-width="1.5"/>
+    </g>
+    <text x="830" y="370" text-anchor="middle" font-size="11" fill="#8b7d65" font-style="italic">one place to patch · one place to secure</text>
+  </g>
+
+  <!-- Primitives -->
+  <g transform="translate(0, 1700)">
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(0, 1650)">
+    <line x1="70" y1="0" x2="1030" y2="0" stroke="#d4c9b5"/>
+    <text x="70" y="30" font-size="11" letter-spacing="2" fill="#8b7d65" font-family="'JetBrains Mono', monospace">SASMITACOURSE · SESSION 22</text>
+    <text x="1030" y="30" text-anchor="end" font-size="11" letter-spacing="2" fill="#8b7d65" font-family="'JetBrains Mono', monospace">SUBGRAPHS · MCP · 2026-05-20 · REV V1</text>
+  </g>
+</svg>

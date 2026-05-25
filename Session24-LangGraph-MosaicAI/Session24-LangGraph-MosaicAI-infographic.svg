@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" width="1200" height="1500" role="img" aria-label="Session 24 infographic: LangGraph wired into Databricks via Genie, UC tools, and MLflow ChatAgent.">
+  <rect width="1200" height="1500" fill="#f5efe6"/>
+  <text x="60" y="80" font-family="JetBrains Mono, monospace" font-size="14" letter-spacing="6" fill="#b8472e" font-weight="700">SESSION 24 · ONE-PAGE SUMMARY</text>
+  <text x="60" y="160" font-family="Fraunces, serif" font-style="italic" font-size="72" font-weight="700" fill="#1f1a14">Wiring LangGraph</text>
+  <text x="60" y="232" font-family="Fraunces, serif" font-style="italic" font-size="72" font-weight="700" fill="#b8472e">into Databricks</text>
+  <line x1="60" y1="270" x2="1140" y2="270" stroke="#1f1a14" stroke-width="2"/>
+
+  <text x="60" y="320" font-family="Spectral, serif" font-style="italic" font-size="22" fill="#4a4239">Genie + Unity Catalog tools become nodes in your LangGraph.</text>
+  <text x="60" y="350" font-family="Spectral, serif" font-style="italic" font-size="22" fill="#4a4239">A supervisor routes among them, capped at 3 hops.</text>
+  <text x="60" y="380" font-family="Spectral, serif" font-style="italic" font-size="22" fill="#4a4239">The whole graph hides behind one MLflow ChatAgent.predict().</text>
+
+  <g transform="translate(60, 430)">
+    <rect width="510" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+    <text x="20" y="35" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">01 · GENIE AGENT</text>
+    <text x="20" y="70" font-family="Fraunces, serif" font-style="italic" font-size="24" font-weight="700" fill="#1f1a14">Just a space ID. No LLM.</text>
+    <text x="20" y="105" font-family="Spectral, serif" font-size="15" fill="#4a4239">GenieAgent(genie_space_id="01ef…",</text>
+    <text x="20" y="125" font-family="Spectral, serif" font-size="15" fill="#4a4239">name="Genie",</text>
+    <text x="20" y="145" font-family="Spectral, serif" font-size="15" fill="#4a4239">description="Answers questions on NY taxi data")</text>
+    <text x="20" y="180" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">LLM lives inside Genie on Databricks side.</text>
+    <text x="20" y="200" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">You only hold a reference.</text>
+  </g>
+
+  <g transform="translate(630, 430)">
+    <rect width="510" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+    <text x="20" y="35" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">02 · CODE AGENT</text>
+    <text x="20" y="70" font-family="Fraunces, serif" font-style="italic" font-size="24" font-weight="700" fill="#1f1a14">ReAct over UC tools.</text>
+    <text x="20" y="105" font-family="Spectral, serif" font-size="15" fill="#4a4239">llm = ChatDatabricks(endpoint=…)</text>
+    <text x="20" y="125" font-family="Spectral, serif" font-size="15" fill="#4a4239">tools = UCFunctionToolkit(["system.ai.*"]).tools</text>
+    <text x="20" y="145" font-family="Spectral, serif" font-size="15" fill="#4a4239">create_react_agent(model=llm, tools=tools)</text>
+    <text x="20" y="180" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">python_exec, ai_query, ai_classify,</text>
+    <text x="20" y="200" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">ai_extract, ai_summarize, vector_search…</text>
+  </g>
+
+  <g transform="translate(60, 680)">
+    <rect width="510" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+    <text x="20" y="35" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">03 · SUPERVISOR</text>
+    <text x="20" y="70" font-family="Fraunces, serif" font-style="italic" font-size="24" font-weight="700" fill="#1f1a14">LangGraph node, multi-route.</text>
+    <text x="20" y="105" font-family="Spectral, serif" font-size="15" fill="#4a4239">workflow.add_conditional_edges(</text>
+    <text x="20" y="125" font-family="Spectral, serif" font-size="15" fill="#4a4239">  "supervisor", route_fn,</text>
+    <text x="20" y="145" font-family="Spectral, serif" font-size="15" fill="#4a4239">  {**workers, "FINISH": "final_answer"})</text>
+    <text x="20" y="180" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">.with_structured_output(Route) +</text>
+    <text x="20" y="200" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">iteration_count ≥ 3 → FINISH safety cap.</text>
+  </g>
+
+  <g transform="translate(630, 680)">
+    <rect width="510" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+    <text x="20" y="35" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">04 · CHATAGENT WRAPPER</text>
+    <text x="20" y="70" font-family="Fraunces, serif" font-style="italic" font-size="24" font-weight="700" fill="#1f1a14">From MLflow, not Databricks.</text>
+    <text x="20" y="105" font-family="Spectral, serif" font-size="15" fill="#4a4239">class LangGraphChatAgent(ChatAgent):</text>
+    <text x="20" y="125" font-family="Spectral, serif" font-size="15" fill="#4a4239">    def predict(self, messages, …):</text>
+    <text x="20" y="145" font-family="Spectral, serif" font-size="15" fill="#4a4239">        return ChatAgentResponse(…)</text>
+    <text x="20" y="180" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">Twenty lines of glue. Unlocks autolog, eval,</text>
+    <text x="20" y="200" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#8b7d65">Mosaic AI deployment, multi-turn tracking.</text>
+  </g>
+
+  <line x1="60" y1="950" x2="1140" y2="950" stroke="#1f1a14" stroke-width="1"/>
+  <text x="60" y="990" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="3" fill="#b8472e" font-weight="700">THE EIGHT-STEP CANONICAL ORDER</text>
+
+  <g font-family="Spectral, serif" font-size="14" fill="#4a4239">
+    <text x="60" y="1030"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">01</tspan>  Create Genie space; copy ID</text>
+    <text x="60" y="1055"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">02</tspan>  GenieAgent(space_id=…)  (no model)</text>
+    <text x="60" y="1080"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">03</tspan>  ChatDatabricks(endpoint=…)</text>
+    <text x="60" y="1105"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">04</tspan>  UCFunctionToolkit(["system.ai.*"])</text>
+    <text x="620" y="1030"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">05</tspan>  create_react_agent(llm, tools)</text>
+    <text x="620" y="1055"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">06</tspan>  Optional: custom worker functions</text>
+    <text x="620" y="1080"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">07</tspan>  Supervisor + StateGraph + compile</text>
+    <text x="620" y="1105"><tspan font-family="JetBrains Mono, monospace" font-weight="700" fill="#1f1a14">08</tspan>  Wrap in LangGraphChatAgent(ChatAgent)</text>
+  </g>
+
+  <line x1="60" y1="1150" x2="1140" y2="1150" stroke="#1f1a14" stroke-width="1"/>
+  <text x="60" y="1190" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="3" fill="#b8472e" font-weight="700">CORRECTIONS VS THE TRANSCRIPT</text>
+
+  <g font-family="Spectral, serif" font-size="13" fill="#4a4239">
+    <text x="60" y="1230"><tspan fill="#b8472e" font-weight="700">·</tspan>  "Mujaik AI" → <tspan fill="#1f1a14" font-weight="700">Mosaic AI</tspan>  (AssemblyAI mishearing)</text>
+    <text x="60" y="1255"><tspan fill="#b8472e" font-weight="700">·</tspan>  "chart Databricks" / "chart Agent" → <tspan fill="#1f1a14" font-weight="700">ChatDatabricks / ChatAgent</tspan></text>
+    <text x="60" y="1280"><tspan fill="#b8472e" font-weight="700">·</tspan>  "databricks Lang 2 Chain" → <tspan fill="#1f1a14" font-weight="700">databricks-langchain</tspan>  (PyPI)</text>
+    <text x="60" y="1305"><tspan fill="#b8472e" font-weight="700">·</tspan>  "GPT-OS 120 billion" → <tspan fill="#1f1a14" font-weight="700">gpt-oss-120b</tspan>  (OpenAI, Aug 2025)</text>
+    <text x="620" y="1230"><tspan fill="#b8472e" font-weight="700">·</tspan>  "ChatAgent by Databricks" → <tspan fill="#1f1a14" font-weight="700">by MLflow</tspan></text>
+    <text x="620" y="1255"><tspan fill="#b8472e" font-weight="700">·</tspan>  "supervisor by Databricks" → <tspan fill="#1f1a14" font-weight="700">LangGraph pattern</tspan></text>
+    <text x="620" y="1280"><tspan fill="#b8472e" font-weight="700">·</tspan>  "3 iterations is the limit" → <tspan fill="#1f1a14" font-weight="700">lecturer's chosen cap</tspan></text>
+    <text x="620" y="1305"><tspan fill="#b8472e" font-weight="700">·</tspan>  "100% MLflow, not LangFuse" → <tspan fill="#1f1a14" font-weight="700">both work</tspan></text>
+  </g>
+
+  <line x1="60" y1="1380" x2="1140" y2="1380" stroke="#1f1a14" stroke-width="2"/>
+  <text x="60" y="1420" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" fill="#8b7d65">SASMITA COURSE · SESSION 24 · 2026-05-20 · REV V1</text>
+  <text x="60" y="1442" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" fill="#8b7d65">PREVIOUS · S23 DATABRICKS INTRO</text>
+  <text x="60" y="1464" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" fill="#8b7d65">NEXT · S25 NEW YORK TAXI + CUSTOMER-SALES MULTI-AGENT BUILD</text>
+</svg>

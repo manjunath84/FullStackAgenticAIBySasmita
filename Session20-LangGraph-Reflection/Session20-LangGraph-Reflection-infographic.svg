@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1500" font-family="Spectral, Georgia, serif">
+  <defs>
+    <marker id="ig-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f1a14"/>
+    </marker>
+    <marker id="ig-arr-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b8472e"/>
+    </marker>
+    <pattern id="ig-paper" patternUnits="userSpaceOnUse" width="100" height="100">
+      <rect width="100" height="100" fill="#f5efe6"/>
+      <circle cx="20" cy="30" r="0.6" fill="#1f1a14" opacity="0.05"/>
+      <circle cx="70" cy="80" r="0.5" fill="#1f1a14" opacity="0.04"/>
+      <circle cx="45" cy="50" r="0.4" fill="#1f1a14" opacity="0.03"/>
+    </pattern>
+  </defs>
+
+  <!-- background -->
+  <rect width="1100" height="1500" fill="url(#ig-paper)"/>
+
+  <!-- =========== HEADER =========== -->
+  <text x="60" y="80" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="6" fill="#b8472e" font-weight="700">SESSION 20 · LANGGRAPH PART 2</text>
+  <text x="60" y="155" font-family="Fraunces, serif" font-style="italic" font-weight="700" font-size="68" fill="#1f1a14" letter-spacing="-1">Reflection &amp;</text>
+  <text x="60" y="220" font-family="Fraunces, serif" font-style="italic" font-weight="700" font-size="68" fill="#b8472e" letter-spacing="-1">Conditional Routing</text>
+  <line x1="60" y1="248" x2="1040" y2="248" stroke="#1f1a14" stroke-width="2"/>
+  <text x="60" y="280" font-family="Spectral, serif" font-style="italic" font-size="20" fill="#4a4239">Same four primitives. New shapes — a critic over a draft, a router over a classifier, a prebuilt ReAct loop in one line.</text>
+
+  <!-- =========== Strip 1: PRIMITIVES =========== -->
+  <text x="60" y="350" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">§ 01 — THE FOUR PRIMITIVES (RECAP)</text>
+
+  <g transform="translate(60, 370)">
+    <rect width="220" height="120" fill="#ffffff" stroke="#1f1a14" stroke-width="1.5"/>
+    <text x="20" y="34" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#b8472e" font-weight="700">STATE</text>
+    <text x="20" y="62" font-family="Fraunces, serif" font-style="italic" font-size="17" fill="#1f1a14">TypedDict</text>
+    <text x="20" y="88" font-family="Spectral, serif" font-size="13" fill="#4a4239">Shared across all nodes;</text>
+    <text x="20" y="106" font-family="Spectral, serif" font-size="13" fill="#4a4239">node returns partial dict.</text>
+  </g>
+  <g transform="translate(300, 370)">
+    <rect width="220" height="120" fill="#ffffff" stroke="#1f1a14" stroke-width="1.5"/>
+    <text x="20" y="34" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#b8472e" font-weight="700">NODE</text>
+    <text x="20" y="62" font-family="Fraunces, serif" font-style="italic" font-size="17" fill="#1f1a14">function</text>
+    <text x="20" y="88" font-family="Spectral, serif" font-size="13" fill="#4a4239">state → dict.</text>
+    <text x="20" y="106" font-family="Spectral, serif" font-size="13" fill="#4a4239">LLM call, tool, or plain Python.</text>
+  </g>
+  <g transform="translate(540, 370)">
+    <rect width="220" height="120" fill="#ffffff" stroke="#2a5d62" stroke-width="1.5"/>
+    <text x="20" y="34" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#2a5d62" font-weight="700">EDGE</text>
+    <text x="20" y="62" font-family="Fraunces, serif" font-style="italic" font-size="17" fill="#1f1a14">straight</text>
+    <text x="20" y="88" font-family="Spectral, serif" font-size="13" fill="#4a4239">add_edge("A", "B").</text>
+    <text x="20" y="106" font-family="Spectral, serif" font-size="13" fill="#4a4239">After A, always B.</text>
+  </g>
+  <g transform="translate(780, 370)">
+    <rect width="220" height="120" fill="#ffffff" stroke="#b8472e" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="20" y="34" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#b8472e" font-weight="700">COND. EDGE</text>
+    <text x="20" y="62" font-family="Fraunces, serif" font-style="italic" font-size="17" fill="#1f1a14">branch</text>
+    <text x="20" y="88" font-family="Spectral, serif" font-size="13" fill="#4a4239">Router fn reads state,</text>
+    <text x="20" y="106" font-family="Spectral, serif" font-size="13" fill="#4a4239">returns next node name.</text>
+  </g>
+
+  <!-- =========== Strip 2: REFLECTION PATTERN =========== -->
+  <text x="60" y="565" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">§ 02 — REFLECTION PATTERN</text>
+  <text x="60" y="600" font-family="Fraunces, serif" font-style="italic" font-size="28" fill="#1f1a14">Draft → critique → revise</text>
+  <text x="60" y="630" font-family="Spectral, serif" font-size="14" fill="#4a4239">A second LLM acts as critic. The critique prompt asks for the word "IMPROVE" so the router can substring-check.</text>
+
+  <g transform="translate(60, 660)">
+    <!-- START -->
+    <rect x="0" y="40" width="80" height="40" rx="20" fill="#1f1a14"/>
+    <text x="40" y="65" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6" letter-spacing="2">START</text>
+    <!-- draft -->
+    <rect x="120" y="30" width="140" height="60" fill="#ffffff" stroke="#1f1a14" stroke-width="1.5"/>
+    <text x="190" y="58" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="18" fill="#1f1a14">draft</text>
+    <text x="190" y="76" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b7d65">LLM 1</text>
+    <!-- critique -->
+    <rect x="300" y="30" width="160" height="60" fill="#ffffff" stroke="#2a5d62" stroke-width="2"/>
+    <text x="380" y="58" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="18" fill="#2a5d62">critique</text>
+    <text x="380" y="76" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b7d65">LLM 2 · judge</text>
+    <!-- revise -->
+    <rect x="500" y="30" width="140" height="60" fill="#ffffff" stroke="#b8472e" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="570" y="58" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="18" fill="#b8472e">revise</text>
+    <text x="570" y="76" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b7d65">LLM 1</text>
+    <!-- END -->
+    <rect x="680" y="40" width="80" height="40" rx="20" fill="#c89b3c"/>
+    <text x="720" y="65" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14" letter-spacing="2">END</text>
+    <!-- edges -->
+    <line x1="80" y1="60" x2="120" y2="60" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ig-arr)"/>
+    <line x1="260" y1="60" x2="300" y2="60" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ig-arr)"/>
+    <line x1="460" y1="60" x2="500" y2="60" stroke="#1f1a14" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#ig-arr)"/>
+    <line x1="640" y1="60" x2="680" y2="60" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ig-arr)"/>
+    <!-- looks-good path -->
+    <path d="M 380 90 Q 380 145 670 145 L 720 90" fill="none" stroke="#1f1a14" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#ig-arr)"/>
+    <text x="540" y="160" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#8b7d65">looks good (no "IMPROVE")</text>
+    <text x="480" y="22" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#b8472e">"IMPROVE"</text>
+  </g>
+
+  <!-- annotation: extension -->
+  <g transform="translate(60, 855)">
+    <rect width="980" height="64" fill="rgba(184,71,46,0.06)" stroke="#b8472e" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="20" y="26" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#b8472e" font-weight="700">EXTENSION (LECTURER)</text>
+    <text x="20" y="48" font-family="Spectral, serif" font-size="14" fill="#1f1a14">Repoint <tspan font-family="JetBrains Mono, monospace" font-size="13">revise → critique</tspan> to get a multi-pass loop. Bound iterations in code (state counter), not in the prompt.</text>
+  </g>
+
+  <!-- =========== Strip 3: CONDITIONAL ROUTING =========== -->
+  <text x="60" y="970" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">§ 03 — CONDITIONAL ROUTING (CUSTOMER SERVICE)</text>
+  <text x="60" y="1005" font-family="Fraunces, serif" font-style="italic" font-size="28" fill="#1f1a14">Classify, then fan out</text>
+  <text x="60" y="1033" font-family="Spectral, serif" font-size="14" fill="#4a4239">Router function reads <tspan font-family="JetBrains Mono, monospace" font-size="13">priority</tspan> from state and returns a literal node name. State is shared across handlers.</text>
+
+  <g transform="translate(60, 1060)">
+    <!-- START -->
+    <rect x="0" y="60" width="80" height="40" rx="20" fill="#1f1a14"/>
+    <text x="40" y="85" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6" letter-spacing="2">START</text>
+    <!-- categorize -->
+    <rect x="120" y="50" width="200" height="60" fill="#ffffff" stroke="#1f1a14" stroke-width="1.5"/>
+    <text x="220" y="78" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="17" fill="#1f1a14">categorize_request</text>
+    <text x="220" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b7d65">optional LLM classifier</text>
+    <!-- urgent -->
+    <rect x="380" y="0" width="180" height="56" fill="#ffffff" stroke="#b8472e" stroke-width="2"/>
+    <text x="470" y="26" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="16" fill="#b8472e">handle_urgent</text>
+    <text x="470" y="44" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b7d65">priority &lt;= 2</text>
+    <!-- standard -->
+    <rect x="380" y="104" width="180" height="56" fill="#ffffff" stroke="#2a5d62" stroke-width="2"/>
+    <text x="470" y="130" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="16" fill="#2a5d62">handle_standard</text>
+    <text x="470" y="148" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b7d65">priority &gt;= 3</text>
+    <!-- END -->
+    <rect x="620" y="60" width="80" height="40" rx="20" fill="#c89b3c"/>
+    <text x="660" y="85" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14" letter-spacing="2">END</text>
+    <!-- edges -->
+    <line x1="80" y1="80" x2="120" y2="80" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ig-arr)"/>
+    <path d="M 320 70 Q 350 70 380 30" fill="none" stroke="#1f1a14" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#ig-arr)"/>
+    <path d="M 320 90 Q 350 90 380 130" fill="none" stroke="#1f1a14" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#ig-arr)"/>
+    <path d="M 560 30 Q 590 30 620 65" fill="none" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ig-arr)"/>
+    <path d="M 560 130 Q 590 130 620 95" fill="none" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#ig-arr)"/>
+    <!-- router label -->
+    <text x="335" y="178" font-family="JetBrains Mono, monospace" font-size="10" fill="#b8472e">route_by_priority(state) -&gt; Literal[...]</text>
+  </g>
+
+  <!-- =========== Strip 4: PREBUILT REACT =========== -->
+  <text x="60" y="1290" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">§ 04 — PREBUILT REACT</text>
+  <text x="60" y="1325" font-family="Fraunces, serif" font-style="italic" font-size="26" fill="#1f1a14">Last week's hand-built loop → one line</text>
+
+  <g transform="translate(60, 1345)">
+    <rect width="980" height="80" fill="#1f1a14"/>
+    <text x="24" y="36" font-family="JetBrains Mono, monospace" font-size="14" fill="#5ba0a8">from</text>
+    <text x="76" y="36" font-family="JetBrains Mono, monospace" font-size="14" fill="#f5efe6">langgraph.prebuilt </text>
+    <text x="280" y="36" font-family="JetBrains Mono, monospace" font-size="14" fill="#5ba0a8">import</text>
+    <text x="350" y="36" font-family="JetBrains Mono, monospace" font-size="14" fill="#c89b3c">create_react_agent</text>
+    <text x="24" y="64" font-family="JetBrains Mono, monospace" font-size="14" fill="#f5efe6">prebuilt = </text>
+    <text x="148" y="64" font-family="JetBrains Mono, monospace" font-size="14" fill="#c89b3c">create_react_agent</text>
+    <text x="362" y="64" font-family="JetBrains Mono, monospace" font-size="14" fill="#f5efe6">(llm, [tool_a, tool_b])  </text>
+    <text x="640" y="64" font-family="JetBrains Mono, monospace" font-size="14" fill="#8b7d65">#  the whole loop</text>
+  </g>
+
+  <!-- =========== Strip 5: NEXT SESSION =========== -->
+  <text x="60" y="1465" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">SESSION 21 PREVIEW</text>
+  <text x="260" y="1465" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#4a4239">Human-in-the-loop coding assistant · interrupt() + MemorySaver checkpointer + thread_id</text>
+
+  <!-- footer -->
+  <text x="1040" y="80" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#8b7d65">2026-05-04 · 63 MIN</text>
+</svg>

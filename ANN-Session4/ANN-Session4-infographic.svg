@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 3120" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" font-family="Spectral, Georgia, serif">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5efe6"/>
+      <stop offset="1" stop-color="#ede5d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1100" height="3120" fill="url(#paper)"/>
+
+  
+  <g>
+    <rect x="0" y="0" width="1100" height="380" fill="#1f1a14"/>
+    <g opacity="0.15" stroke="#d96d4a" stroke-width="0.6" fill="none">
+      <circle cx="920" cy="180" r="3" fill="#d96d4a"/>
+      <circle cx="980" cy="140" r="3" fill="#d96d4a"/>
+      <circle cx="1030" cy="220" r="3" fill="#d96d4a"/>
+      <line x1="920" y1="180" x2="980" y2="140"/>
+      <line x1="980" y1="140" x2="1030" y2="220"/>
+      <line x1="920" y1="180" x2="1030" y2="220"/>
+    </g>
+    <text x="70" y="80" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="8" fill="#c89b3c" font-weight="600">ANN-SESSION 04 · STUDY NOTES · REV V1</text>
+    <text x="70" y="170" font-family="Fraunces, serif" font-style="italic" font-size="58" font-weight="700" fill="#f5efe6">The big recap</text>
+    <text x="70" y="225" font-family="Fraunces, serif" font-style="italic" font-size="44" font-weight="700" fill="#d96d4a">&amp; softmax done right</text>
+    <text x="70" y="282" font-family="Fraunces, serif" font-style="italic" font-size="19" fill="#c5b9a0">163-minute reset-and-extend session: ~80% restated for new joiners,</text>
+    <text x="70" y="308" font-family="Fraunces, serif" font-style="italic" font-size="19" fill="#c5b9a0">~20% new content that corrects an earlier mistake.</text>
+    <line x1="70" y1="342" x2="180" y2="342" stroke="#d96d4a" stroke-width="2"/>
+    <text x="70" y="362" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8b7d65">SOFTMAX + ECOSYSTEM + ANACONDA + CHECKPOINTS</text>
+  </g>
+
+  
+  <g transform="translate(0, 440)">
+    <text x="70" y="0" font-size="92" fill="#b8472e" opacity="0.28" font-family="Fraunces, serif">&#x201C;</text>
+    <foreignObject x="120" y="-40" width="900" height="180">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:23px; line-height:1.45; color:#1f1a14; font-style:italic; font-family:Fraunces, Georgia, serif;">
+        Reset-and-extend. The recap restates the entire training loop for new joiners. The new material lands two corrections at once — <span style="color:#b8472e; font-weight:600;">softmax is the right output for multi-class</span> (not sigmoid + threshold bands), and <span style="color:#b8472e; font-weight:600;">the hidden-layer activation is independent of the output-layer activation</span>.
+      </div>
+    </foreignObject>
+  </g>
+
+  
+  <text x="70" y="720" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 01 — THE NUMBER-OR-CLASS DECISION TREE</text>
+  <text x="70" y="764" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Look at Y. Pick the output layer.</text>
+
+  <g transform="translate(70, 810)">
+    <!-- root -->
+    <rect x="380" y="0" width="200" height="56" rx="4" fill="#1f1a14"/>
+    <text x="480" y="26" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#c89b3c" font-weight="700">START — LOOK AT Y</text>
+    <text x="480" y="44" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#f5efe6">number or class?</text>
+
+    <!-- left: regression -->
+    <line x1="430" y1="56" x2="190" y2="100" stroke="#1f1a14" stroke-width="1.5"/>
+    <text x="240" y="86" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#b8472e">Y = number</text>
+    <rect x="40" y="100" width="300" height="120" rx="4" fill="#2a5d62"/>
+    <text x="190" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" fill="#c5b9a0" font-weight="700">REGRESSION</text>
+    <text x="190" y="148" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#f5efe6">house price, sales</text>
+    <text x="190" y="172" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#5ba0a8">output: identity</text>
+    <text x="190" y="194" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#5ba0a8">loss:   MSE</text>
+
+    <!-- right: classification -->
+    <line x1="530" y1="56" x2="770" y2="100" stroke="#1f1a14" stroke-width="1.5"/>
+    <text x="660" y="86" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#b8472e">Y = class</text>
+
+    <rect x="620" y="100" width="140" height="120" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.5"/>
+    <text x="690" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#b8472e" font-weight="700">2 CLASSES</text>
+    <text x="690" y="146" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="12" fill="#1f1a14">fraud / not</text>
+    <text x="690" y="172" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4a4239">output: sigmoid</text>
+    <text x="690" y="190" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4a4239">loss:   BCE</text>
+
+    <rect x="780" y="100" width="180" height="120" rx="4" fill="#b8472e"/>
+    <text x="870" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" fill="#f5e6cf" font-weight="700">K &gt; 2 CLASSES</text>
+    <text x="870" y="146" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="12" fill="#f5efe6">rainy/windy/sunny</text>
+    <text x="870" y="170" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5e6cf" font-weight="700">output: softmax</text>
+    <text x="870" y="188" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5e6cf" font-weight="700">loss:   sparse CE</text>
+    <text x="870" y="208" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#f5e6cf">← the §08 correction</text>
+
+    <!-- hidden-layer note -->
+    <rect x="40" y="244" width="920" height="42" rx="3" fill="rgba(200, 155, 60, 0.18)" stroke="#c89b3c" stroke-width="1"/>
+    <text x="500" y="270" text-anchor="middle" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#1f1a14">
+      <tspan font-weight="600">Hidden layers in all three cases:</tspan> ReLU. The hidden-layer activation is independent of the output-layer activation.
+    </text>
+  </g>
+
+  
+  <text x="70" y="1260" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 02 — SOFTMAX, COMPUTED</text>
+  <text x="70" y="1304" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Three classes, real numbers, the bands trick made wrong</text>
+
+  
+  <g transform="translate(70, 1350)">
+    <rect width="960" height="260" rx="4" fill="#fbf7ef" stroke="#1f1a14" stroke-width="1.5"/>
+
+    <!-- z inputs -->
+    <text x="22" y="32" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#5ba0a8">PRE-ACTIVATIONS (z)</text>
+    <rect x="22" y="50" width="200" height="30" rx="3" fill="#fbf7ef" stroke="#5ba0a8" stroke-width="1.2"/><rect x="22" y="90" width="200" height="30" rx="3" fill="#fbf7ef" stroke="#5ba0a8" stroke-width="1.2"/><rect x="22" y="130" width="200" height="30" rx="3" fill="#fbf7ef" stroke="#5ba0a8" stroke-width="1.2"/>
+    <text x="32" y="70" font-family="JetBrains Mono, monospace" font-size="13" fill="#4a4239">rainy  : z = +2.0</text><text x="32" y="110" font-family="JetBrains Mono, monospace" font-size="13" fill="#4a4239">windy  : z = +0.5</text><text x="32" y="150" font-family="JetBrains Mono, monospace" font-size="13" fill="#4a4239">sunny  : z = -1.0</text>
+
+    <!-- arrow -->
+    <text x="262" y="115" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" fill="#1f1a14">→</text>
+
+    <!-- softmax formula -->
+    <rect x="300" y="50" width="280" height="120" rx="4" fill="#c89b3c"/>
+    <text x="440" y="80" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" font-weight="700" fill="#1f1a14">SOFTMAX</text>
+    <text x="440" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" fill="#1f1a14">e^(zᵢ) / Σⱼ e^(zⱼ)</text>
+    <text x="440" y="138" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#1f1a14">every output ∈ (0, 1)</text>
+    <text x="440" y="158" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#1f1a14">all outputs sum to 1</text>
+
+    <!-- arrow -->
+    <text x="600" y="115" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" fill="#1f1a14">→</text>
+
+    <!-- probabilities -->
+    <text x="640" y="32" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#b8472e">PROBABILITIES (ŷ)</text>
+    <rect x="640" y="50" width="280" height="30" rx="3" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.2"/><rect x="640" y="90" width="280" height="30" rx="3" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.2"/><rect x="640" y="130" width="280" height="30" rx="3" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.2"/>
+    <text x="650" y="70" font-family="JetBrains Mono, monospace" font-size="13" fill="#1f1a14">rainy  : p = 0.786  (78.6%)</text><text x="650" y="110" font-family="JetBrains Mono, monospace" font-size="13" fill="#1f1a14">windy  : p = 0.175  (17.5%)</text><text x="650" y="150" font-family="JetBrains Mono, monospace" font-size="13" fill="#1f1a14">sunny  : p = 0.039  (3.9%)</text>
+
+    <!-- bottom band: verification -->
+    <line x1="22" y1="200" x2="938" y2="200" stroke="#d4c9b5"/>
+    <text x="22" y="226" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#b8472e">VERIFY:</text>
+    <text x="100" y="226" font-family="JetBrains Mono, monospace" font-size="13" fill="#1f1a14">Σ p = 1.000 ✓     argmax(ŷ) → rainy</text>
+    <text x="22" y="246" font-family="Spectral, serif" font-style="italic" font-size="13" fill="#4a4239">Not sigmoid + threshold bands. The bands have no loss signal, classes have no order, adding a class breaks everything.</text>
+  </g>
+
+  
+  <text x="70" y="1680" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 03 — THE ECOSYSTEM IN 2024 (with 2026 context)</text>
+  <text x="70" y="1724" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">TF / Keras / PyTorch / JAX — which to use when</text>
+
+  <g transform="translate(70, 1770)">
+    <rect width="220" height="190" rx="4" fill="#fbf7ef" stroke="#2a5d62" stroke-width="2"/>
+    <text x="20" y="32" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#2a5d62">TENSORFLOW</text>
+    <text x="20" y="60" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#1f1a14">Google · 2015</text>
+    <text x="20" y="86" font-family="Spectral, serif" font-size="13" fill="#4a4239">Production deployment</text>
+    <text x="20" y="106" font-family="Spectral, serif" font-size="13" fill="#4a4239">TF Serving · TFLite · TF.js</text>
+    <text x="20" y="138" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#b8472e">USE FOR:</text>
+    <text x="20" y="158" font-family="Spectral, serif" font-size="12" fill="#4a4239">Mobile, web, serving</text>
+    <text x="20" y="176" font-family="Spectral, serif" font-size="12" fill="#4a4239">vendor-locked tooling</text>
+  </g>
+
+  <g transform="translate(310, 1770)">
+    <rect width="220" height="190" rx="4" fill="#fbf7ef" stroke="#c89b3c" stroke-width="2"/>
+    <text x="20" y="32" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">KERAS</text>
+    <text x="20" y="60" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#1f1a14">High-level API</text>
+    <text x="20" y="86" font-family="Spectral, serif" font-size="13" fill="#4a4239">TF&apos;s official API since 2.0</text>
+    <text x="20" y="106" font-family="Spectral, serif" font-size="13" fill="#4a4239">v3 supports PyTorch + JAX</text>
+    <text x="20" y="138" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#b8472e">USE FOR:</text>
+    <text x="20" y="158" font-family="Spectral, serif" font-size="12" fill="#4a4239">Beginners</text>
+    <text x="20" y="176" font-family="Spectral, serif" font-size="12" fill="#4a4239">99% of cohort cases</text>
+  </g>
+
+  <g transform="translate(550, 1770)">
+    <rect width="220" height="190" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="2"/>
+    <text x="20" y="32" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#b8472e">PYTORCH ★</text>
+    <text x="20" y="60" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#1f1a14">Meta · 2016</text>
+    <text x="20" y="86" font-family="Spectral, serif" font-size="13" fill="#4a4239">Dominant research</text>
+    <text x="20" y="106" font-family="Spectral, serif" font-size="13" fill="#4a4239">framework 2024–2026</text>
+    <text x="20" y="138" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#b8472e">USE FOR:</text>
+    <text x="20" y="158" font-family="Spectral, serif" font-size="12" fill="#4a4239">Research, papers, HF code</text>
+    <text x="20" y="176" font-family="Spectral, serif" font-size="12" fill="#4a4239">custom training loops</text>
+  </g>
+
+  <g transform="translate(790, 1770)">
+    <rect width="220" height="190" rx="4" fill="#fbf7ef" stroke="#6db33f" stroke-width="2"/>
+    <text x="20" y="32" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#6db33f">JAX</text>
+    <text x="20" y="60" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#1f1a14">Google · 2018</text>
+    <text x="20" y="86" font-family="Spectral, serif" font-size="13" fill="#4a4239">Functional + XLA</text>
+    <text x="20" y="106" font-family="Spectral, serif" font-size="13" fill="#4a4239">Frontier labs (Gemini, PaLM)</text>
+    <text x="20" y="138" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#b8472e">USE FOR:</text>
+    <text x="20" y="158" font-family="Spectral, serif" font-size="12" fill="#4a4239">Cutting-edge research</text>
+    <text x="20" y="176" font-family="Spectral, serif" font-size="12" fill="#4a4239">large-scale training</text>
+  </g>
+
+  <text x="70" y="1990" font-family="Spectral, serif" font-style="italic" font-size="14" fill="#4a4239">
+    Theano (2008–2017): discontinued. Mentioned only because the Keras backends story includes it.
+  </text>
+
+  
+  <text x="70" y="2100" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 04 — ENV SETUP — QUICK REFERENCE</text>
+  <text x="70" y="2144" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">The bridge from theory to code</text>
+
+  <g transform="translate(70, 2190)">
+    <rect width="960" height="240" rx="4" fill="#1f1a14"/>
+    <text x="24" y="32" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" font-weight="700" fill="#c89b3c"># 1. Create a per-project env (don&apos;t install into base)</text>
+    <text x="40" y="56" font-family="JetBrains Mono, monospace" font-size="14" fill="#f5efe6">conda create --name genai python=3.11</text>
+
+    <text x="24" y="92" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" font-weight="700" fill="#c89b3c"># 2. Activate</text>
+    <text x="40" y="116" font-family="JetBrains Mono, monospace" font-size="14" fill="#f5efe6">conda activate genai</text>
+
+    <text x="24" y="152" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" font-weight="700" fill="#c89b3c"># 3. Install packages into THIS env only</text>
+    <text x="40" y="176" font-family="JetBrains Mono, monospace" font-size="14" fill="#f5efe6">pip install tensorflow keras numpy pandas</text>
+
+    <text x="24" y="212" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2" font-weight="700" fill="#c89b3c"># 4. Launch Jupyter (must be inside the activated env)</text>
+  </g>
+
+  <g transform="translate(70, 2460)">
+    <rect width="960" height="60" fill="rgba(184, 71, 46, 0.06)" stroke="#b8472e" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="20" y="26" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#b8472e">FAILURE TELL</text>
+    <text x="20" y="46" font-family="Spectral, serif" font-size="14" fill="#1f1a14">If your prompt doesn&apos;t show <tspan font-family="JetBrains Mono, monospace" font-weight="700">(genai)</tspan> in parens, you forgot <tspan font-family="JetBrains Mono, monospace" font-weight="700">conda activate</tspan>. Stop and retry — half of all “works on my machine” stories trace here.</text>
+  </g>
+
+  
+  <text x="70" y="2610" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 05 — WHAT TO CARRY FORWARD</text>
+  <text x="70" y="2654" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Three rules, three corrections, one forward link</text>
+
+  <g transform="translate(70, 2700)">
+    <rect width="960" height="290" rx="4" fill="#fbf7ef" stroke="#1f1a14" stroke-width="1.5"/>
+
+    <text x="30" y="38" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">THREE RULES</text>
+    <text x="30" y="64" font-family="Spectral, serif" font-size="14" fill="#4a4239">① <tspan font-weight="700" fill="#1f1a14">Softmax for multi-class, sigmoid for binary, identity for regression.</tspan> Output layer is task-specific.</text>
+    <text x="30" y="86" font-family="Spectral, serif" font-size="14" fill="#4a4239">② <tspan font-weight="700" fill="#1f1a14">Hidden-layer activation is ReLU,</tspan> regardless of what task you&apos;re solving.</text>
+    <text x="30" y="108" font-family="Spectral, serif" font-size="14" fill="#4a4239">③ <tspan font-weight="700" fill="#1f1a14">Always <tspan font-family="JetBrains Mono, monospace">conda activate</tspan> before <tspan font-family="JetBrains Mono, monospace">pip install</tspan>.</tspan> Never install into base.</text>
+
+    <line x1="30" y1="126" x2="930" y2="126" stroke="#d4c9b5"/>
+
+    <text x="30" y="152" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700">THREE CORRECTIONS (vs. lecturer)</text>
+    <text x="30" y="176" font-family="Spectral, serif" font-size="13" fill="#4a4239">① “John John Hoffer” → <tspan font-weight="700" fill="#1f1a14">John Hopfield</tspan> (Princeton; 2024 Nobel Prize in Physics with Hinton).</text>
+    <text x="30" y="198" font-family="Spectral, serif" font-size="13" fill="#4a4239">② “Neural networks are black boxes” — <tspan font-weight="700" fill="#1f1a14">substantially out of date in 2026</tspan>. Mechanistic interpretability is real.</text>
+    <text x="30" y="220" font-family="Spectral, serif" font-size="13" fill="#4a4239">③ “Stop when error = 0” — <tspan font-weight="700" fill="#1f1a14">stop on gradient ≈ 0</tspan> or early stopping on validation loss.</text>
+
+    <line x1="30" y1="240" x2="930" y2="240" stroke="#d4c9b5"/>
+
+    <text x="30" y="262" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#2a5d62" font-weight="700">SHIPS TO →</text>
+    <text x="160" y="262" font-family="Spectral, serif" font-size="14" fill="#1f1a14">The next session is hands-on Keras: image classification with sparse_categorical_crossentropy.</text>
+  </g>
+
+  
+  <g transform="translate(0, 3030)">
+    <line x1="70" y1="0" x2="1030" y2="0" stroke="#1f1a14" stroke-width="1"/>
+    <text x="70" y="28" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8b7d65">ANN-SESSION 04 · STUDY NOTES · REV V1</text>
+    <text x="1030" y="28" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8b7d65">SASMITA COURSE · UPLOADED 2026-05-18</text>
+    <text x="550" y="60" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#4a4239">Original recording: ~mid-October 2024 (Hinton + Hopfield Nobel + Dussehra references). See §02 of the notes.</text>
+  </g>
+
+</svg>

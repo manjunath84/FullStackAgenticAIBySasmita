@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1800" font-family="Spectral, serif">
+  <defs>
+    <style>
+      .paper { fill: #f5efe6; }
+      .paper-2 { fill: #ede5d6; }
+      .ink { fill: #1f1a14; }
+      .ink-soft { fill: #4a4239; }
+      .ink-mute { fill: #8b7d65; }
+      .terracotta { fill: #b8472e; }
+      .terracotta-light { fill: #d96d4a; }
+      .teal { fill: #2a5d62; }
+      .teal-light { fill: #5ba0a8; }
+      .ochre { fill: #c89b3c; }
+      .line-stroke { stroke: #d4c9b5; }
+      .ink-stroke { stroke: #1f1a14; }
+      .terracotta-stroke { stroke: #b8472e; }
+      .teal-stroke { stroke: #2a5d62; }
+      .ochre-stroke { stroke: #c89b3c; }
+      .highlight { fill: #f8e6cf; }
+      .display { font-family: Fraunces, Georgia, serif; font-style: italic; font-weight: 700; }
+      .body { font-family: Spectral, Georgia, serif; }
+      .mono { font-family: 'JetBrains Mono', Consolas, monospace; }
+      text { fill: #1f1a14; }
+    </style>
+    <marker id="arrow-terra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/>
+    </marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2a5d62"/>
+    </marker>
+    <marker id="arrow-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect class="paper" width="1400" height="1800"/>
+
+  <!-- Header -->
+  <g>
+    <text class="mono" x="80" y="80" font-size="13" letter-spacing="6" fill="#b8472e" font-weight="700">SESSION 15 — GRAPHRAG, PART 1</text>
+    <text class="display" x="80" y="160" font-size="76" fill="#1f1a14">Why graphs.</text>
+    <text class="display" x="80" y="240" font-size="76" fill="#b8472e">Why Neo4j.</text>
+    <text class="display" x="80" y="320" font-size="76" fill="#1f1a14">Enough Cypher to read.</text>
+    <line x1="80" y1="370" x2="500" y2="370" class="ink-stroke" stroke-width="3"/>
+    <text class="mono" x="80" y="400" font-size="11" letter-spacing="3" fill="#8b7d65">2026-05-03 · 66 MIN · CONCEPT-ONLY (NO LIVE DEMO)</text>
+  </g>
+
+  <!-- Section 1: Why graphs -->
+  <g transform="translate(80, 460)">
+    <text class="mono" x="0" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">01 · WHERE VANILLA RAG BREAKS</text>
+    <text class="display" x="0" y="44" font-size="32" fill="#1f1a14">The multi-hop problem</text>
+
+    <!-- vanilla RAG chunk -->
+    <g transform="translate(0, 80)">
+      <rect class="paper-2" x="0" y="0" width="600" height="140" rx="2"/>
+      <text class="mono" x="20" y="32" font-size="11" letter-spacing="2" fill="#8b7d65">VANILLA RAG</text>
+      <text class="body" x="20" y="60" font-size="15" fill="#4a4239">embed query → cosine-match top-k → stuff prompt</text>
+      <text class="body" x="20" y="92" font-size="15" fill="#4a4239" font-style="italic">Optimizes for: recall (cheap, broad).</text>
+      <text class="body" x="20" y="116" font-size="15" fill="#b8472e" font-weight="700">Fails when: the answer is spread across chunks</text>
+      <text class="body" x="20" y="134" font-size="15" fill="#b8472e" font-weight="700">that aren't individually similar to the question.</text>
+    </g>
+
+    <!-- arrow -->
+    <text class="display" x="620" y="170" font-size="48" fill="#b8472e">→</text>
+
+    <!-- GraphRAG fix -->
+    <g transform="translate(700, 80)">
+      <rect class="highlight" x="0" y="0" width="540" height="140" rx="2" stroke="#c89b3c" stroke-width="1"/>
+      <text class="mono" x="20" y="32" font-size="11" letter-spacing="2" fill="#b8472e">GRAPHRAG FIX</text>
+      <text class="body" x="20" y="60" font-size="15" fill="#1f1a14">Add a <tspan font-weight="700">graph channel</tspan>: typed entities and</text>
+      <text class="body" x="20" y="80" font-size="15" fill="#1f1a14">explicit relationships, queried with Cypher.</text>
+      <text class="body" x="20" y="112" font-size="14" fill="#4a4239" font-style="italic">Edge et al., Microsoft Research, 2024 —</text>
+      <text class="mono" x="20" y="130" font-size="11" fill="#8b7d65">arXiv:2404.16130</text>
+    </g>
+  </g>
+
+  <!-- Section 2: Node/Relationship anatomy -->
+  <g transform="translate(80, 740)">
+    <text class="mono" x="0" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">02 · THE WHOLE DATA MODEL</text>
+    <text class="display" x="0" y="44" font-size="32" fill="#1f1a14">Two entities. That's it.</text>
+
+    <!-- Node example -->
+    <g transform="translate(0, 90)">
+      <ellipse cx="160" cy="100" rx="150" ry="80" fill="#5ba0a8" stroke="#2a5d62" stroke-width="3"/>
+      <text class="mono" x="160" y="70" text-anchor="middle" font-size="11" letter-spacing="2" fill="#f5efe6" font-weight="700">:Person</text>
+      <text class="body" x="160" y="100" text-anchor="middle" font-size="14" fill="#f5efe6">name: 'Alice'</text>
+      <text class="body" x="160" y="120" text-anchor="middle" font-size="14" fill="#f5efe6">age: 28</text>
+      <text class="body" x="160" y="140" text-anchor="middle" font-size="14" fill="#f5efe6">city: 'New York'</text>
+
+      <text class="mono" x="160" y="210" text-anchor="middle" font-size="10" letter-spacing="2" fill="#2a5d62" font-weight="700">NODE</text>
+      <text class="body" x="160" y="232" text-anchor="middle" font-size="13" fill="#4a4239">label(s) + property map</text>
+
+      <!-- relationship arrow -->
+      <line x1="320" y1="100" x2="500" y2="100" stroke="#b8472e" stroke-width="3" marker-end="url(#arrow-terra)"/>
+      <rect x="340" y="62" width="140" height="36" fill="#f5efe6" stroke="#b8472e" stroke-width="2" rx="2"/>
+      <text class="mono" x="410" y="80" text-anchor="middle" font-size="11" letter-spacing="1" fill="#b8472e" font-weight="700">:WORKS_AT</text>
+      <text class="mono" x="410" y="92" text-anchor="middle" font-size="9" fill="#4a4239">since: 2020</text>
+
+      <!-- Company node -->
+      <ellipse cx="660" cy="100" rx="150" ry="80" fill="#5ba0a8" stroke="#2a5d62" stroke-width="3"/>
+      <text class="mono" x="660" y="70" text-anchor="middle" font-size="11" letter-spacing="2" fill="#f5efe6" font-weight="700">:Company:TechCompany</text>
+      <text class="body" x="660" y="100" text-anchor="middle" font-size="14" fill="#f5efe6">name: 'TechCorp'</text>
+      <text class="body" x="660" y="120" text-anchor="middle" font-size="14" fill="#f5efe6">founded: 2010</text>
+      <text class="body" x="660" y="140" text-anchor="middle" font-size="14" fill="#f5efe6">employees: 500</text>
+
+      <text class="mono" x="660" y="210" text-anchor="middle" font-size="10" letter-spacing="2" fill="#2a5d62" font-weight="700">NODE (MULTI-LABEL)</text>
+      <text class="body" x="660" y="232" text-anchor="middle" font-size="13" fill="#4a4239">a node can carry several labels</text>
+
+      <text class="mono" x="410" y="40" text-anchor="middle" font-size="10" letter-spacing="2" fill="#b8472e" font-weight="700">RELATIONSHIP</text>
+      <text class="body" x="410" y="155" text-anchor="middle" font-size="12" fill="#4a4239" font-style="italic">typed, directed, can have properties</text>
+    </g>
+
+    <!-- Cypher pattern -->
+    <g transform="translate(900, 90)">
+      <rect class="paper-2" x="0" y="0" width="340" height="240" rx="2"/>
+      <text class="mono" x="20" y="30" font-size="11" letter-spacing="2" fill="#8b7d65">CYPHER PATTERN SYNTAX</text>
+      <text class="mono" x="20" y="68" font-size="14" fill="#1f1a14">(p:Person {name: 'Alice'})</text>
+      <text class="body" x="20" y="92" font-size="12" fill="#4a4239" font-style="italic">parentheses = node</text>
+
+      <text class="mono" x="20" y="138" font-size="14" fill="#1f1a14">-[r:WORKS_AT {since:2020}]-&gt;</text>
+      <text class="body" x="20" y="162" font-size="12" fill="#4a4239" font-style="italic">brackets = relationship</text>
+
+      <text class="mono" x="20" y="208" font-size="14" fill="#1f1a14">(c:Company)</text>
+      <text class="body" x="20" y="226" font-size="12" fill="#4a4239" font-style="italic">draw the subgraph; engine matches it</text>
+    </g>
+  </g>
+
+  <!-- Section 3: Cypher clause map -->
+  <g transform="translate(80, 1140)">
+    <text class="mono" x="0" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">03 · CYPHER CLAUSE MAP</text>
+    <text class="display" x="0" y="44" font-size="32" fill="#1f1a14">SQL keywords ↔ Cypher keywords</text>
+
+    <g transform="translate(0, 80)">
+      <!-- Header row -->
+      <rect x="0" y="0" width="1240" height="40" fill="#1f1a14"/>
+      <text class="mono" x="20" y="26" font-size="11" letter-spacing="3" fill="#f5efe6" font-weight="700">SQL</text>
+      <text class="mono" x="320" y="26" font-size="11" letter-spacing="3" fill="#f5efe6" font-weight="700">CYPHER</text>
+      <text class="mono" x="660" y="26" font-size="11" letter-spacing="3" fill="#f5efe6" font-weight="700">PURPOSE</text>
+
+      <!-- Rows -->
+      <g font-size="14">
+        <rect x="0" y="40" width="1240" height="40" class="paper-2"/>
+        <text class="mono" x="20" y="65" fill="#1f1a14">SELECT … FROM</text>
+        <text class="mono" x="320" y="65" fill="#b8472e">MATCH … RETURN</text>
+        <text class="body" x="660" y="65" fill="#4a4239">read rows / subgraphs</text>
+
+        <text class="mono" x="20" y="105" fill="#1f1a14">INSERT INTO</text>
+        <text class="mono" x="320" y="105" fill="#b8472e">CREATE</text>
+        <text class="body" x="660" y="105" fill="#4a4239">add a node or relationship</text>
+
+        <rect x="0" y="120" width="1240" height="40" class="paper-2"/>
+        <text class="mono" x="20" y="145" fill="#1f1a14">INSERT … ON DUPLICATE KEY UPDATE</text>
+        <text class="mono" x="320" y="145" fill="#b8472e">MERGE … ON CREATE/ON MATCH SET</text>
+        <text class="body" x="660" y="145" fill="#4a4239">upsert</text>
+
+        <text class="mono" x="20" y="185" fill="#1f1a14">WHERE</text>
+        <text class="mono" x="320" y="185" fill="#b8472e">WHERE</text>
+        <text class="body" x="660" y="185" fill="#4a4239">filter; AND / OR / NOT / IN all work</text>
+
+        <rect x="0" y="200" width="1240" height="40" class="paper-2"/>
+        <text class="mono" x="20" y="225" fill="#1f1a14">UPDATE … SET</text>
+        <text class="mono" x="320" y="225" fill="#b8472e">SET</text>
+        <text class="body" x="660" y="225" fill="#4a4239">add/overwrite properties; no migration</text>
+
+        <text class="mono" x="20" y="265" fill="#1f1a14">JOIN ... ON</text>
+        <text class="mono" x="320" y="265" fill="#b8472e">(:A)-[:REL]-&gt;(:B)</text>
+        <text class="body" x="660" y="265" fill="#4a4239">traverse a typed edge</text>
+
+        <rect x="0" y="280" width="1240" height="40" class="paper-2"/>
+        <text class="mono" x="20" y="305" fill="#1f1a14">GROUP BY</text>
+        <text class="mono" x="320" y="305" fill="#b8472e">(implicit)</text>
+        <text class="body" x="660" y="305" fill="#4a4239">non-aggregated RETURN cols ARE the group keys</text>
+
+        <text class="mono" x="20" y="345" fill="#1f1a14">COUNT / AVG / MIN / MAX</text>
+        <text class="mono" x="320" y="345" fill="#b8472e">COUNT / AVG / MIN / MAX</text>
+        <text class="body" x="660" y="345" fill="#4a4239">live inside RETURN</text>
+
+        <rect x="0" y="360" width="1240" height="40" class="paper-2"/>
+        <text class="mono" x="20" y="385" fill="#1f1a14">ORDER BY … DESC</text>
+        <text class="mono" x="320" y="385" fill="#b8472e">ORDER BY … DESC</text>
+        <text class="body" x="660" y="385" fill="#4a4239">same as SQL</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Section 4: GraphRAG architecture -->
+  <g transform="translate(80, 1620)">
+    <text class="mono" x="0" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">04 · WHERE THIS LANDS</text>
+    <text class="display" x="0" y="40" font-size="28" fill="#1f1a14">vector channel + graph channel → LLM</text>
+
+    <!-- pipeline -->
+    <g transform="translate(0, 70)" font-size="13">
+      <rect x="0" y="0" width="200" height="60" fill="#5ba0a8" stroke="#2a5d62" stroke-width="2" rx="2"/>
+      <text class="mono" x="100" y="30" text-anchor="middle" fill="#f5efe6" font-weight="700">USER QUERY</text>
+      <text class="body" x="100" y="50" text-anchor="middle" fill="#f5efe6" font-style="italic">natural language</text>
+
+      <line x1="200" y1="30" x2="280" y2="30" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrow-ink)"/>
+
+      <rect x="280" y="-40" width="220" height="60" fill="#f5efe6" stroke="#2a5d62" stroke-width="2" rx="2"/>
+      <text class="mono" x="390" y="-12" text-anchor="middle" fill="#2a5d62" font-weight="700">VECTOR RETRIEVAL</text>
+      <text class="body" x="390" y="6" text-anchor="middle" fill="#4a4239" font-style="italic">embed + similarity</text>
+
+      <rect x="280" y="50" width="220" height="60" fill="#f5efe6" stroke="#b8472e" stroke-width="2" rx="2"/>
+      <text class="mono" x="390" y="78" text-anchor="middle" fill="#b8472e" font-weight="700">GRAPH RETRIEVAL</text>
+      <text class="body" x="390" y="96" text-anchor="middle" fill="#4a4239" font-style="italic">NL → Cypher → rows</text>
+
+      <line x1="500" y1="-10" x2="600" y2="30" stroke="#2a5d62" stroke-width="2" marker-end="url(#arrow-teal)"/>
+      <line x1="500" y1="80" x2="600" y2="30" stroke="#b8472e" stroke-width="2" marker-end="url(#arrow-terra)"/>
+
+      <rect x="600" y="0" width="200" height="60" fill="#1f1a14" rx="2"/>
+      <text class="mono" x="700" y="28" text-anchor="middle" fill="#f5efe6" font-weight="700">MERGED CONTEXT</text>
+      <text class="body" x="700" y="48" text-anchor="middle" fill="#ede5d6" font-style="italic">two signals, one prompt</text>
+
+      <line x1="800" y1="30" x2="880" y2="30" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrow-ink)"/>
+
+      <rect x="880" y="0" width="160" height="60" fill="#b8472e" rx="2"/>
+      <text class="mono" x="960" y="36" text-anchor="middle" fill="#f5efe6" font-size="18" font-weight="700">LLM</text>
+
+      <line x1="1040" y1="30" x2="1120" y2="30" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrow-ink)"/>
+
+      <text class="display" x="1140" y="38" font-size="20" fill="#1f1a14">answer</text>
+    </g>
+
+    <text class="body" x="0" y="160" font-size="13" fill="#4a4239" font-style="italic">Graph rows are <tspan font-weight="700">structured + deterministic</tspan> — same query, same rows. Reduces hallucination opportunity; doesn't eliminate it (sampling is still probabilistic).</text>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(80, 1750)">
+    <line x1="0" y1="0" x2="1240" y2="0" stroke="#1f1a14" stroke-width="2"/>
+    <text class="mono" x="0" y="24" font-size="10" letter-spacing="3" fill="#8b7d65">SOURCES: NEO4J CYPHER MANUAL · LANGCHAIN-NEO4J · EDGE ET AL. 2024 (ARXIV:2404.16130)</text>
+    <text class="mono" x="1240" y="24" font-size="10" letter-spacing="3" fill="#b8472e" text-anchor="end" font-weight="700">SASMITACOURSE — S15</text>
+  </g>
+</svg>

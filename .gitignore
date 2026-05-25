@@ -8,4 +8,5 @@
 # But not these:
 !*/
 !*.html
+!*-infographic*.svg
 !.gitignore

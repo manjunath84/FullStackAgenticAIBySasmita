@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 4210" width="1100" height="4210" preserveAspectRatio="xMidYMid meet" font-family="'Spectral', Georgia, serif">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5efe6"/>
+      <stop offset="1" stop-color="#ede5d6"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f1a14"/>
+      <stop offset="1" stop-color="#3a312a"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/>
+    </marker>
+  </defs>
+
+  <rect width="1100" height="4210" fill="url(#paper)"/>
+
+  <!-- HERO -->
+  <g>
+    <rect x="0" y="0" width="1100" height="380" fill="url(#ink)"/>
+    <g opacity="0.18" stroke="#d96d4a" stroke-width="0.7" fill="none">
+      <circle cx="900" cy="190" r="3" fill="#d96d4a"/>
+      <circle cx="960" cy="120" r="3" fill="#d96d4a"/>
+      <circle cx="1020" cy="220" r="3" fill="#d96d4a"/>
+      <circle cx="880" cy="280" r="3" fill="#d96d4a"/>
+      <circle cx="990" cy="310" r="3" fill="#d96d4a"/>
+      <line x1="900" y1="190" x2="960" y2="120"/>
+      <line x1="900" y1="190" x2="1020" y2="220"/>
+      <line x1="900" y1="190" x2="880" y2="280"/>
+      <line x1="960" y1="120" x2="1020" y2="220"/>
+      <line x1="1020" y1="220" x2="990" y2="310"/>
+      <line x1="880" y1="280" x2="990" y2="310"/>
+    </g>
+    <text x="70" y="90" font-size="13" letter-spacing="8" fill="#c89b3c" font-weight="600" font-family="'JetBrains Mono', monospace">SESSION 07 · STUDY NOTES · REV V2</text>
+    <text x="70" y="170" font-size="56" font-weight="700" fill="#f5efe6" font-style="italic">The Transformer</text>
+    <text x="70" y="225" font-size="56" font-weight="700" fill="#d96d4a" font-style="italic">Encoder</text>
+    <text x="70" y="285" font-size="20" fill="#c5b9a0" font-style="italic">How text becomes context-aware numbers —</text>
+    <text x="70" y="312" font-size="20" fill="#c5b9a0" font-style="italic">the architecture that broke open modern AI</text>
+    <line x1="70" y1="345" x2="180" y2="345" stroke="#d96d4a" stroke-width="2"/>
+    <text x="70" y="365" font-size="11" letter-spacing="3" fill="#8b7d65" font-family="'JetBrains Mono', monospace">2017 — VASWANI ET AL., "ATTENTION IS ALL YOU NEED"</text>
+  </g>
+
+  <!-- THESIS -->
+  <g transform="translate(0, 430)">
+    <text x="70" y="0" font-size="100" fill="#b8472e" opacity="0.3" font-family="serif">"</text>
+    <foreignObject x="120" y="-40" width="900" height="160">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:24px; line-height:1.4; color:#1f1a14; font-style:italic; font-family:Georgia, serif;">
+        Every token in the input is enriched with <span style="color:#b8472e; font-weight:600;">three layers of information</span> — generic meaning, position, and attention-mixed context from every other token. Once each token carries all that, the model can process them <span style="color:#b8472e; font-weight:600;">in parallel.</span>
+      </div>
+    </foreignObject>
+  </g>
+
+  <!-- SECTION 01: WORD2VEC SCATTER -->
+  <g transform="translate(0, 700)">
+    <text x="70" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">§ 01 — STARTING POINT</text>
+    <text x="70" y="44" font-size="34" fill="#1f1a14" font-weight="700" font-style="italic">Words as coordinates in latent space</text>
+    <foreignObject x="70" y="64" width="960" height="100">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:15px; line-height:1.55; color:#4a4239;">
+        Every token gets mapped to a 256–512-dim vector. The axes below are labeled <em>"animal / bird"</em> for intuition only — <strong>real Word2Vec dimensions are learned and uninterpretable</strong>. Words with similar contexts end up close together; the cluster structure is the thing, not the axis names.
+      </div>
+    </foreignObject>
+
+    <g transform="translate(120, 220)">
+      <rect x="0" y="0" width="500" height="400" fill="#fbf7ef" stroke="#1f1a14" stroke-width="1.2"/>
+      <text x="250" y="430" text-anchor="middle" font-size="12" font-family="'JetBrains Mono', monospace" fill="#4a4239">→ latent dim 1 (intuition: "animal-ness")</text>
+      <text x="-200" y="-15" text-anchor="middle" transform="rotate(-90)" font-size="12" font-family="'JetBrains Mono', monospace" fill="#4a4239">→ latent dim 2 (intuition: "bird-ness")</text>
+      <line x1="0" y1="100" x2="500" y2="100" stroke="#d4c9b5" stroke-dasharray="2,3"/>
+      <line x1="0" y1="200" x2="500" y2="200" stroke="#d4c9b5" stroke-dasharray="2,3"/>
+      <line x1="0" y1="300" x2="500" y2="300" stroke="#d4c9b5" stroke-dasharray="2,3"/>
+      <line x1="125" y1="0" x2="125" y2="400" stroke="#d4c9b5" stroke-dasharray="2,3"/>
+      <line x1="250" y1="0" x2="250" y2="400" stroke="#d4c9b5" stroke-dasharray="2,3"/>
+      <line x1="375" y1="0" x2="375" y2="400" stroke="#d4c9b5" stroke-dasharray="2,3"/>
+
+      <circle cx="450" cy="320" r="16" fill="#b8472e"/>
+      <text x="450" y="325" text-anchor="middle" font-size="12" fill="#f5efe6" font-weight="700">dog</text>
+      <circle cx="300" cy="80" r="16" fill="#2a5d62"/>
+      <text x="300" y="85" text-anchor="middle" font-size="11" fill="#f5efe6" font-weight="700">eagle</text>
+      <circle cx="350" cy="360" r="16" fill="#c89b3c"/>
+      <text x="350" y="365" text-anchor="middle" font-size="11" fill="#1f1a14" font-weight="700">man</text>
+      <circle cx="50" cy="380" r="16" fill="#4a4239"/>
+      <text x="50" y="385" text-anchor="middle" font-size="10" fill="#f5efe6" font-weight="700">robot</text>
+    </g>
+
+    <g transform="translate(700, 260)">
+      <line x1="0" y1="0" x2="0" y2="320" stroke="#b8472e" stroke-width="2"/>
+      <foreignObject x="20" y="-10" width="350" height="360">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px; line-height:1.6; color:#4a4239; font-family:Georgia, serif;">
+          <div style="font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:2px; color:#b8472e; font-weight:700; margin-bottom:12px;">THE PROBLEM</div>
+          <p style="margin:0 0 14px;">These coordinates are <em>generic</em>. The vector for <b>dog</b> is identical in:</p>
+          <p style="margin:0 0 6px; font-family:'JetBrains Mono', monospace; font-size:13px; color:#1f1a14;">→ "man bites <b style="color:#b8472e;">dog</b>"</p>
+          <p style="margin:0 0 18px; font-family:'JetBrains Mono', monospace; font-size:13px; color:#1f1a14;">→ "<b style="color:#b8472e;">dog</b> bites man"</p>
+          <p style="margin:0;">Same words. Opposite meanings. Word2Vec carries <b>no order</b> and <b>no input-specific relationships.</b></p>
+        </div>
+      </foreignObject>
+    </g>
+  </g>
+
+  <!-- SECTION 02: THE THREE LAYERS -->
+  <g transform="translate(0, 1340)">
+    <text x="70" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">§ 02 — THE FIX</text>
+    <text x="70" y="44" font-size="34" fill="#1f1a14" font-weight="700" font-style="italic">Three layers, summed per token</text>
+
+    <g transform="translate(70, 80)">
+      <rect width="960" height="80" rx="2" fill="#1f1a14"/>
+      <text x="480" y="50" text-anchor="middle" font-size="22" fill="#f5efe6" font-family="'JetBrains Mono', monospace">
+        <tspan fill="#5ba0a8">generic</tspan>
+        <tspan fill="#f5efe6">  +  </tspan>
+        <tspan fill="#c89b3c">positional</tspan>
+        <tspan fill="#f5efe6">  +  </tspan>
+        <tspan fill="#d96d4a">attention-mixed</tspan>
+        <tspan fill="#f5efe6">  =  </tspan>
+        <tspan fill="#f5efe6" font-style="italic">rich embedding</tspan>
+      </text>
+    </g>
+
+    <text x="70" y="210" font-size="13" letter-spacing="2" font-family="'JetBrains Mono', monospace" fill="#4a4239" font-weight="700">ILLUSTRATIVE EXAMPLE — "man bites dog"</text>
+
+    <g transform="translate(70, 240)">
+      <!-- man column -->
+      <g transform="translate(0, 0)">
+        <text x="150" y="0" text-anchor="middle" font-size="22" font-weight="700" fill="#1f1a14" font-style="italic">man</text>
+        <g transform="translate(20, 25)">
+          <rect width="260" height="60" rx="4" fill="#fbf7ef" stroke="#5ba0a8" stroke-width="2"/>
+          <text x="12" y="22" font-size="10" letter-spacing="1" fill="#5ba0a8" font-weight="700" font-family="'JetBrains Mono', monospace">L1 · GENERIC (real-valued)</text>
+          <text x="12" y="46" font-size="13" font-family="'JetBrains Mono', monospace" fill="#1f1a14">[0.7, 0.1, -0.3, 0.2]</text>
+        </g>
+        <text x="150" y="105" text-anchor="middle" font-size="20" fill="#1f1a14" font-weight="700">+</text>
+        <g transform="translate(20, 115)">
+          <rect width="260" height="60" rx="4" fill="#fbf7ef" stroke="#c89b3c" stroke-width="2"/>
+          <text x="12" y="22" font-size="10" letter-spacing="1" fill="#c89b3c" font-weight="700" font-family="'JetBrains Mono', monospace">L2 · POSITION = 0</text>
+          <text x="12" y="46" font-size="13" font-family="'JetBrains Mono', monospace" fill="#1f1a14">[0.0, 1.0, 0.0, 1.0]</text>
+        </g>
+        <text x="150" y="195" text-anchor="middle" font-size="20" fill="#1f1a14" font-weight="700">+</text>
+        <g transform="translate(20, 205)">
+          <rect width="260" height="60" rx="4" fill="#fbf7ef" stroke="#d96d4a" stroke-width="2"/>
+          <text x="12" y="22" font-size="10" letter-spacing="1" fill="#d96d4a" font-weight="700" font-family="'JetBrains Mono', monospace">L3 · ATTN WEIGHTS (sum=1)</text>
+          <text x="12" y="46" font-size="12" font-family="'JetBrains Mono', monospace" fill="#1f1a14">[man:0.5, bites:0.4, dog:0.1]</text>
+        </g>
+        <line x1="150" y1="280" x2="150" y2="305" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrow)"/>
+        <g transform="translate(20, 310)">
+          <rect width="260" height="50" rx="4" fill="#1f1a14"/>
+          <text x="130" y="20" text-anchor="middle" font-size="10" letter-spacing="1" fill="#c89b3c" font-weight="700" font-family="'JetBrains Mono', monospace">RICH EMBEDDING — man</text>
+          <text x="130" y="40" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" fill="#f5efe6">position 0 + context-mix</text>
+        </g>
+      </g>
+
+      <!-- bites column -->
+      <g transform="translate(330, 0)">
+        <text x="150" y="0" text-anchor="middle" font-size="22" font-weight="700" fill="#1f1a14" font-style="italic">bites</text>
+        <g transform="translate(20, 25)">
+          <rect width="260" height="60" rx="4" fill="#fbf7ef" stroke="#5ba0a8" stroke-width="2"/>
+          <text x="12" y="22" font-size="10" letter-spacing="1" fill="#5ba0a8" font-weight="700" font-family="'JetBrains Mono', monospace">L1 · GENERIC (real-valued)</text>
+          <text x="12" y="46" font-size="13" font-family="'JetBrains Mono', monospace" fill="#1f1a14">[0.1, -0.4, 0.5, 0.9]</text>
+        </g>
+        <text x="150" y="105" text-anchor="middle" font-size="20" fill="#1f1a14" font-weight="700">+</text>
+        <g transform="translate(20, 115)">
+          <rect width="260" height="60" rx="4" fill="#fbf7ef" stroke="#c89b3c" stroke-width="2"/>
+          <text x="12" y="22" font-size="10" letter-spacing="1" fill="#c89b3c" font-weight="700" font-family="'JetBrains Mono', monospace">L2 · POSITION = 1</text>
+          <text x="12" y="46" font-size="13" font-family="'JetBrains Mono', monospace" fill="#1f1a14">[0.8, 0.5, 0.6, 0.5]</text>
+        </g>
+        <text x="150" y="195" text-anchor="middle" font-size="20" fill="#1f1a14" font-weight="700">+</text>
+        <g transform="translate(20, 205)">
+          <rect width="260" height="60" rx="4" fill="#fbf7ef" stroke="#d96d4a" stroke-width="2"/>
+          <text x="12" y="22" font-size="10" letter-spacing="1" fill="#d96d4a" font-weight="700" font-family="'JetBrains Mono', monospace">L3 · ATTN WEIGHTS (sum=1)</text>
+          <text x="12" y="46" font-size="12" font-family="'JetBrains Mono', monospace" fill="#1f1a14">[man:0.3, bites:0.5, dog:0.2]</text>
+        </g>
+        <line x1="150" y1="280" x2="150" y2="305" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrow)"/>
+        <g transform="translate(20, 310)">
+          <rect width="260" height="50" rx="4" fill="#1f1a14"/>
+          <text x="130" y="20" text-anchor="middle" font-size="10" letter-spacing="1" fill="#c89b3c" font-weight="700" font-family="'JetBrains Mono', monospace">RICH EMBEDDING — bites</text>
+          <text x="130" y="40" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" fill="#f5efe6">position 1 + context-mix</text>
+        </g>
+      </g>
+
+      <!-- dog column -->
+      <g transform="translate(660, 0)">
+        <text x="150" y="0" text-anchor="middle" font-size="22" font-weight="700" fill="#1f1a14" font-style="italic">dog</text>
+        <g transform="translate(20, 25)">
+          <rect width="260" height="60" rx="4" fill="#fbf7ef" stroke="#5ba0a8" stroke-width="2"/>
+          <text x="12" y="22" font-size="10" letter-spacing="1" fill="#5ba0a8" font-weight="700" font-family="'JetBrains Mono', monospace">L1 · GENERIC (real-valued)</text>
+          <text x="12" y="46" font-size="13" font-family="'JetBrains Mono', monospace" fill="#1f1a14">[0.9, 0.2, -0.1, 0.1]</text>
+        </g>
+        <text x="150" y="105" text-anchor="middle" font-size="20" fill="#1f1a14" font-weight="700">+</text>
+        <g transform="translate(20, 115)">
+          <rect width="260" height="60" rx="4" fill="#fbf7ef" stroke="#c89b3c" stroke-width="2"/>
+          <text x="12" y="22" font-size="10" letter-spacing="1" fill="#c89b3c" font-weight="700" font-family="'JetBrains Mono', monospace">L2 · POSITION = 2</text>
+          <text x="12" y="46" font-size="13" font-family="'JetBrains Mono', monospace" fill="#1f1a14">[1.0, 0.0, 1.0, 0.0]</text>
+        </g>
+        <text x="150" y="195" text-anchor="middle" font-size="20" fill="#1f1a14" font-weight="700">+</text>
+        <g transform="translate(20, 205)">
+          <rect width="260" height="60" rx="4" fill="#fbf7ef" stroke="#d96d4a" stroke-width="2"/>
+          <text x="12" y="22" font-size="10" letter-spacing="1" fill="#d96d4a" font-weight="700" font-family="'JetBrains Mono', monospace">L3 · ATTN WEIGHTS (sum=1)</text>
+          <text x="12" y="46" font-size="12" font-family="'JetBrains Mono', monospace" fill="#1f1a14">[man:0.1, bites:0.4, dog:0.5]</text>
+        </g>
+        <line x1="150" y1="280" x2="150" y2="305" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrow)"/>
+        <g transform="translate(20, 310)">
+          <rect width="260" height="50" rx="4" fill="#1f1a14"/>
+          <text x="130" y="20" text-anchor="middle" font-size="10" letter-spacing="1" fill="#c89b3c" font-weight="700" font-family="'JetBrains Mono', monospace">RICH EMBEDDING — dog</text>
+          <text x="130" y="40" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" fill="#f5efe6">position 2 + context-mix</text>
+        </g>
+      </g>
+    </g>
+
+    <text x="70" y="720" font-size="13" font-style="italic" fill="#8b7d65">Vectors illustrative. Real positional encodings use sine/cosine; real attention weights are softmax-normalized rows of the attention matrix.</text>
+  </g>
+
+  <!-- SECTION 03: ATTENTION HEATMAP -->
+  <g transform="translate(0, 2160)">
+    <text x="70" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">§ 03 — WHAT ATTENTION LOOKS LIKE</text>
+    <text x="70" y="44" font-size="34" fill="#1f1a14" font-weight="700" font-style="italic">A matrix of who looks at whom</text>
+
+    <g transform="translate(160, 100)">
+      <text x="180" y="-15" text-anchor="middle" font-size="12" font-family="'JetBrains Mono', monospace" fill="#4a4239">→ ATTENDS TO (key)</text>
+      <text x="60" y="20" text-anchor="middle" font-size="14" font-family="'JetBrains Mono', monospace" fill="#1f1a14" font-weight="700">man</text>
+      <text x="180" y="20" text-anchor="middle" font-size="14" font-family="'JetBrains Mono', monospace" fill="#1f1a14" font-weight="700">bites</text>
+      <text x="300" y="20" text-anchor="middle" font-size="14" font-family="'JetBrains Mono', monospace" fill="#1f1a14" font-weight="700">dog</text>
+      <text x="-10" y="86" text-anchor="end" font-size="14" font-family="'JetBrains Mono', monospace" fill="#1f1a14" font-weight="700">man</text>
+      <text x="-10" y="206" text-anchor="end" font-size="14" font-family="'JetBrains Mono', monospace" fill="#1f1a14" font-weight="700">bites</text>
+      <text x="-10" y="326" text-anchor="end" font-size="14" font-family="'JetBrains Mono', monospace" fill="#1f1a14" font-weight="700">dog</text>
+      <text x="-100" y="20" font-size="11" font-family="'JetBrains Mono', monospace" fill="#8b7d65">FROM ↓ (query)</text>
+
+      <rect x="0" y="40" width="120" height="80" fill="#b8472e" opacity="0.9"/>
+      <text x="60" y="86" text-anchor="middle" font-size="16" font-family="'JetBrains Mono', monospace" fill="#f5efe6" font-weight="700">0.5</text>
+      <rect x="120" y="40" width="120" height="80" fill="#b8472e" opacity="0.7"/>
+      <text x="180" y="86" text-anchor="middle" font-size="16" font-family="'JetBrains Mono', monospace" fill="#f5efe6" font-weight="700">0.4</text>
+      <rect x="240" y="40" width="120" height="80" fill="#b8472e" opacity="0.2"/>
+      <text x="300" y="86" text-anchor="middle" font-size="16" font-family="'JetBrains Mono', monospace" fill="#1f1a14" font-weight="700">0.1</text>
+
+      <rect x="0" y="160" width="120" height="80" fill="#b8472e" opacity="0.5"/>
+      <text x="60" y="206" text-anchor="middle" font-size="16" font-family="'JetBrains Mono', monospace" fill="#f5efe6" font-weight="700">0.3</text>
+      <rect x="120" y="160" width="120" height="80" fill="#b8472e" opacity="0.9"/>
+      <text x="180" y="206" text-anchor="middle" font-size="16" font-family="'JetBrains Mono', monospace" fill="#f5efe6" font-weight="700">0.5</text>
+      <rect x="240" y="160" width="120" height="80" fill="#b8472e" opacity="0.4"/>
+      <text x="300" y="206" text-anchor="middle" font-size="16" font-family="'JetBrains Mono', monospace" fill="#f5efe6" font-weight="700">0.2</text>
+
+      <rect x="0" y="280" width="120" height="80" fill="#b8472e" opacity="0.2"/>
+      <text x="60" y="326" text-anchor="middle" font-size="16" font-family="'JetBrains Mono', monospace" fill="#1f1a14" font-weight="700">0.1</text>
+      <rect x="120" y="280" width="120" height="80" fill="#b8472e" opacity="0.7"/>
+      <text x="180" y="326" text-anchor="middle" font-size="16" font-family="'JetBrains Mono', monospace" fill="#f5efe6" font-weight="700">0.4</text>
+      <rect x="240" y="280" width="120" height="80" fill="#b8472e" opacity="0.9"/>
+      <text x="300" y="326" text-anchor="middle" font-size="16" font-family="'JetBrains Mono', monospace" fill="#f5efe6" font-weight="700">0.5</text>
+
+      <rect x="0" y="40" width="360" height="320" fill="none" stroke="#1f1a14" stroke-width="1.5"/>
+      <line x1="0" y1="160" x2="360" y2="160" stroke="#1f1a14" stroke-width="1.5"/>
+      <line x1="0" y1="280" x2="360" y2="280" stroke="#1f1a14" stroke-width="1.5"/>
+      <line x1="120" y1="40" x2="120" y2="360" stroke="#1f1a14" stroke-width="1.5"/>
+      <line x1="240" y1="40" x2="240" y2="360" stroke="#1f1a14" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(620, 280)">
+      <line x1="0" y1="0" x2="0" y2="240" stroke="#b8472e" stroke-width="2"/>
+      <foreignObject x="20" y="-10" width="430" height="280">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px; line-height:1.6; color:#4a4239; font-family:Georgia, serif;">
+          <div style="font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:2px; color:#b8472e; font-weight:700; margin-bottom:12px;">READ THIS AS</div>
+          <p style="margin:0 0 14px;">Each row = one token (the <em>query</em>) and how strongly it attends to every other token (the <em>keys</em>).</p>
+          <p style="margin:0 0 14px;"><b>Rows sum to 1</b> — each row is a softmax-normalized probability distribution. (Word2Vec vectors do <em>not</em> sum to 1.)</p>
+          <p style="margin:0; color:#b8472e; font-style:italic;">Numbers illustrative — the real values come from learned Q/K projections.</p>
+        </div>
+      </foreignObject>
+    </g>
+  </g>
+
+  <!-- SECTION 04: PARALLEL VS SEQUENTIAL -->
+  <g transform="translate(0, 2680)">
+    <text x="70" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">§ 04 — THE STRUCTURAL BREAK</text>
+    <text x="70" y="44" font-size="34" fill="#1f1a14" font-weight="700" font-style="italic">Sequential vs parallel</text>
+
+    <g transform="translate(70, 90)">
+      <rect width="460" height="260" rx="2" fill="#fbf7ef" stroke="#8b7d65" stroke-width="1.5"/>
+      <text x="24" y="32" font-size="11" letter-spacing="3" fill="#8b7d65" font-weight="700" font-family="'JetBrains Mono', monospace">BEFORE 2017 — RNN / LSTM</text>
+      <text x="24" y="68" font-size="22" fill="#1f1a14" font-weight="700" font-style="italic">One token at a time</text>
+      <g transform="translate(24, 100)">
+        <rect width="80" height="44" rx="4" fill="#e0d8c8"/>
+        <text x="40" y="29" text-anchor="middle" font-size="14" fill="#1f1a14" font-weight="700">man</text>
+        <line x1="86" y1="22" x2="118" y2="22" stroke="#8b7d65" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="120" y="0" width="80" height="44" rx="4" fill="#e0d8c8"/>
+        <text x="160" y="29" text-anchor="middle" font-size="14" fill="#1f1a14" font-weight="700">bites</text>
+        <line x1="206" y1="22" x2="238" y2="22" stroke="#8b7d65" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="240" y="0" width="80" height="44" rx="4" fill="#e0d8c8"/>
+        <text x="280" y="29" text-anchor="middle" font-size="14" fill="#1f1a14" font-weight="700">dog</text>
+      </g>
+      <text x="24" y="180" font-size="13" fill="#4a4239" font-family="'JetBrains Mono', monospace">⚠ Vanishing gradients on long sequences</text>
+      <text x="24" y="205" font-size="13" fill="#4a4239" font-family="'JetBrains Mono', monospace">⚠ Strictly serial — hard to use a GPU</text>
+      <text x="24" y="230" font-size="13" fill="#4a4239" font-family="'JetBrains Mono', monospace">⚠ Long-range dependencies decay</text>
+    </g>
+
+    <g transform="translate(570, 90)">
+      <rect width="460" height="260" rx="2" fill="#fbf7ef" stroke="#b8472e" stroke-width="2.5"/>
+      <text x="24" y="32" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">2017+ — TRANSFORMER</text>
+      <text x="24" y="68" font-size="22" fill="#1f1a14" font-weight="700" font-style="italic">All tokens at once</text>
+      <g transform="translate(24, 100)">
+        <rect width="80" height="44" rx="4" fill="#f8d4c5" stroke="#b8472e"/>
+        <text x="40" y="29" text-anchor="middle" font-size="14" fill="#1f1a14" font-weight="700">man</text>
+        <rect x="120" y="0" width="80" height="44" rx="4" fill="#f8d4c5" stroke="#b8472e"/>
+        <text x="160" y="29" text-anchor="middle" font-size="14" fill="#1f1a14" font-weight="700">bites</text>
+        <rect x="240" y="0" width="80" height="44" rx="4" fill="#f8d4c5" stroke="#b8472e"/>
+        <text x="280" y="29" text-anchor="middle" font-size="14" fill="#1f1a14" font-weight="700">dog</text>
+        <path d="M 40,44 Q 100,80 160,44" fill="none" stroke="#b8472e" stroke-width="1.5" opacity="0.7"/>
+        <path d="M 160,44 Q 220,80 280,44" fill="none" stroke="#b8472e" stroke-width="1.5" opacity="0.7"/>
+        <path d="M 40,46 Q 160,100 280,46" fill="none" stroke="#b8472e" stroke-width="1.5" opacity="0.7"/>
+      </g>
+      <text x="24" y="180" font-size="13" fill="#4a4239" font-family="'JetBrains Mono', monospace">✓ Every token sees every other directly</text>
+      <text x="24" y="205" font-size="13" fill="#4a4239" font-family="'JetBrains Mono', monospace">✓ Massively parallel on GPU</text>
+      <text x="24" y="230" font-size="13" fill="#4a4239" font-family="'JetBrains Mono', monospace">⚠ But: O(n²) compute in sequence length</text>
+    </g>
+  </g>
+
+  <!-- SECTION 05: ENCODER STACK + FILTER CHAIN BRIDGE -->
+  <g transform="translate(0, 3070)">
+    <text x="70" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">§ 05 — ARCHITECTURE</text>
+    <text x="70" y="44" font-size="34" fill="#1f1a14" font-weight="700" font-style="italic">Six stacked encoder blocks</text>
+
+    <g transform="translate(70, 100)">
+      <text x="70" y="0" text-anchor="middle" font-size="14" font-family="'JetBrains Mono', monospace" fill="#4a4239">input text</text>
+      <line x1="70" y1="10" x2="70" y2="40" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <g transform="translate(20, 45)">
+        <rect width="100" height="46" rx="4" fill="#5ba0a8"/>
+        <text x="50" y="22" text-anchor="middle" font-size="11" fill="#f5efe6" font-weight="700" font-family="'JetBrains Mono', monospace">embedding</text>
+        <text x="50" y="38" text-anchor="middle" font-size="10" fill="#f5efe6" font-family="'JetBrains Mono', monospace">+ position</text>
+      </g>
+      <line x1="70" y1="91" x2="70" y2="115" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <g transform="translate(0, 120)">
+        <g transform="translate(20, 0)">
+          <rect width="100" height="50" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.5"/>
+          <text x="50" y="22" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" fill="#b8472e" font-weight="700">BLOCK 1</text>
+          <text x="50" y="38" text-anchor="middle" font-size="9" font-family="'JetBrains Mono', monospace" fill="#4a4239">attn → FFN</text>
+        </g>
+        <line x1="70" y1="50" x2="70" y2="64" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <g transform="translate(20, 70)">
+          <rect width="100" height="50" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.5"/>
+          <text x="50" y="22" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" fill="#b8472e" font-weight="700">BLOCK 2</text>
+          <text x="50" y="38" text-anchor="middle" font-size="9" font-family="'JetBrains Mono', monospace" fill="#4a4239">attn → FFN</text>
+        </g>
+        <line x1="70" y1="120" x2="70" y2="134" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <g transform="translate(20, 140)">
+          <rect width="100" height="50" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.5"/>
+          <text x="50" y="22" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" fill="#b8472e" font-weight="700">BLOCK 3</text>
+          <text x="50" y="38" text-anchor="middle" font-size="9" font-family="'JetBrains Mono', monospace" fill="#4a4239">attn → FFN</text>
+        </g>
+        <line x1="70" y1="190" x2="70" y2="204" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <g transform="translate(20, 210)">
+          <rect width="100" height="50" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.5"/>
+          <text x="50" y="22" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" fill="#b8472e" font-weight="700">BLOCK 4</text>
+          <text x="50" y="38" text-anchor="middle" font-size="9" font-family="'JetBrains Mono', monospace" fill="#4a4239">attn → FFN</text>
+        </g>
+        <line x1="70" y1="260" x2="70" y2="274" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <g transform="translate(20, 280)">
+          <rect width="100" height="50" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.5"/>
+          <text x="50" y="22" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" fill="#b8472e" font-weight="700">BLOCK 5</text>
+          <text x="50" y="38" text-anchor="middle" font-size="9" font-family="'JetBrains Mono', monospace" fill="#4a4239">attn → FFN</text>
+        </g>
+        <line x1="70" y1="330" x2="70" y2="344" stroke="#1f1a14" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <g transform="translate(20, 350)">
+          <rect width="100" height="50" rx="4" fill="#1f1a14"/>
+          <text x="50" y="22" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" fill="#c89b3c" font-weight="700">BLOCK 6</text>
+          <text x="50" y="38" text-anchor="middle" font-size="9" font-family="'JetBrains Mono', monospace" fill="#f5efe6">attn → FFN</text>
+        </g>
+      </g>
+
+      <line x1="70" y1="520" x2="70" y2="544" stroke="#1f1a14" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="70" y="565" text-anchor="middle" font-size="14" font-family="'JetBrains Mono', monospace" fill="#b8472e" font-weight="700">rich embeddings</text>
+
+      <g transform="translate(180, 130)">
+        <text x="0" y="0" font-size="11" letter-spacing="2" font-family="'JetBrains Mono', monospace" fill="#8b7d65" font-weight="700">PATTERN DEPTH ↓</text>
+        <line x1="0" y1="10" x2="220" y2="10" stroke="#8b7d65"/>
+        <g transform="translate(0, 35)"><text x="0" y="0" font-size="13" fill="#4a4239" font-style="italic">Block 1:</text><text x="80" y="0" font-size="13" fill="#1f1a14">surface relationships</text></g>
+        <g transform="translate(0, 115)"><text x="0" y="0" font-size="13" fill="#4a4239" font-style="italic">Block 3:</text><text x="80" y="0" font-size="13" fill="#1f1a14">phrase-level meaning</text></g>
+        <g transform="translate(0, 225)"><text x="0" y="0" font-size="13" fill="#4a4239" font-style="italic">Block 5:</text><text x="80" y="0" font-size="13" fill="#1f1a14">sentence-level intent</text></g>
+        <g transform="translate(0, 335)"><text x="0" y="0" font-size="13" fill="#4a4239" font-style="italic">Block 6:</text><text x="80" y="0" font-size="13" fill="#1f1a14">discourse, references</text></g>
+        <text x="0" y="395" font-size="11" font-style="italic" fill="#8b7d65">(Interpretations illustrative —</text>
+        <text x="0" y="412" font-size="11" font-style="italic" fill="#8b7d65">layers aren't cleanly labeled in practice.)</text>
+      </g>
+
+      <!-- Filter-chain bridge -->
+      <g transform="translate(450, 130)">
+        <rect width="510" height="430" rx="2" fill="rgba(109, 179, 63, 0.07)" stroke="#6db33f" stroke-width="1.5"/>
+        <text x="25" y="40" font-size="11" letter-spacing="3" fill="#6db33f" font-weight="700" font-family="'JetBrains Mono', monospace">JAVA / SPRING BRIDGE</text>
+        <text x="25" y="75" font-size="22" font-style="italic" font-weight="700" fill="#1f1a14">It's a FilterChain.</text>
+        <foreignObject x="25" y="90" width="460" height="200">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px; line-height:1.6; color:#1f1a14; font-family:Georgia, serif;">
+            <p style="margin:0 0 10px;">Each block consumes the previous block's output, transforms it, and passes it on — same shape, richer content. Like a Spring <code style="background:rgba(109,179,63,0.15); padding:1px 5px; font-family:'JetBrains Mono',monospace; font-size:13px;">FilterChain</code> mutating a request object as it flows through.</p>
+            <p style="margin:0 0 10px;">Same logic as <b>hidden layers in an ANN</b> or <b>successive conv layers in a CNN</b> (edges → parts → objects).</p>
+            <p style="margin:0; font-size:13px;"><b style="color:#b8472e;">6 is the paper's choice.</b> BERT-base = 12 encoder layers, GPT-3 = 96 decoder layers. Not sacred.</p>
+          </div>
+        </foreignObject>
+        <text x="25" y="335" font-size="11" letter-spacing="3" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">UNDER EACH BLOCK</text>
+        <foreignObject x="25" y="345" width="460" height="80">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:13px; line-height:1.5; color:#4a4239; font-family:Georgia, serif;">
+            <p style="margin:0;">Each sublayer is wrapped in <code style="background:#f8e6cf; padding:1px 4px; font-family:'JetBrains Mono',monospace; font-size:12px;">LayerNorm(x + Sublayer(x))</code> — a residual connection plus normalization. The "add" in the lecturer's diagram is this residual; it's important for training stability.</p>
+          </div>
+        </foreignObject>
+      </g>
+    </g>
+  </g>
+
+  <!-- SECTION 06: REFERENCE CARDS -->
+  <g transform="translate(0, 3800)">
+    <text x="70" y="0" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700" font-family="'JetBrains Mono', monospace">§ 06 — REFERENCE</text>
+    <text x="70" y="44" font-size="34" fill="#1f1a14" font-weight="700" font-style="italic">Quick cards</text>
+
+    <g transform="translate(70, 80)">
+      <rect width="310" height="240" rx="2" fill="#fbf7ef" stroke="#1f1a14" stroke-width="1.2"/>
+      <rect width="310" height="6" fill="#5ba0a8"/>
+      <text x="20" y="40" font-size="11" letter-spacing="2" font-family="'JetBrains Mono', monospace" fill="#5ba0a8" font-weight="700">ENCODER vs DECODER</text>
+      <text x="20" y="72" font-size="16" font-weight="700" fill="#1f1a14" font-style="italic">Encoder</text>
+      <text x="20" y="94" font-size="13" fill="#4a4239">text → rich embeddings</text>
+      <text x="20" y="113" font-size="13" fill="#4a4239">not generative · BERT</text>
+      <text x="20" y="148" font-size="16" font-weight="700" fill="#1f1a14" font-style="italic">Decoder</text>
+      <text x="20" y="170" font-size="13" fill="#4a4239">generates next token</text>
+      <text x="20" y="189" font-size="13" fill="#4a4239">+ masked self-attention</text>
+      <text x="20" y="208" font-size="13" fill="#4a4239">+ cross-attn (if encoder)</text>
+      <text x="20" y="227" font-size="13" fill="#4a4239">GPT, Llama (decoder-only)</text>
+    </g>
+
+    <g transform="translate(395, 80)">
+      <rect width="310" height="240" rx="2" fill="#fbf7ef" stroke="#1f1a14" stroke-width="1.2"/>
+      <rect width="310" height="6" fill="#c89b3c"/>
+      <text x="20" y="40" font-size="11" letter-spacing="2" font-family="'JetBrains Mono', monospace" fill="#c89b3c" font-weight="700">TEMPERATURE (decoder knob)</text>
+      <text x="20" y="68" font-size="13" fill="#4a4239">scales logits before softmax</text>
+      <text x="20" y="86" font-size="13" fill="#4a4239" font-family="'JetBrains Mono', monospace">probs = softmax(logits / T)</text>
+      <text x="20" y="118" font-size="16" font-weight="700" fill="#1f1a14" font-style="italic">Low T (≈0.2)</text>
+      <text x="20" y="140" font-size="13" fill="#4a4239">distribution sharpens →</text>
+      <text x="20" y="159" font-size="13" fill="#4a4239">near-deterministic</text>
+      <text x="20" y="187" font-size="16" font-weight="700" fill="#1f1a14" font-style="italic">High T (≈1.5)</text>
+      <text x="20" y="209" font-size="13" fill="#4a4239">distribution flattens →</text>
+      <text x="20" y="228" font-size="13" fill="#4a4239">more varied output</text>
+    </g>
+
+    <g transform="translate(720, 80)">
+      <rect width="310" height="240" rx="2" fill="#fbf7ef" stroke="#1f1a14" stroke-width="1.2"/>
+      <rect width="310" height="6" fill="#b8472e"/>
+      <text x="20" y="40" font-size="11" letter-spacing="2" font-family="'JetBrains Mono', monospace" fill="#b8472e" font-weight="700">FOR SESSION 08</text>
+      <text x="20" y="68" font-size="13" fill="#4a4239">→ sine/cosine positional encoding</text>
+      <text x="20" y="90" font-size="13" fill="#4a4239">→ self-attention math (Q, K, V)</text>
+      <text x="20" y="112" font-size="13" fill="#4a4239">→ softmax + √d_k scaling</text>
+      <text x="20" y="134" font-size="13" fill="#4a4239">→ masked attention in decoder</text>
+      <text x="20" y="156" font-size="13" fill="#4a4239">→ cross-attention mechanics</text>
+      <text x="20" y="178" font-size="13" fill="#4a4239">→ ANN refresher (prerequisite)</text>
+      <text x="20" y="210" font-size="12" font-style="italic" fill="#8b7d65">check MLOps folder: Word2Vec</text>
+    </g>
+  </g>
+
+  <!-- FOOTER -->
+  <g transform="translate(0, 4090)">
+    <rect width="1100" height="120" fill="#1f1a14"/>
+    <text x="70" y="50" font-size="11" letter-spacing="4" fill="#c89b3c" font-weight="700" font-family="'JetBrains Mono', monospace">REMEMBER THIS</text>
+    <text x="70" y="85" font-size="22" fill="#f5efe6" font-style="italic">Generic meaning + position + attention-mix</text>
+    <text x="70" y="113" font-size="22" fill="#d96d4a" font-style="italic">→ parallel processing on GPU → scale → modern AI.</text>
+  </g>
+</svg>

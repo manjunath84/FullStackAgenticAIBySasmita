@@ -1,0 +1,297 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 2800" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbf7f0"/>
+      <stop offset="1" stop-color="#f0ebe0"/>
+    </linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a2b4a"/>
+      <stop offset="1" stop-color="#2d4a7c"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d4574e"/>
+      <stop offset="1" stop-color="#e8945a"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a2b4a"/>
+    </marker>
+    <marker id="arrowAccent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#d4574e"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="2800" fill="url(#bg)"/>
+
+  <!-- HERO -->
+  <rect x="0" y="0" width="1000" height="220" fill="url(#hero)"/>
+  <text x="60" y="80" font-size="14" letter-spacing="6" fill="#e8945a" font-weight="600">SESSION 7  ·  STUDY NOTES</text>
+  <text x="60" y="140" font-size="44" font-weight="800" fill="#fbf7f0">The Transformer Encoder</text>
+  <text x="60" y="180" font-size="20" fill="#c8d0e0" font-style="italic">How text becomes context-aware numbers — the architecture that broke open modern AI</text>
+
+  <!-- THESIS -->
+  <g transform="translate(60, 270)">
+    <text font-size="13" letter-spacing="3" fill="#d4574e" font-weight="700">THE BIG IDEA</text>
+    <foreignObject x="0" y="20" width="880" height="120">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:22px; line-height:1.5; color:#1a2b4a; font-weight:500;">
+        Every token in the input is enriched with <b style="color:#d4574e;">three layers of information</b> — what it means generically, where it sits, and how it relates to every other token. Once each token carries all the context it needs, the model can process them <b style="color:#d4574e;">all at once</b>, not one by one.
+      </div>
+    </foreignObject>
+  </g>
+
+  <!-- 3-LAYER EMBEDDING STACK -->
+  <g transform="translate(0, 460)">
+    <text x="60" y="0" font-size="13" letter-spacing="3" fill="#d4574e" font-weight="700">SECTION 01  ·  THE THREE-LAYER EMBEDDING</text>
+    <text x="60" y="36" font-size="28" fill="#1a2b4a" font-weight="700">What each token carries</text>
+
+    <!-- Layer 1: Generic -->
+    <g transform="translate(60, 80)">
+      <rect width="880" height="130" rx="10" fill="#ffffff" stroke="#1a2b4a" stroke-width="1.5"/>
+      <rect width="8" height="130" rx="4" fill="#5b8dd6"/>
+      <text x="30" y="38" font-size="13" letter-spacing="2" fill="#5b8dd6" font-weight="700">LAYER 1  ·  GENERIC EMBEDDING</text>
+      <text x="30" y="68" font-size="20" fill="#1a2b4a" font-weight="700">English-level meaning (Word2Vec-style)</text>
+      <text x="30" y="95" font-size="15" fill="#3a3a3a">Every word gets coordinates along latent topic axes — animal, bird, sky, machine, etc.</text>
+      <text x="30" y="115" font-size="14" fill="#666" font-style="italic">dog → high on "animal", low on "sky"     ·     eagle → high on "bird" and "sky"</text>
+    </g>
+
+    <!-- Layer 2: Positional -->
+    <g transform="translate(60, 230)">
+      <rect width="880" height="130" rx="10" fill="#ffffff" stroke="#1a2b4a" stroke-width="1.5"/>
+      <rect width="8" height="130" rx="4" fill="#e8945a"/>
+      <text x="30" y="38" font-size="13" letter-spacing="2" fill="#e8945a" font-weight="700">LAYER 2  ·  POSITIONAL ENCODING</text>
+      <text x="30" y="68" font-size="20" fill="#1a2b4a" font-weight="700">Where the token sits in the input</text>
+      <text x="30" y="95" font-size="15" fill="#3a3a3a">Without this, "man bites dog" and "dog bites man" look identical to the model.</text>
+      <text x="30" y="115" font-size="14" fill="#666" font-style="italic">Added once, before the encoder stack. Position doesn't change between layers.</text>
+    </g>
+
+    <!-- Layer 3: Attention -->
+    <g transform="translate(60, 380)">
+      <rect width="880" height="130" rx="10" fill="#ffffff" stroke="#1a2b4a" stroke-width="1.5"/>
+      <rect width="8" height="130" rx="4" fill="#d4574e"/>
+      <text x="30" y="38" font-size="13" letter-spacing="2" fill="#d4574e" font-weight="700">LAYER 3  ·  RELATIONSHIP (ATTENTION)</text>
+      <text x="30" y="68" font-size="20" fill="#1a2b4a" font-weight="700">How this token relates to every other token</text>
+      <text x="30" y="95" font-size="15" fill="#3a3a3a">Per-token weights across the whole input. Resolves "He → Ram" type references.</text>
+      <text x="30" y="115" font-size="14" fill="#666" font-style="italic">Input-specific, not generic. This is the 2017 innovation. Rows sum to 1.</text>
+    </g>
+
+    <!-- Sum equation -->
+    <g transform="translate(60, 545)">
+      <rect width="880" height="60" rx="10" fill="#1a2b4a"/>
+      <text x="440" y="38" text-anchor="middle" font-size="20" fill="#fbf7f0" font-weight="600">
+        <tspan fill="#5b8dd6">generic</tspan>
+        <tspan fill="#fbf7f0">  +  </tspan>
+        <tspan fill="#e8945a">positional</tspan>
+        <tspan fill="#fbf7f0">  +  </tspan>
+        <tspan fill="#d4574e">relationship</tspan>
+        <tspan fill="#fbf7f0">  =  rich token embedding</tspan>
+      </text>
+    </g>
+  </g>
+
+  <!-- SECTION 2: PARALLEL VS SEQUENTIAL -->
+  <g transform="translate(0, 1140)">
+    <text x="60" y="0" font-size="13" letter-spacing="3" fill="#d4574e" font-weight="700">SECTION 02  ·  THE STRUCTURAL BREAK</text>
+    <text x="60" y="36" font-size="28" fill="#1a2b4a" font-weight="700">Sequential vs parallel processing</text>
+
+    <!-- Sequential (RNN/LSTM) -->
+    <g transform="translate(60, 80)">
+      <rect width="420" height="220" rx="10" fill="#ffffff" stroke="#aaa" stroke-width="1.5"/>
+      <text x="20" y="30" font-size="14" letter-spacing="2" fill="#888" font-weight="700">BEFORE 2017  ·  RNN / LSTM</text>
+      <text x="20" y="60" font-size="18" fill="#1a2b4a" font-weight="700">One token at a time</text>
+
+      <g transform="translate(20, 90)">
+        <rect width="70" height="40" rx="6" fill="#e0e0e0"/>
+        <text x="35" y="26" text-anchor="middle" font-size="14" fill="#1a2b4a" font-weight="600">man</text>
+        <line x1="78" y1="20" x2="103" y2="20" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="105" y="0" width="70" height="40" rx="6" fill="#e0e0e0"/>
+        <text x="140" y="26" text-anchor="middle" font-size="14" fill="#1a2b4a" font-weight="600">bites</text>
+        <line x1="183" y1="20" x2="208" y2="20" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="210" y="0" width="70" height="40" rx="6" fill="#e0e0e0"/>
+        <text x="245" y="26" text-anchor="middle" font-size="14" fill="#1a2b4a" font-weight="600">dog</text>
+      </g>
+
+      <text x="20" y="170" font-size="13" fill="#666">⚠ Long contexts decay — model "forgets" earlier tokens.</text>
+      <text x="20" y="192" font-size="13" fill="#666">⚠ Slow: scales linearly with input length.</text>
+    </g>
+
+    <!-- Parallel (Transformer) -->
+    <g transform="translate(520, 80)">
+      <rect width="420" height="220" rx="10" fill="#ffffff" stroke="#d4574e" stroke-width="2"/>
+      <text x="20" y="30" font-size="14" letter-spacing="2" fill="#d4574e" font-weight="700">2017+  ·  TRANSFORMER</text>
+      <text x="20" y="60" font-size="18" fill="#1a2b4a" font-weight="700">All tokens at once</text>
+
+      <g transform="translate(20, 90)">
+        <rect width="70" height="40" rx="6" fill="#fde4d8" stroke="#d4574e"/>
+        <text x="35" y="26" text-anchor="middle" font-size="14" fill="#1a2b4a" font-weight="600">man</text>
+        <rect x="105" y="0" width="70" height="40" rx="6" fill="#fde4d8" stroke="#d4574e"/>
+        <text x="140" y="26" text-anchor="middle" font-size="14" fill="#1a2b4a" font-weight="600">bites</text>
+        <rect x="210" y="0" width="70" height="40" rx="6" fill="#fde4d8" stroke="#d4574e"/>
+        <text x="245" y="26" text-anchor="middle" font-size="14" fill="#1a2b4a" font-weight="600">dog</text>
+        <!-- cross attention lines -->
+        <path d="M 35,40 Q 87,65 140,40" fill="none" stroke="#d4574e" stroke-width="1.2" opacity="0.6"/>
+        <path d="M 140,40 Q 192,65 245,40" fill="none" stroke="#d4574e" stroke-width="1.2" opacity="0.6"/>
+        <path d="M 35,42 Q 140,90 245,42" fill="none" stroke="#d4574e" stroke-width="1.2" opacity="0.6"/>
+      </g>
+
+      <text x="20" y="170" font-size="13" fill="#666">✓ Every token sees every other token directly.</text>
+      <text x="20" y="192" font-size="13" fill="#666">✓ Scales: 5 words or 5,000 — same wall-clock structure.</text>
+    </g>
+  </g>
+
+  <!-- SECTION 3: ENCODER BLOCK -->
+  <g transform="translate(0, 1500)">
+    <text x="60" y="0" font-size="13" letter-spacing="3" fill="#d4574e" font-weight="700">SECTION 03  ·  THE ENCODER BLOCK</text>
+    <text x="60" y="36" font-size="28" fill="#1a2b4a" font-weight="700">Anatomy of one block (repeated ×6)</text>
+
+    <!-- Flow diagram -->
+    <g transform="translate(60, 80)">
+      <!-- Pipeline boxes -->
+      <g>
+        <rect x="0" y="0" width="180" height="70" rx="8" fill="#1a2b4a"/>
+        <text x="90" y="32" text-anchor="middle" font-size="14" fill="#e8945a" font-weight="700">INPUT TEXT</text>
+        <text x="90" y="52" text-anchor="middle" font-size="12" fill="#fbf7f0">tokenize</text>
+      </g>
+
+      <line x1="180" y1="35" x2="215" y2="35" stroke="#1a2b4a" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <g transform="translate(220, 0)">
+        <rect width="180" height="70" rx="8" fill="#5b8dd6"/>
+        <text x="90" y="32" text-anchor="middle" font-size="14" fill="#fbf7f0" font-weight="700">EMBEDDING</text>
+        <text x="90" y="52" text-anchor="middle" font-size="12" fill="#fbf7f0">generic vectors</text>
+      </g>
+
+      <line x1="400" y1="35" x2="435" y2="35" stroke="#1a2b4a" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <g transform="translate(440, 0)">
+        <rect width="180" height="70" rx="8" fill="#e8945a"/>
+        <text x="90" y="32" text-anchor="middle" font-size="14" fill="#fbf7f0" font-weight="700">+ POSITIONAL</text>
+        <text x="90" y="52" text-anchor="middle" font-size="12" fill="#fbf7f0">added once</text>
+      </g>
+
+      <line x1="620" y1="35" x2="655" y2="35" stroke="#1a2b4a" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <!-- Repeated block -->
+      <g transform="translate(660, 0)">
+        <rect width="220" height="70" rx="8" fill="#fbf7f0" stroke="#d4574e" stroke-width="2" stroke-dasharray="6,3"/>
+        <text x="110" y="30" text-anchor="middle" font-size="13" fill="#d4574e" font-weight="700">SELF-ATTENTION → FFN</text>
+        <text x="110" y="50" text-anchor="middle" font-size="12" fill="#1a2b4a">repeat ×6</text>
+      </g>
+
+      <!-- Repetition arrow -->
+      <path d="M 770 70 Q 770 110 720 110 Q 660 110 660 70" fill="none" stroke="#d4574e" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#arrowAccent)"/>
+      <text x="700" y="125" text-anchor="middle" font-size="11" fill="#d4574e" font-style="italic">deeper = finer patterns</text>
+
+      <!-- Output -->
+      <line x1="440" y1="180" x2="440" y2="155" stroke="#1a2b4a" stroke-width="2" marker-end="url(#arrow)"/>
+      <g transform="translate(310, 180)">
+        <rect width="260" height="50" rx="8" fill="#1a2b4a"/>
+        <text x="130" y="32" text-anchor="middle" font-size="15" fill="#fbf7f0" font-weight="700">→ RICH EMBEDDINGS OUT</text>
+      </g>
+    </g>
+
+    <!-- Sub-explanation -->
+    <g transform="translate(60, 290)">
+      <rect width="880" height="100" rx="10" fill="#fde4d8"/>
+      <text x="25" y="30" font-size="14" letter-spacing="2" fill="#d4574e" font-weight="700">WHY REPEAT?</text>
+      <foreignObject x="25" y="40" width="830" height="60">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:15px; line-height:1.5; color:#1a2b4a;">
+          Each block sees the previous block's output, not the raw embedding. Stacking lets the model build progressively finer-grained patterns — the same logic as hidden layers in an ANN or successive conv layers in a CNN. 6 is the paper's choice; GPT-3.5/GPT-4 etc. use different counts. <b>AI = pattern recognition; depth = more patterns.</b>
+        </div>
+      </foreignObject>
+    </g>
+  </g>
+
+  <!-- SECTION 4: TIMELINE / TURNING POINT -->
+  <g transform="translate(0, 1980)">
+    <text x="60" y="0" font-size="13" letter-spacing="3" fill="#d4574e" font-weight="700">SECTION 04  ·  WHY 2017 MATTERED</text>
+    <text x="60" y="36" font-size="28" fill="#1a2b4a" font-weight="700">The inflection point</text>
+
+    <g transform="translate(60, 80)">
+      <!-- Timeline axis -->
+      <line x1="0" y1="100" x2="880" y2="100" stroke="#1a2b4a" stroke-width="2"/>
+
+      <!-- Pre-2017 -->
+      <g transform="translate(0, 100)">
+        <circle r="8" fill="#888"/>
+        <text x="0" y="-15" text-anchor="middle" font-size="13" fill="#888" font-weight="700">PRE-2017</text>
+        <text x="0" y="30" text-anchor="middle" font-size="12" fill="#666">RNN, LSTM</text>
+        <text x="0" y="50" text-anchor="middle" font-size="12" fill="#666">sequential</text>
+        <text x="0" y="70" text-anchor="middle" font-size="12" fill="#666">short context</text>
+      </g>
+
+      <!-- 2017 paper -->
+      <g transform="translate(440, 100)">
+        <circle r="14" fill="#d4574e"/>
+        <text x="0" y="-25" text-anchor="middle" font-size="14" fill="#d4574e" font-weight="800">2017</text>
+        <text x="0" y="35" text-anchor="middle" font-size="13" fill="#1a2b4a" font-weight="700">"Attention Is All You Need"</text>
+        <text x="0" y="55" text-anchor="middle" font-size="12" fill="#666">attention + positional encoding</text>
+        <text x="0" y="73" text-anchor="middle" font-size="12" fill="#666">parallel processing</text>
+      </g>
+
+      <!-- Post-2017 -->
+      <g transform="translate(880, 100)">
+        <circle r="8" fill="#1a2b4a"/>
+        <text x="0" y="-15" text-anchor="middle" font-size="13" fill="#1a2b4a" font-weight="700">TODAY</text>
+        <text x="0" y="30" text-anchor="middle" font-size="12" fill="#666">GPT, Claude, Gemini</text>
+        <text x="0" y="50" text-anchor="middle" font-size="12" fill="#666">2M+ token context</text>
+        <text x="0" y="70" text-anchor="middle" font-size="12" fill="#666">multimodal</text>
+      </g>
+    </g>
+
+    <g transform="translate(60, 280)">
+      <rect width="880" height="80" rx="10" fill="#1a2b4a"/>
+      <foreignObject x="25" y="15" width="830" height="60">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:15px; line-height:1.5; color:#fbf7f0;">
+          <b style="color:#e8945a;">No new core algorithm has emerged since 2017.</b> Today's gap between OpenAI's GPT and a hobby Transformer isn't architecture — it's <b style="color:#e8945a;">data and compute</b>: months of human labeling, RLHF, augmentation, plus enormous training budgets. Hence the global rush for data centers.
+        </div>
+      </foreignObject>
+    </g>
+  </g>
+
+  <!-- SECTION 5: ENCODER VS DECODER + ASIDES -->
+  <g transform="translate(0, 2410)">
+    <text x="60" y="0" font-size="13" letter-spacing="3" fill="#d4574e" font-weight="700">SECTION 05  ·  CHEAT CARDS</text>
+    <text x="60" y="36" font-size="28" fill="#1a2b4a" font-weight="700">Quick references</text>
+
+    <!-- Card 1 -->
+    <g transform="translate(60, 80)">
+      <rect width="280" height="180" rx="10" fill="#ffffff" stroke="#1a2b4a" stroke-width="1.5"/>
+      <text x="20" y="32" font-size="13" letter-spacing="2" fill="#5b8dd6" font-weight="700">ENCODER vs DECODER</text>
+      <text x="20" y="62" font-size="14" fill="#1a2b4a" font-weight="700">Encoder</text>
+      <text x="20" y="82" font-size="13" fill="#444">→ text in, rich embeddings out</text>
+      <text x="20" y="100" font-size="13" fill="#444">→ not generative</text>
+      <text x="20" y="130" font-size="14" fill="#1a2b4a" font-weight="700">Decoder</text>
+      <text x="20" y="150" font-size="13" fill="#444">→ generates the next token</text>
+      <text x="20" y="168" font-size="13" fill="#444">→ adds masked self-attention</text>
+    </g>
+
+    <!-- Card 2 -->
+    <g transform="translate(360, 80)">
+      <rect width="280" height="180" rx="10" fill="#ffffff" stroke="#1a2b4a" stroke-width="1.5"/>
+      <text x="20" y="32" font-size="13" letter-spacing="2" fill="#e8945a" font-weight="700">TEMPERATURE</text>
+      <text x="20" y="62" font-size="14" fill="#1a2b4a" font-weight="700">Low</text>
+      <text x="20" y="82" font-size="13" fill="#444">→ always pick highest-prob token</text>
+      <text x="20" y="100" font-size="13" fill="#444">→ deterministic</text>
+      <text x="20" y="130" font-size="14" fill="#1a2b4a" font-weight="700">High</text>
+      <text x="20" y="150" font-size="13" fill="#444">→ sample from top-N</text>
+      <text x="20" y="168" font-size="13" fill="#444">→ marketed as "creativity"</text>
+    </g>
+
+    <!-- Card 3 -->
+    <g transform="translate(660, 80)">
+      <rect width="280" height="180" rx="10" fill="#ffffff" stroke="#1a2b4a" stroke-width="1.5"/>
+      <text x="20" y="32" font-size="13" letter-spacing="2" fill="#d4574e" font-weight="700">FOR SESSION 8</text>
+      <text x="20" y="62" font-size="13" fill="#444">• Positional encoding math</text>
+      <text x="20" y="84" font-size="13" fill="#444">• Self-attention (Q, K, V)</text>
+      <text x="20" y="106" font-size="13" fill="#444">• Softmax mechanics</text>
+      <text x="20" y="128" font-size="13" fill="#444">• Masked attention in decoder</text>
+      <text x="20" y="150" font-size="13" fill="#444">• ANN refresher (prerequisite)</text>
+    </g>
+  </g>
+
+  <!-- FOOTER -->
+  <g transform="translate(0, 2710)">
+    <rect width="1000" height="90" fill="#1a2b4a"/>
+    <text x="60" y="45" font-size="13" letter-spacing="3" fill="#e8945a" font-weight="700">REMEMBER</text>
+    <text x="60" y="72" font-size="16" fill="#fbf7f0" font-style="italic">Generic meaning + position + relationships → parallel processing → scale → modern AI.</text>
+  </g>
+</svg>

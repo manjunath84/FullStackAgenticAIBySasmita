@@ -1,0 +1,233 @@
+<svg viewBox="0 0 1200 1700" xmlns="http://www.w3.org/2000/svg" font-family="'Spectral', Georgia, serif">
+  <defs>
+    <style>
+      .paper-bg { fill: #f5efe6; }
+      .ink { fill: #1f1a14; }
+      .ink-soft { fill: #4a4239; }
+      .ink-mute { fill: #8b7d65; }
+      .terracotta { fill: #b8472e; }
+      .teal { fill: #2a5d62; }
+      .teal-light { fill: #5ba0a8; }
+      .ochre { fill: #c89b3c; }
+      .spring { fill: #6db33f; }
+      .highlight { fill: #f8e6cf; }
+      .line { stroke: #d4c9b5; }
+      .paper-2 { fill: #ede5d6; }
+      .mono { font-family: 'JetBrains Mono', monospace; }
+      .display { font-family: 'Fraunces', Georgia, serif; font-style: italic; font-weight: 700; }
+      .label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 3px; }
+    </style>
+  </defs>
+
+  <!-- background -->
+  <rect width="1200" height="1700" class="paper-bg"/>
+
+  <!-- HEADER -->
+  <text x="80" y="80" class="label terracotta">SESSION 19 &#183; STUDY NOTES</text>
+  <text x="80" y="160" class="display ink" font-size="68">LangGraph,</text>
+  <text x="80" y="220" class="display terracotta" font-size="68">in four primitives.</text>
+  <text x="80" y="270" class="ink-soft" font-style="italic" font-size="22">State. Node. Edge. Conditional Edge.</text>
+  <text x="80" y="296" class="ink-soft" font-style="italic" font-size="22">Same four primitives build linear, router, and ReAct.</text>
+
+  <!-- meta strip -->
+  <line x1="80" y1="328" x2="1120" y2="328" stroke="#1f1a14" stroke-width="2"/>
+  <text x="80" y="356" class="mono ink-mute" font-size="11" letter-spacing="2">2026-05-19 &#183; 72.6 MIN &#183; 3 SPEAKERS &#183; LANGGRAPH PART 1</text>
+
+  <!-- ====================== PRIMITIVES BLOCK ====================== -->
+  <text x="80" y="420" class="label terracotta">&#167; 01 &#183; THE FOUR PRIMITIVES</text>
+  <text x="80" y="460" class="display ink" font-size="32">Everything is one of these four things.</text>
+
+  <!-- 4 primitive cards -->
+  <g>
+    <!-- State -->
+    <rect x="80" y="490" width="250" height="170" class="paper-2" stroke="#d4c9b5"/>
+    <rect x="80" y="490" width="250" height="32" class="ink"/>
+    <text x="96" y="511" class="mono" fill="#f5efe6" font-size="12" letter-spacing="3">STATE</text>
+    <text x="96" y="546" class="display ink" font-size="20">Shared typed</text>
+    <text x="96" y="569" class="display ink" font-size="20">data.</text>
+    <text x="96" y="600" class="ink-soft" font-size="13">Every node reads from</text>
+    <text x="96" y="617" class="ink-soft" font-size="13">and writes to it. The</text>
+    <text x="96" y="634" class="ink-soft" font-size="13">only memory the graph</text>
+    <text x="96" y="651" class="ink-soft" font-size="13">has between nodes.</text>
+
+    <!-- Node -->
+    <rect x="350" y="490" width="250" height="170" class="paper-2" stroke="#d4c9b5"/>
+    <rect x="350" y="490" width="250" height="32" class="terracotta"/>
+    <text x="366" y="511" class="mono" fill="#f5efe6" font-size="12" letter-spacing="3">NODE</text>
+    <text x="366" y="546" class="display ink" font-size="20">f(state) -&gt; dict</text>
+    <text x="366" y="592" class="ink-soft" font-size="13">A function that returns</text>
+    <text x="366" y="609" class="ink-soft" font-size="13">a partial update to</text>
+    <text x="366" y="626" class="ink-soft" font-size="13">state. Calls an LLM,</text>
+    <text x="366" y="643" class="ink-soft" font-size="13">a tool, or runs Python.</text>
+
+    <!-- Edge -->
+    <rect x="620" y="490" width="250" height="170" class="paper-2" stroke="#d4c9b5"/>
+    <rect x="620" y="490" width="250" height="32" class="teal"/>
+    <text x="636" y="511" class="mono" fill="#f5efe6" font-size="12" letter-spacing="3">EDGE</text>
+    <text x="636" y="546" class="display ink" font-size="20">Fixed wire,</text>
+    <text x="636" y="569" class="display ink" font-size="20">A &#8594; B.</text>
+    <text x="636" y="600" class="ink-soft" font-size="13">After node A finishes,</text>
+    <text x="636" y="617" class="ink-soft" font-size="13">always run node B.</text>
+    <text x="636" y="634" class="ink-soft" font-size="13">No choice.</text>
+
+    <!-- Conditional Edge -->
+    <rect x="890" y="490" width="230" height="170" class="paper-2" stroke="#d4c9b5"/>
+    <rect x="890" y="490" width="230" height="32" class="ochre"/>
+    <text x="906" y="511" class="mono ink" font-size="12" letter-spacing="2">CONDITIONAL EDGE</text>
+    <text x="906" y="546" class="display ink" font-size="20">Wire + small</text>
+    <text x="906" y="569" class="display ink" font-size="20">router fn.</text>
+    <text x="906" y="600" class="ink-soft" font-size="13">Routing function reads</text>
+    <text x="906" y="617" class="ink-soft" font-size="13">state, returns a key,</text>
+    <text x="906" y="634" class="ink-soft" font-size="13">key maps to the next</text>
+    <text x="906" y="651" class="ink-soft" font-size="13">node. The only branch.</text>
+  </g>
+
+  <!-- ====================== NODE CONTRACT ====================== -->
+  <rect x="80" y="700" width="1040" height="100" class="highlight" stroke="#c89b3c"/>
+  <text x="106" y="730" class="label terracotta">REMEMBER THIS</text>
+  <text x="106" y="763" class="display ink" font-size="22">A node takes the current state as input and returns a dict of fields to merge into state.</text>
+  <text x="106" y="785" class="ink-soft" font-style="italic" font-size="14">Not the whole state. Not a mutation. A partial update. LangGraph does the merge.</text>
+
+  <!-- ====================== THREE PATTERNS ====================== -->
+  <text x="80" y="860" class="label terracotta">&#167; 02 &#183; THREE PATTERNS FROM THE SAME PRIMITIVES</text>
+  <text x="80" y="900" class="display ink" font-size="32">Linear &#183; Router &#183; ReAct.</text>
+
+  <!-- LINEAR -->
+  <g transform="translate(80, 940)">
+    <rect x="0" y="0" width="320" height="320" fill="none" stroke="#d4c9b5"/>
+    <text x="16" y="28" class="mono ink-mute" font-size="11" letter-spacing="3">PATTERN A</text>
+    <text x="16" y="58" class="display ink" font-size="22">Linear</text>
+    <text x="16" y="80" class="ink-soft" font-size="13" font-style="italic">START &#8594; greet &#8594; END</text>
+
+    <!-- nodes -->
+    <rect x="60" y="110" width="200" height="36" class="ink"/>
+    <text x="160" y="133" text-anchor="middle" fill="#f5efe6" class="mono" font-size="13">START</text>
+
+    <line x1="160" y1="146" x2="160" y2="170" stroke="#1f1a14" stroke-width="2"/>
+    <polygon points="155,168 165,168 160,176" class="ink"/>
+
+    <rect x="60" y="180" width="200" height="48" class="paper-2" stroke="#b8472e" stroke-width="2"/>
+    <text x="160" y="210" text-anchor="middle" class="display ink" font-size="16">greet</text>
+
+    <line x1="160" y1="228" x2="160" y2="252" stroke="#1f1a14" stroke-width="2"/>
+    <polygon points="155,250 165,250 160,258" class="ink"/>
+
+    <rect x="60" y="262" width="200" height="36" class="ink"/>
+    <text x="160" y="285" text-anchor="middle" fill="#f5efe6" class="mono" font-size="13">END</text>
+  </g>
+
+  <!-- ROUTER -->
+  <g transform="translate(440, 940)">
+    <rect x="0" y="0" width="320" height="320" fill="none" stroke="#d4c9b5"/>
+    <text x="16" y="28" class="mono ink-mute" font-size="11" letter-spacing="3">PATTERN B</text>
+    <text x="16" y="58" class="display ink" font-size="22">Router</text>
+    <text x="16" y="80" class="ink-soft" font-size="13" font-style="italic">classify then fan out once</text>
+
+    <rect x="100" y="105" width="120" height="36" class="ink"/>
+    <text x="160" y="128" text-anchor="middle" fill="#f5efe6" class="mono" font-size="13">classify</text>
+
+    <!-- conditional edge label -->
+    <text x="160" y="160" text-anchor="middle" class="mono" fill="#c89b3c" font-size="10" letter-spacing="2">PICK_ROUTE</text>
+
+    <!-- branches -->
+    <line x1="140" y1="141" x2="80" y2="180" stroke="#c89b3c" stroke-width="2" stroke-dasharray="4 3"/>
+    <line x1="180" y1="141" x2="240" y2="180" stroke="#c89b3c" stroke-width="2" stroke-dasharray="4 3"/>
+
+    <rect x="20" y="185" width="120" height="44" class="paper-2" stroke="#b8472e" stroke-width="2"/>
+    <text x="80" y="213" text-anchor="middle" class="display ink" font-size="14">math</text>
+
+    <rect x="180" y="185" width="120" height="44" class="paper-2" stroke="#b8472e" stroke-width="2"/>
+    <text x="240" y="213" text-anchor="middle" class="display ink" font-size="14">chitchat</text>
+
+    <line x1="80" y1="229" x2="155" y2="265" stroke="#1f1a14" stroke-width="2"/>
+    <line x1="240" y1="229" x2="165" y2="265" stroke="#1f1a14" stroke-width="2"/>
+
+    <rect x="100" y="267" width="120" height="36" class="ink"/>
+    <text x="160" y="290" text-anchor="middle" fill="#f5efe6" class="mono" font-size="13">END</text>
+  </g>
+
+  <!-- REACT -->
+  <g transform="translate(800, 940)">
+    <rect x="0" y="0" width="320" height="320" fill="none" stroke="#d4c9b5"/>
+    <text x="16" y="28" class="mono ink-mute" font-size="11" letter-spacing="3">PATTERN C</text>
+    <text x="16" y="58" class="display ink" font-size="22">ReAct</text>
+    <text x="16" y="80" class="ink-soft" font-size="13" font-style="italic">LLM and tools, in a loop</text>
+
+    <rect x="100" y="105" width="120" height="36" class="ink"/>
+    <text x="160" y="128" text-anchor="middle" fill="#f5efe6" class="mono" font-size="13">START</text>
+
+    <line x1="160" y1="141" x2="160" y2="160" stroke="#1f1a14" stroke-width="2"/>
+
+    <rect x="100" y="165" width="120" height="44" class="paper-2" stroke="#2a5d62" stroke-width="2"/>
+    <text x="160" y="193" text-anchor="middle" class="display ink" font-size="14">agent</text>
+
+    <text x="160" y="225" text-anchor="middle" class="mono" fill="#c89b3c" font-size="9" letter-spacing="1">tool_calls?</text>
+
+    <!-- to tools -->
+    <line x1="100" y1="187" x2="40" y2="200" stroke="#c89b3c" stroke-width="2" stroke-dasharray="4 3"/>
+    <rect x="0" y="205" width="80" height="44" class="paper-2" stroke="#2a5d62" stroke-width="2"/>
+    <text x="40" y="232" text-anchor="middle" class="display ink" font-size="13">tools</text>
+
+    <!-- tools loop back to agent -->
+    <path d="M 40 205 C 40 170, 40 150, 100 170" stroke="#b8472e" stroke-width="2" fill="none"/>
+    <polygon points="96,168 104,170 100,176" class="terracotta"/>
+    <text x="20" y="170" class="mono terracotta" font-size="9">loop</text>
+
+    <!-- to END -->
+    <line x1="220" y1="187" x2="270" y2="240" stroke="#c89b3c" stroke-width="2" stroke-dasharray="4 3"/>
+    <rect x="220" y="245" width="80" height="36" class="ink"/>
+    <text x="260" y="268" text-anchor="middle" fill="#f5efe6" class="mono" font-size="13">END</text>
+  </g>
+
+  <!-- ====================== THE RHYTHM ====================== -->
+  <text x="80" y="1330" class="label terracotta">&#167; 03 &#183; THE FOUR-STEP RHYTHM</text>
+  <text x="80" y="1370" class="display ink" font-size="32">Every program. Same beats.</text>
+
+  <g transform="translate(80, 1400)">
+    <!-- build -->
+    <rect x="0" y="0" width="240" height="80" class="paper-2" stroke="#d4c9b5"/>
+    <text x="20" y="28" class="mono" fill="#b8472e" font-size="11" letter-spacing="3">01 BUILD</text>
+    <text x="20" y="56" class="mono ink" font-size="13">b = StateGraph(MyState)</text>
+    <text x="20" y="72" class="ink-mute" font-size="11" font-style="italic">create a builder</text>
+
+    <!-- arrow -->
+    <line x1="244" y1="40" x2="262" y2="40" stroke="#1f1a14" stroke-width="2"/>
+    <polygon points="260,36 268,40 260,44" class="ink"/>
+
+    <!-- add -->
+    <rect x="270" y="0" width="240" height="80" class="paper-2" stroke="#d4c9b5"/>
+    <text x="290" y="28" class="mono" fill="#b8472e" font-size="11" letter-spacing="3">02 ADD</text>
+    <text x="290" y="56" class="mono ink" font-size="13">add_node, add_edge,</text>
+    <text x="290" y="71" class="mono ink" font-size="13">add_conditional_edges</text>
+
+    <line x1="514" y1="40" x2="532" y2="40" stroke="#1f1a14" stroke-width="2"/>
+    <polygon points="530,36 538,40 530,44" class="ink"/>
+
+    <!-- compile -->
+    <rect x="540" y="0" width="240" height="80" class="paper-2" stroke="#d4c9b5"/>
+    <text x="560" y="28" class="mono" fill="#b8472e" font-size="11" letter-spacing="3">03 COMPILE</text>
+    <text x="560" y="56" class="mono ink" font-size="13">app = b.compile()</text>
+    <text x="560" y="72" class="ink-mute" font-size="11" font-style="italic">freeze the topology</text>
+
+    <line x1="784" y1="40" x2="802" y2="40" stroke="#1f1a14" stroke-width="2"/>
+    <polygon points="800,36 808,40 800,44" class="ink"/>
+
+    <!-- invoke -->
+    <rect x="810" y="0" width="240" height="80" class="paper-2" stroke="#d4c9b5"/>
+    <text x="830" y="28" class="mono" fill="#b8472e" font-size="11" letter-spacing="3">04 INVOKE</text>
+    <text x="830" y="56" class="mono ink" font-size="13">app.invoke(initial)</text>
+    <text x="830" y="72" class="ink-mute" font-size="11" font-style="italic">returns final state</text>
+  </g>
+
+  <!-- ====================== JAVA / SPRING BRIDGE ====================== -->
+  <rect x="80" y="1520" width="1040" height="100" fill="rgba(109,179,63,0.07)" stroke="#6db33f" stroke-width="1"/>
+  <rect x="80" y="1520" width="6" height="100" class="spring"/>
+  <text x="106" y="1548" class="mono spring" font-size="11" letter-spacing="3">JAVA / SPRING BRIDGE</text>
+  <text x="106" y="1577" class="ink" font-size="15">LangChain is one <tspan class="mono" font-size="13">@Service</tspan> bean. LangGraph is the workflow engine above it &#8212; nodes are handlers,</text>
+  <text x="106" y="1598" class="ink" font-size="15">conditional edges are <tspan class="mono" font-size="13">switch</tspan> statements over <tspan class="mono" font-size="13">@Qualifier</tspan> names, state is a request-scoped DTO.</text>
+
+  <!-- FOOTER -->
+  <line x1="80" y1="1650" x2="1120" y2="1650" stroke="#d4c9b5"/>
+  <text x="80" y="1675" class="mono ink-mute" font-size="10" letter-spacing="2">SASMITACOURSE &#183; SESSION 19 INFOGRAPHIC</text>
+  <text x="1120" y="1675" text-anchor="end" class="mono ink-mute" font-size="10" letter-spacing="2">REV v1 &#183; 2026-05-19</text>
+</svg>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" width="1200" height="1500" role="img" aria-labelledby="ig5Title ig5Desc">
+  <title id="ig5Title">Session 5 — Cleaning text before it can be a number</title>
+  <desc id="ig5Desc">Visual summary: the 4-step classical NLP preprocessing pipeline, contrasted with what modern LLMs do, plus key corrections.</desc>
+
+  <defs>
+    <style>
+      .display { font-family: 'Fraunces', 'Iowan Old Style', Georgia, serif; font-style: italic; font-weight: 700; }
+      .display-r { font-family: 'Fraunces', serif; font-weight: 700; }
+      .body { font-family: 'Spectral', Georgia, serif; }
+      .mono { font-family: 'JetBrains Mono', 'Menlo', monospace; }
+    </style>
+    <marker id="ig5Arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f1a14"/>
+    </marker>
+    <marker id="ig5ArrowTerra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b8472e"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="1500" fill="#f5efe6"/>
+
+  <text x="60" y="80" class="mono" fill="#b8472e" font-size="13" letter-spacing="6" font-weight="700">SESSION 05 · VISUAL SUMMARY · NLP PREREQUISITES</text>
+  <text x="60" y="160" class="display" fill="#1f1a14" font-size="58">Cleaning text before it can</text>
+  <text x="60" y="218" class="display" fill="#b8472e" font-size="58">be a number.</text>
+  <line x1="60" y1="252" x2="1140" y2="252" stroke="#1f1a14" stroke-width="2"/>
+  <text x="60" y="285" class="body" fill="#4a4239" font-size="18" font-style="italic">Lowercase → tokenize → stem/lemmatize → drop stopwords. Then feed the result to embedding (Session 6).</text>
+
+  <text x="60" y="340" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§06 · THE CLASSICAL 4-STEP PIPELINE</text>
+
+  <g transform="translate(60, 360)">
+    <rect x="0" y="0" width="1080" height="48" fill="#1f1a14"/>
+    <text x="20" y="22" class="mono" fill="#c89b3c" font-size="11" font-weight="700">RAW INPUT</text>
+    <text x="20" y="40" class="mono" fill="#f5efe6" font-size="14">"The quick brown foxes ARE jumping over the lazy dogs!"</text>
+
+    <line x1="540" y1="48" x2="540" y2="68" stroke="#b8472e" stroke-width="2" marker-end="url(#ig5ArrowTerra)"/>
+    <text x="554" y="64" class="mono" fill="#b8472e" font-size="12" font-style="italic">STEP 1 · LOWERCASE</text>
+
+    <rect x="0" y="68" width="1080" height="48" fill="#ede5d6" stroke="#d4c9b5"/>
+    <text x="20" y="90" class="mono" fill="#8b7d65" font-size="11" font-weight="700">↓ AFTER LOWERCASE</text>
+    <text x="20" y="108" class="mono" fill="#1f1a14" font-size="14">"the quick brown foxes are jumping over the lazy dogs!"</text>
+
+    <line x1="540" y1="116" x2="540" y2="136" stroke="#b8472e" stroke-width="2" marker-end="url(#ig5ArrowTerra)"/>
+    <text x="554" y="132" class="mono" fill="#b8472e" font-size="12" font-style="italic">STEP 2 · TOKENIZE (word level)</text>
+
+    <rect x="0" y="136" width="1080" height="48" fill="#ede5d6" stroke="#d4c9b5"/>
+    <text x="20" y="158" class="mono" fill="#8b7d65" font-size="11" font-weight="700">↓ AFTER TOKENIZE (11 tokens)</text>
+    <text x="20" y="176" class="mono" fill="#1f1a14" font-size="12">["the", "quick", "brown", "foxes", "are", "jumping", "over", "the", "lazy", "dogs", "!"]</text>
+
+    <line x1="540" y1="184" x2="540" y2="204" stroke="#b8472e" stroke-width="2" marker-end="url(#ig5ArrowTerra)"/>
+    <text x="554" y="200" class="mono" fill="#b8472e" font-size="12" font-style="italic">STEP 3 · LEMMATIZE</text>
+
+    <rect x="0" y="204" width="1080" height="48" fill="#ede5d6" stroke="#d4c9b5"/>
+    <text x="20" y="226" class="mono" fill="#8b7d65" font-size="11" font-weight="700">↓ AFTER LEMMATIZE</text>
+    <text x="20" y="244" class="mono" fill="#1f1a14" font-size="12">["the", "quick", "brown", "fox", "be", "jump", "over", "the", "lazy", "dog", "!"]</text>
+
+    <line x1="540" y1="252" x2="540" y2="272" stroke="#b8472e" stroke-width="2" marker-end="url(#ig5ArrowTerra)"/>
+    <text x="554" y="268" class="mono" fill="#b8472e" font-size="12" font-style="italic">STEP 4 · DROP STOPWORDS</text>
+
+    <rect x="0" y="272" width="1080" height="56" fill="#f8e6cf" stroke="#b8472e" stroke-width="2"/>
+    <text x="20" y="294" class="mono" fill="#b8472e" font-size="11" font-weight="700">↓ CLEANED OUTPUT — feeds Session 6 embedding (6 tokens, ~45% shrink)</text>
+    <text x="20" y="316" class="mono" fill="#1f1a14" font-size="16" font-weight="700">["quick", "brown", "fox", "jump", "lazy", "dog"]</text>
+  </g>
+
+  <g transform="translate(60, 760)">
+    <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§08 · CLASSICAL NLP  VS  MODERN LLM</text>
+
+    <rect x="0" y="20" width="1080" height="220" fill="#ede5d6" stroke="#d4c9b5"/>
+
+    <line x1="380" y1="20" x2="380" y2="240" stroke="#d4c9b5"/>
+    <line x1="730" y1="20" x2="730" y2="240" stroke="#d4c9b5"/>
+    <line x1="0" y1="56" x2="1080" y2="56" stroke="#d4c9b5"/>
+
+    <text x="20" y="44" class="mono" fill="#1f1a14" font-size="12" font-weight="700">STEP</text>
+    <text x="400" y="44" class="mono" fill="#2a5d62" font-size="12" font-weight="700">CLASSICAL NLP (this session)</text>
+    <text x="750" y="44" class="mono" fill="#b8472e" font-size="12" font-weight="700">MODERN LLM (Session 7+)</text>
+
+    <text x="20" y="84" class="mono" fill="#1f1a14" font-size="13">Lowercase</text>
+    <text x="400" y="84" class="mono" fill="#4a4239" font-size="13">yes, almost always</text>
+    <text x="750" y="84" class="mono" fill="#4a4239" font-size="13">usually no (cased models exist)</text>
+
+    <text x="20" y="116" class="mono" fill="#1f1a14" font-size="13">Tokenize</text>
+    <text x="400" y="116" class="mono" fill="#4a4239" font-size="13">word-level (split on space)</text>
+    <text x="750" y="116" class="mono" fill="#4a4239" font-size="13">subword (BPE / WordPiece /</text>
+    <text x="750" y="132" class="mono" fill="#4a4239" font-size="13">SentencePiece)</text>
+
+    <text x="20" y="160" class="mono" fill="#1f1a14" font-size="13">Stem / Lemmatize</text>
+    <text x="400" y="160" class="mono" fill="#4a4239" font-size="13">one of the two, almost always</text>
+    <text x="750" y="160" class="mono" fill="#4a4239" font-size="13">no</text>
+
+    <text x="20" y="192" class="mono" fill="#1f1a14" font-size="13">Stopword removal</text>
+    <text x="400" y="192" class="mono" fill="#4a4239" font-size="13">yes, almost always</text>
+    <text x="750" y="192" class="mono" fill="#4a4239" font-size="13">no</text>
+
+    <text x="20" y="224" class="mono" fill="#1f1a14" font-size="13" font-style="italic">replaces all this with…</text>
+    <text x="400" y="224" class="mono" fill="#8b7d65" font-size="13" font-style="italic">— this IS the pipeline</text>
+    <text x="750" y="224" class="mono" fill="#b8472e" font-size="13" font-style="italic">subword tokenizer + attention</text>
+  </g>
+
+  <g transform="translate(60, 1040)">
+    <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">§06.3 · STEMMING VS LEMMATIZATION</text>
+
+    <rect x="0" y="20" width="520" height="180" fill="#ede5d6" stroke="#d4c9b5"/>
+    <text x="20" y="44" class="mono" fill="#c89b3c" font-size="11" font-weight="700">STEMMING (Porter, 1980)</text>
+    <text x="20" y="64" class="body" fill="#4a4239" font-size="13" font-style="italic">rule-based suffix strip · fast · may produce non-words</text>
+    <text x="20" y="92" class="mono" fill="#1f1a14" font-size="12">"running"  →  "run"</text>
+    <text x="20" y="110" class="mono" fill="#1f1a14" font-size="12">"foxes"    →  "fox"</text>
+    <text x="20" y="128" class="mono" fill="#1f1a14" font-size="12">"happily"  →  "happili"</text>
+    <text x="20" y="146" class="mono" fill="#1f1a14" font-size="12">"lazy"     →  "lazi"      ← not a real word</text>
+    <text x="20" y="178" class="mono" fill="#8b7d65" font-size="11">use when: large corpus, speed matters</text>
+
+    <rect x="560" y="20" width="520" height="180" fill="#ede5d6" stroke="#d4c9b5"/>
+    <text x="580" y="44" class="mono" fill="#2a5d62" font-size="11" font-weight="700">LEMMATIZATION (WordNet)</text>
+    <text x="580" y="64" class="body" fill="#4a4239" font-size="13" font-style="italic">dictionary lookup + POS tag · slow · real-word output</text>
+    <text x="580" y="92" class="mono" fill="#1f1a14" font-size="12">"running"  →  "run"</text>
+    <text x="580" y="110" class="mono" fill="#1f1a14" font-size="12">"better"   →  "good"      ← stemming can't do this</text>
+    <text x="580" y="128" class="mono" fill="#1f1a14" font-size="12">"was"      →  "be"</text>
+    <text x="580" y="146" class="mono" fill="#1f1a14" font-size="12">"lazy"     →  "lazy"      ← preserved</text>
+    <text x="580" y="178" class="mono" fill="#8b7d65" font-size="11">use when: small corpus, output read by humans</text>
+  </g>
+
+  <g transform="translate(60, 1280)">
+    <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" letter-spacing="3" font-weight="700">FIVE CORRECTIONS YOU SHOULD CARRY</text>
+    <rect x="0" y="14" width="1080" height="170" fill="#f8e6cf" stroke="#b8472e" stroke-dasharray="4 3"/>
+
+    <g transform="translate(20, 38)">
+      <text x="0" y="0" class="mono" fill="#b8472e" font-size="11" font-weight="700">1.</text>
+      <text x="22" y="0" class="mono" fill="#1f1a14" font-size="12">Modern LLMs skip almost this entire pipeline. Subword tokenizer + attention does the work.</text>
+
+      <text x="0" y="28" class="mono" fill="#b8472e" font-size="11" font-weight="700">2.</text>
+      <text x="22" y="28" class="mono" fill="#1f1a14" font-size="12">Don't lowercase by reflex — "Apple" the company is not "apple" the fruit. Use bert-base-cased when entities matter.</text>
+
+      <text x="0" y="56" class="mono" fill="#b8472e" font-size="11" font-weight="700">3.</text>
+      <text x="22" y="56" class="mono" fill="#1f1a14" font-size="12">Word2Vec was 2013, not 2018. BERT (2018) and GPT-2 (2019) had displaced it by then.</text>
+
+      <text x="0" y="84" class="mono" fill="#b8472e" font-size="11" font-weight="700">4.</text>
+      <text x="22" y="84" class="mono" fill="#1f1a14" font-size="12">The lemmatizer doesn't do NER. POS tagging informs lemmatization; NER is a separate task with different tools.</text>
+
+      <text x="0" y="112" class="mono" fill="#b8472e" font-size="11" font-weight="700">5.</text>
+      <text x="22" y="112" class="mono" fill="#1f1a14" font-size="12">"Corpus" = collection of documents.  "Vocabulary" = unique tokens.  Use the right one in interviews.</text>
+    </g>
+  </g>
+
+  <text x="60" y="1480" class="mono" fill="#8b7d65" font-size="10" letter-spacing="2">SESSION 05 · 2026-05-19 · SASMITA COURSE</text>
+  <text x="1140" y="1480" class="mono" fill="#8b7d65" font-size="10" letter-spacing="2" text-anchor="end">NEXT → SESSION 06 · EMBEDDING</text>
+</svg>
