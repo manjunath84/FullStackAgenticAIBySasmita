@@ -17,13 +17,13 @@
       <line x1="970" y1="200" x2="1030" y2="160"/>
       <line x1="900" y1="150" x2="1030" y2="160"/>
     </g>
-    <text x="70" y="80" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="8" fill="#c89b3c" font-weight="600">SESSION 25 &middot; STUDY NOTES &middot; REV V1</text>
+    <text x="70" y="80" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="8" fill="#c89b3c" font-weight="600">SESSION 25 · STUDY NOTES · REV V1</text>
     <text x="70" y="170" font-family="Fraunces, serif" font-style="italic" font-size="56" font-weight="700" fill="#f5efe6">Supervisor Routing</text>
     <text x="70" y="225" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#d96d4a">and the REST connection</text>
     <text x="70" y="280" font-family="Fraunces, serif" font-style="italic" font-size="19" fill="#c5b9a0">The supervisor is an LLM call. The quality of its routing</text>
     <text x="70" y="306" font-family="Fraunces, serif" font-style="italic" font-size="19" fill="#c5b9a0">is bounded by the worker descriptions you give it.</text>
     <line x1="70" y1="340" x2="180" y2="340" stroke="#d96d4a" stroke-width="2"/>
-    <text x="70" y="362" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8b7d65">GENIE &middot; CHATAGENT &middot; RECURSION_LIMIT &middot; PAT &middot; GENIE_SPACE_ID</text>
+    <text x="70" y="362" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8b7d65">GENIE · CHATAGENT · RECURSION_LIMIT · PAT · GENIE_SPACE_ID</text>
   </g>
 
   
@@ -31,13 +31,13 @@
     <text x="70" y="0" font-size="92" fill="#b8472e" opacity="0.28" font-family="Fraunces, serif">&#x201C;</text>
     <foreignObject x="120" y="-40" width="900" height="180">
       <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:23px; line-height:1.45; color:#1f1a14; font-style:italic; font-family:Fraunces, Georgia, serif;">
-        The supervisor called the math node <span style="color:#b8472e; font-weight:600;">three times in a row</span> when it should have called it once. That&rsquo;s not a bug &mdash; it&rsquo;s the supervisor doing exactly what the worker descriptions told it to do. The fix is the prompt, not the recursion cap. <span style="color:#b8472e; font-weight:600;">MLflow tracing</span> is what makes the gap visible.
+        The supervisor called the math node <span style="color:#b8472e; font-weight:600;">three times in a row</span> when it should have called it once. That’s not a bug — it’s the supervisor doing exactly what the worker descriptions told it to do. The fix is the prompt, not the recursion cap. <span style="color:#b8472e; font-weight:600;">MLflow tracing</span> is what makes the gap visible.
       </div>
     </foreignObject>
   </g>
 
   
-  <text x="70" y="720" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">&sect; 01 &mdash; THE MULTI-AGENT GRAPH</text>
+  <text x="70" y="720" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 01 — THE MULTI-AGENT GRAPH</text>
   <text x="70" y="764" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">One supervisor. Three workers. One FINISH.</text>
 
   <g transform="translate(70, 810)">
@@ -50,7 +50,7 @@
     <rect x="140" y="125" width="220" height="80" rx="4" fill="#1f1a14" stroke="#d96d4a" stroke-width="2"/>
     <text x="250" y="148" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" font-weight="700" fill="#d96d4a">SUPERVISOR</text>
     <text x="250" y="170" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="16" font-weight="700" fill="#f5efe6">llm.with_structured_output</text>
-    <text x="250" y="190" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#c5b9a0">returns &rarr; next_node</text>
+    <text x="250" y="190" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#c5b9a0">returns → next_node</text>
 
     <!-- four worker arrows fanning out -->
     <line x1="360" y1="140" x2="475" y2="50"  stroke="#1f1a14" stroke-width="1.6" marker-end="url(#ah_s)"/>
@@ -60,20 +60,20 @@
 
     <!-- workers -->
     <rect x="478" y="25"  width="200" height="50" rx="4" fill="#2a5d62"/>
-    <text x="578" y="48" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" font-weight="700" fill="#c5b9a0">WORKER &middot; GENIE</text>
-    <text x="578" y="66" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6">NL &rarr; SQL over UC tables</text>
+    <text x="578" y="48" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" font-weight="700" fill="#c5b9a0">WORKER · GENIE</text>
+    <text x="578" y="66" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6">NL → SQL over UC tables</text>
 
     <rect x="478" y="95"  width="200" height="50" rx="4" fill="#2a5d62"/>
-    <text x="578" y="118" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" font-weight="700" fill="#c5b9a0">WORKER &middot; CODER</text>
+    <text x="578" y="118" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" font-weight="700" fill="#c5b9a0">WORKER · CODER</text>
     <text x="578" y="136" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6">create_react_agent + UC fns</text>
 
     <rect x="478" y="175" width="200" height="50" rx="4" fill="#2a5d62"/>
-    <text x="578" y="198" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" font-weight="700" fill="#c5b9a0">WORKER &middot; WEATHER</text>
+    <text x="578" y="198" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" font-weight="700" fill="#c5b9a0">WORKER · WEATHER</text>
     <text x="578" y="216" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6">pyfunc.load_model</text>
 
     <rect x="478" y="245" width="200" height="50" rx="4" fill="#b8472e"/>
-    <text x="578" y="268" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" font-weight="700" fill="#f5e6cf">FINISH &rarr; FINAL_ANSWER</text>
-    <text x="578" y="286" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5e6cf">compose &rarr; END</text>
+    <text x="578" y="268" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" font-weight="700" fill="#f5e6cf">FINISH → FINAL_ANSWER</text>
+    <text x="578" y="286" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f5e6cf">compose → END</text>
 
     <!-- report-back arrows (dashed) -->
     <path d="M 478 50  Q 410 100 360 145" stroke="#8b7d65" stroke-width="1" stroke-dasharray="3,3" fill="none" marker-end="url(#ah_g)"/>
@@ -91,60 +91,60 @@
     <!-- bottom: state schema -->
     <g transform="translate(0, 320)">
       <rect width="960" height="60" fill="#fbf7ef" stroke="#c89b3c" stroke-width="1.5"/>
-      <text x="20" y="22" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">STATE &mdash; AgentState(ChatAgentState)</text>
-      <text x="20" y="44" font-family="JetBrains Mono, monospace" font-size="13" fill="#1f1a14">messages: list  &middot;  next_node: str  &middot;  iteration_count: int</text>
+      <text x="20" y="22" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">STATE — AgentState(ChatAgentState)</text>
+      <text x="20" y="44" font-family="JetBrains Mono, monospace" font-size="13" fill="#1f1a14">messages: list  ·  next_node: str  ·  iteration_count: int</text>
     </g>
   </g>
 
   
-  <text x="70" y="1250" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">&sect; 02 &mdash; CLEAN ROUTE vs 3-CALL LOOP</text>
+  <text x="70" y="1250" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 02 — CLEAN ROUTE vs 3-CALL LOOP</text>
   <text x="70" y="1294" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Same code. Different question. Different trace.</text>
 
   <g transform="translate(70, 1340)">
     <!-- DEMO 1 -->
     <rect x="0" y="0" width="470" height="280" rx="4" fill="rgba(109, 179, 63, 0.06)" stroke="#6db33f" stroke-width="1.5"/>
-    <text x="20" y="28" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#3f7b27">DEMO 1 &mdash; CLEAN</text>
-    <text x="20" y="50" font-family="Fraunces, serif" font-style="italic" font-size="16" font-weight="700" fill="#1f1a14">&ldquo;What is the total population in Afghanistan?&rdquo;</text>
+    <text x="20" y="28" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#3f7b27">DEMO 1 — CLEAN</text>
+    <text x="20" y="50" font-family="Fraunces, serif" font-style="italic" font-size="16" font-weight="700" fill="#1f1a14">“What is the total population in Afghanistan?”</text>
     <g font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">
-      <text x="20" y="82"><tspan fill="#3f7b27" font-weight="700">[1]</tspan> START &rarr; supervisor</text>
+      <text x="20" y="82"><tspan fill="#3f7b27" font-weight="700">[1]</tspan> START → supervisor</text>
       <text x="20" y="100"><tspan fill="#3f7b27" font-weight="700">[2]</tspan> supervisor: next_node = &quot;Genie&quot;</text>
-      <text x="20" y="118"><tspan fill="#3f7b27" font-weight="700">[3]</tspan> Genie node: REST call &rarr; SQL &rarr; rows</text>
-      <text x="20" y="136"><tspan fill="#3f7b27" font-weight="700">[4]</tspan> Genie &rarr; supervisor</text>
+      <text x="20" y="118"><tspan fill="#3f7b27" font-weight="700">[3]</tspan> Genie node: REST call → SQL → rows</text>
+      <text x="20" y="136"><tspan fill="#3f7b27" font-weight="700">[4]</tspan> Genie → supervisor</text>
       <text x="20" y="154"><tspan fill="#3f7b27" font-weight="700">[5]</tspan> supervisor: next_node = &quot;FINISH&quot;</text>
-      <text x="20" y="172"><tspan fill="#3f7b27" font-weight="700">[6]</tspan> final_answer &rarr; END</text>
+      <text x="20" y="172"><tspan fill="#3f7b27" font-weight="700">[6]</tspan> final_answer → END</text>
     </g>
     <line x1="20" y1="192" x2="450" y2="192" stroke="#6db33f" stroke-width="0.6" stroke-dasharray="2,3"/>
     <text x="20" y="214" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#3f7b27">MLFLOW TRACE</text>
-    <text x="20" y="232" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">5 spans &middot; 1 supervisor decision &middot; 1 worker</text>
+    <text x="20" y="232" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">5 spans · 1 supervisor decision · 1 worker</text>
     <text x="20" y="254" font-family="Spectral, serif" font-size="13" font-style="italic" fill="#5a4e3e">Worker description matched the question</text>
     <text x="20" y="268" font-family="Spectral, serif" font-size="13" font-style="italic" fill="#5a4e3e">cleanly. Nothing to debug.</text>
 
     <!-- DEMO 2 -->
     <rect x="490" y="0" width="470" height="280" rx="4" fill="rgba(184, 71, 46, 0.05)" stroke="#b8472e" stroke-width="1.5"/>
-    <text x="510" y="28" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#b8472e">DEMO 2 &mdash; 3-CALL LOOP</text>
-    <text x="510" y="50" font-family="Fraunces, serif" font-style="italic" font-size="16" font-weight="700" fill="#1f1a14">&ldquo;what is 5 + 5&rdquo;</text>
+    <text x="510" y="28" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#b8472e">DEMO 2 — 3-CALL LOOP</text>
+    <text x="510" y="50" font-family="Fraunces, serif" font-style="italic" font-size="16" font-weight="700" fill="#1f1a14">“what is 5 + 5”</text>
     <g font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1a14">
       <text x="510" y="82"><tspan fill="#b8472e" font-weight="700">[1]</tspan> supervisor: next_node = &quot;Coder&quot;  <tspan fill="#8b7d65" font-style="italic">count=1</tspan></text>
       <text x="510" y="100"><tspan fill="#b8472e" font-weight="700">[2]</tspan> Coder runs, returns &quot;10&quot;</text>
-      <text x="510" y="118"><tspan fill="#b8472e" font-weight="700">[3]</tspan> supervisor: next_node = &quot;Coder&quot;  <tspan fill="#8b7d65" font-style="italic">count=2  &larr; again</tspan></text>
+      <text x="510" y="118"><tspan fill="#b8472e" font-weight="700">[3]</tspan> supervisor: next_node = &quot;Coder&quot;  <tspan fill="#8b7d65" font-style="italic">count=2  ← again</tspan></text>
       <text x="510" y="136"><tspan fill="#b8472e" font-weight="700">[4]</tspan> Coder runs, returns &quot;10&quot;</text>
-      <text x="510" y="154"><tspan fill="#b8472e" font-weight="700">[5]</tspan> supervisor: next_node = &quot;Coder&quot;  <tspan fill="#8b7d65" font-style="italic">count=3  &larr; again</tspan></text>
-      <text x="510" y="172"><tspan fill="#b8472e" font-weight="700">[6]</tspan> count &gt; MAX_ITERATIONS &rarr; FINISH (forced)</text>
+      <text x="510" y="154"><tspan fill="#b8472e" font-weight="700">[5]</tspan> supervisor: next_node = &quot;Coder&quot;  <tspan fill="#8b7d65" font-style="italic">count=3  ← again</tspan></text>
+      <text x="510" y="172"><tspan fill="#b8472e" font-weight="700">[6]</tspan> count &gt; MAX_ITERATIONS → FINISH (forced)</text>
     </g>
     <line x1="510" y1="192" x2="940" y2="192" stroke="#b8472e" stroke-width="0.6" stroke-dasharray="2,3"/>
-    <text x="510" y="214" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#b8472e">CAUSE &middot; NOT A BUG</text>
+    <text x="510" y="214" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#b8472e">CAUSE · NOT A BUG</text>
     <text x="510" y="232" font-family="Spectral, serif" font-size="13" fill="#1f1a14">Worker description &amp; system prompt too vague.</text>
-    <text x="510" y="250" font-family="Spectral, serif" font-size="13" fill="#1f1a14">No &ldquo;if answer exists, FINISH&rdquo; instruction.</text>
+    <text x="510" y="250" font-family="Spectral, serif" font-size="13" fill="#1f1a14">No “if answer exists, FINISH” instruction.</text>
     <text x="510" y="268" font-family="Spectral, serif" font-size="13" font-style="italic" fill="#b8472e">Fix the prompt, not the cap.</text>
   </g>
 
   
-  <text x="70" y="1690" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">&sect; 03 &mdash; TWO ITERATION CAPS, DIFFERENT LAYERS</text>
+  <text x="70" y="1690" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 03 — TWO ITERATION CAPS, DIFFERENT LAYERS</text>
   <text x="70" y="1734" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Application logic vs runtime guard. Use both.</text>
 
   <g transform="translate(70, 1780)">
     <rect x="0" y="0" width="470" height="220" rx="4" fill="#fbf7ef" stroke="#c89b3c" stroke-width="1.5"/>
-    <text x="20" y="28" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">YOUR APP &middot; MAX_ITERATIONS</text>
+    <text x="20" y="28" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">YOUR APP · MAX_ITERATIONS</text>
     <text x="20" y="50" font-family="Fraunces, serif" font-style="italic" font-size="16" font-weight="700" fill="#1f1a14">application-level cap</text>
     <g font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">
       <text x="20" y="86">MAX_ITERATIONS = 3</text>
@@ -157,7 +157,7 @@
     <text x="20" y="208" font-family="Spectral, serif" font-size="13" font-style="italic" fill="#5a4e3e">Shapes business logic. You write this.</text>
 
     <rect x="490" y="0" width="470" height="220" rx="4" fill="#fbf7ef" stroke="#b8472e" stroke-width="1.5"/>
-    <text x="510" y="28" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#b8472e">LANGGRAPH &middot; recursion_limit</text>
+    <text x="510" y="28" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#b8472e">LANGGRAPH · recursion_limit</text>
     <text x="510" y="50" font-family="Fraunces, serif" font-style="italic" font-size="16" font-weight="700" fill="#1f1a14">runtime safety net</text>
     <g font-family="JetBrains Mono, monospace" font-size="12" fill="#1f1a14">
       <text x="510" y="86">AGENT.predict(input_example,</text>
@@ -170,7 +170,7 @@
   </g>
 
   
-  <text x="70" y="2060" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">&sect; 04 &mdash; CALLING GENIE FROM OUTSIDE DATABRICKS</text>
+  <text x="70" y="2060" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 04 — CALLING GENIE FROM OUTSIDE DATABRICKS</text>
   <text x="70" y="2104" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Three secrets. Four endpoints. Bearer-token auth.</text>
 
   <g transform="translate(70, 2150)">
@@ -184,57 +184,57 @@
 
       <text x="20" y="110" font-weight="700" fill="#b8472e">DATABRICKS_HOST</text>
       <text x="20" y="128" font-size="11" fill="#5a4e3e">https://&lt;workspace&gt;.cloud.databricks.com</text>
-      <text x="20" y="142" font-size="11" fill="#5a4e3e">(everything before /editor/&hellip;)</text>
+      <text x="20" y="142" font-size="11" fill="#5a4e3e">(everything before /editor/…)</text>
 
       <text x="20" y="176" font-weight="700" fill="#b8472e">DATABRICKS_GENIE_PAT</text>
-      <text x="20" y="194" font-size="11" fill="#5a4e3e">Settings &rarr; Developer &rarr; Access tokens</text>
-      <text x="20" y="208" font-size="11" fill="#5a4e3e">&rarr; Generate new token</text>
+      <text x="20" y="194" font-size="11" fill="#5a4e3e">Settings → Developer → Access tokens</text>
+      <text x="20" y="208" font-size="11" fill="#5a4e3e">→ Generate new token</text>
     </g>
 
     <line x1="20" y1="230" x2="340" y2="230" stroke="#c89b3c" stroke-width="0.6" stroke-dasharray="2,3"/>
     <text x="20" y="252" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2" font-weight="700" fill="#b8472e">WARNING</text>
-    <text x="20" y="270" font-family="Spectral, serif" font-size="12" font-style="italic" fill="#5a4e3e">PAT inherits the creator&rsquo;s full access.</text>
+    <text x="20" y="270" font-family="Spectral, serif" font-size="12" font-style="italic" fill="#5a4e3e">PAT inherits the creator’s full access.</text>
     <text x="20" y="285" font-family="Spectral, serif" font-size="12" font-style="italic" fill="#5a4e3e">Treat as a DB password. Delete when done.</text>
 
     <!-- RIGHT: the 4 endpoints -->
     <rect x="380" y="0" width="580" height="300" rx="4" fill="#1f1a14"/>
-    <text x="400" y="28" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">4 REST ENDPOINTS &middot; Authorization: Bearer &lt;PAT&gt;</text>
+    <text x="400" y="28" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">4 REST ENDPOINTS · Authorization: Bearer &lt;PAT&gt;</text>
 
     <g font-family="JetBrains Mono, monospace" font-size="11" fill="#f5efe6">
       <text x="400" y="62"><tspan fill="#d96d4a" font-weight="700">POST</tspan>  /api/2.0/genie/spaces/{id}/start-conversation</text>
-      <text x="400" y="80" fill="#8b7d65" font-style="italic">      &mdash; first message; returns conversation_id, message_id</text>
+      <text x="400" y="80" fill="#8b7d65" font-style="italic">      — first message; returns conversation_id, message_id</text>
 
       <text x="400" y="112"><tspan fill="#d96d4a" font-weight="700">POST</tspan>  /api/2.0/genie/spaces/{id}/conversations/{cid}</text>
       <text x="400" y="128">       /messages</text>
-      <text x="400" y="146" fill="#8b7d65" font-style="italic">      &mdash; follow-up message in existing conversation</text>
+      <text x="400" y="146" fill="#8b7d65" font-style="italic">      — follow-up message in existing conversation</text>
 
       <text x="400" y="178"><tspan fill="#5ba0a8" font-weight="700">GET</tspan>   /api/2.0/genie/spaces/{id}/conversations/{cid}</text>
       <text x="400" y="194">       /messages/{mid}</text>
-      <text x="400" y="212" fill="#8b7d65" font-style="italic">      &mdash; poll status: PENDING &rarr; COMPLETED / FAILED</text>
+      <text x="400" y="212" fill="#8b7d65" font-style="italic">      — poll status: PENDING → COMPLETED / FAILED</text>
 
-      <text x="400" y="244"><tspan fill="#5ba0a8" font-weight="700">GET</tspan>   &hellip;/messages/{mid}/query-result/{attachment_id}</text>
-      <text x="400" y="262" fill="#8b7d65" font-style="italic">      &mdash; fetch the SQL query result rows</text>
+      <text x="400" y="244"><tspan fill="#5ba0a8" font-weight="700">GET</tspan>   …/messages/{mid}/query-result/{attachment_id}</text>
+      <text x="400" y="262" fill="#8b7d65" font-style="italic">      — fetch the SQL query result rows</text>
     </g>
 
     <text x="400" y="288" font-family="Spectral, serif" font-size="11" font-style="italic" fill="#c5b9a0">Only POST counts toward the QPM quota. GET polling is unmetered.</text>
   </g>
 
   
-  <text x="70" y="2520" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">&sect; 05 &mdash; DATABRICKS, NEO4J, VECTOR SEARCH &mdash; ALL THREE</text>
-  <text x="70" y="2564" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Different data shapes &rarr; different worker nodes.</text>
+  <text x="70" y="2520" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 05 — DATABRICKS, NEO4J, VECTOR SEARCH — ALL THREE</text>
+  <text x="70" y="2564" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">Different data shapes → different worker nodes.</text>
 
   <g transform="translate(70, 2610)">
     <rect x="0" y="0" width="960" height="220" rx="4" fill="#1f1a14"/>
     <text x="30" y="32" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">DATA SHAPE</text>
     <text x="380" y="32" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">USE</text>
-    <text x="700" y="32" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">AS WORKER NODE&hellip;</text>
+    <text x="700" y="32" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" font-weight="700" fill="#c89b3c">AS WORKER NODE…</text>
 
     <g font-family="Spectral, serif" font-size="14" fill="#f5efe6">
-      <text x="30" y="62"><tspan font-weight="700">Structured rows &times; columns</tspan></text>
+      <text x="30" y="62"><tspan font-weight="700">Structured rows × columns</tspan></text>
       <text x="380" y="62">Databricks + Genie (SQL on Spark)</text>
-      <text x="700" y="62" font-family="JetBrains Mono, monospace" fill="#d96d4a">GenieAgent(&hellip;)</text>
+      <text x="700" y="62" font-family="JetBrains Mono, monospace" fill="#d96d4a">GenieAgent(…)</text>
 
-      <text x="30" y="100"><tspan font-weight="700">Graph &mdash; nodes &amp; relationships</tspan></text>
+      <text x="30" y="100"><tspan font-weight="700">Graph — nodes &amp; relationships</tspan></text>
       <text x="380" y="100">Neo4j + Cypher</text>
       <text x="700" y="100" font-family="JetBrains Mono, monospace" fill="#d96d4a">cypher_query_tool</text>
 
@@ -247,11 +247,11 @@
       <text x="700" y="176" font-family="JetBrains Mono, monospace" fill="#d96d4a">supervisor routes</text>
     </g>
 
-    <text x="30" y="208" font-family="Spectral, serif" font-size="13" font-style="italic" fill="#c5b9a0">The supervisor&rsquo;s job is exactly to route based on question shape. That&rsquo;s the design point.</text>
+    <text x="30" y="208" font-family="Spectral, serif" font-size="13" font-style="italic" fill="#c5b9a0">The supervisor’s job is exactly to route based on question shape. That’s the design point.</text>
   </g>
 
   
-  <text x="70" y="2870" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">&sect; 06 &mdash; CLEANUP CHECKLIST</text>
+  <text x="70" y="2870" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="4" fill="#b8472e" font-weight="700">§ 06 — CLEANUP CHECKLIST</text>
   <text x="70" y="2914" font-family="Fraunces, serif" font-style="italic" font-size="32" font-weight="700" fill="#1f1a14">A small SQL Warehouse can eat your $400 trial in a weekend.</text>
 
   <g transform="translate(70, 2960)">
@@ -262,16 +262,16 @@
       <text x="30" y="66">&#9744;  <tspan font-weight="700" fill="#b8472e">DELETE</tspan>  the Personal Access Token if not in active use</text>
       <text x="30" y="94">&#9744;  <tspan font-weight="700" fill="#b8472e">DELETE</tspan>  registered MLflow model versions used for demos</text>
       <text x="30" y="122">&#9744;  <tspan font-weight="700" fill="#b8472e">DELETE</tspan>  large temp tables written to Unity Catalog</text>
-      <text x="30" y="150">&#9744;  <tspan font-weight="700" fill="#b8472e">STOP</tspan>  any Mosaic AI Model Serving endpoint &mdash; biggest line item</text>
+      <text x="30" y="150">&#9744;  <tspan font-weight="700" fill="#b8472e">STOP</tspan>  any Mosaic AI Model Serving endpoint — biggest line item</text>
     </g>
   </g>
 
   
   <g transform="translate(0, 3180)">
     <line x1="70" y1="0" x2="1030" y2="0" stroke="#c89b3c" stroke-width="1"/>
-    <text x="70" y="34" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" fill="#8b7d65">SOURCE &middot; SASMITA WEEKLY COHORT &middot; 2026-05-26 &middot; 47.2 MIN &middot; langgraph-multiagent-genie-san.pdf</text>
-    <text x="70" y="56" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" fill="#8b7d65">VERIFIED AGAINST &middot; docs.databricks.com/aws/en/genie/conversation-api &middot; mlflow.org &middot; databricks-ai-bridge source</text>
-    <text x="70" y="78" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" fill="#8b7d65">NEXT IN COHORT &middot; SESSION 26 &middot; MLFLOW TRACING IN DEPTH</text>
+    <text x="70" y="34" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" fill="#8b7d65">SOURCE · SASMITA WEEKLY COHORT · 2026-05-26 · 47.2 MIN · langgraph-multiagent-genie-san.pdf</text>
+    <text x="70" y="56" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" fill="#8b7d65">VERIFIED AGAINST · docs.databricks.com/aws/en/genie/conversation-api · mlflow.org · databricks-ai-bridge source</text>
+    <text x="70" y="78" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="3" fill="#8b7d65">NEXT IN COHORT · SESSION 26 · MLFLOW TRACING IN DEPTH</text>
   </g>
 
 </svg>
